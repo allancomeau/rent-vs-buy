@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Rent vs. Buy: Financial Simulation Engine</title>
+  <!-- React core (order matters — each depends on the previous) -->
+  <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+  <!-- Recharts dependencies (required per official docs) -->
+  <script src="https://unpkg.com/react-is@18.2.0/umd/react-is.production.min.js"></script>
+  <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+  <!-- Recharts itself -->
+  <script src="https://unpkg.com/recharts@2.15.3/umd/Recharts.js"></script>
+  <!-- Babel for JSX compilation -->
+  <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: #fafafa; }
+    #root { min-height: 100vh; }
+    #loading { display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui; color: #888; font-size: 16px; }
+  </style>
+</head>
+<body>
+  <div id="root"><div id="loading">Loading Rent vs. Buy Engine...</div></div>
+  <script>
+    // Verify all dependencies loaded before running
+    window.addEventListener('DOMContentLoaded', function() {
+      var missing = [];
+      if (!window.React) missing.push('React');
+      if (!window.ReactDOM) missing.push('ReactDOM');
+      if (!window.Recharts) missing.push('Recharts');
+      if (missing.length > 0) {
+        document.getElementById('root').innerHTML =
+          '<div style="padding:40px;font-family:system-ui;color:#dc2626">' +
+          '<h2>Failed to load: ' + missing.join(', ') + '</h2>' +
+          '<p style="margin-top:12px;color:#666">This usually means a CDN is blocked by your browser or network. ' +
+          'Try disabling ad blockers or opening in a different browser.</p></div>';
+      }
+    });
+  </script>
+  <script type="text/babel" data-type="module">
+const { useState, useMemo } = React;
+const { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, ReferenceLine } = Recharts;
+
+// ═══════════════════════════════════════════════════════════════
+// LOCATION REFERENCE DATA
+// ═══════════════════════════════════════════════════════════════
+// Sources cited inline. All prices in local currency.
+// MSAs are the Census Bureau's standard geographic unit — the same
+// framework used by Case-Shiller, FHFA, and the Federal Reserve.
+
+const COUNTRIES = {
+  US: {
+    name: "United States", currency: "USD", sym: "$",
+    personalDefaults: { monthlyPayment: 2000, downPayment: 80000 },
+    taxNote: "Mortgage interest is tax-deductible (excess itemization method). SALT cap $40,400 (2026). Home sale gains excluded up to $500K (MFJ §121).",
+    defaults: {
+      mortgageRate: 0.060, mortgageTerm: 30, marginalTax: 0.22,
+      stdDeduction: 30000, saltCap: 40400, capGainsRate: 0.15,
+      capGainsExclusion: 500000, sellingPct: 0.06, closingPct: 0.03,
+      investReturn: 0.10, inflation: 0.025, renterIns: 300,
+    },
+    national: {
+      medianPrice: 415000, typicalRent: 2000,
+      appreciation5yr: 0.042, appreciation10yr: 0.055, appreciationLR: 0.038,
+      rentGrowth: 0.033, propTaxRate: 0.0089, insRate: 0.0063, maintRate: 0.01,
+      sources: "NAR Q4 2025, Zillow Mar 2026, FHFA HPI, NAHB/Census ACS 2024, NerdWallet 2026"
+    }
+  },
+  CA: {
+    name: "Canada", currency: "CAD", sym: "C$",
+    personalDefaults: { monthlyPayment: 2500, downPayment: 120000 },
+    taxNote: "No mortgage interest deduction on primary residences. Full capital gains exemption on principal residence (PRE). First-time buyers may access FHSA and HBP (RRSP withdrawal) — not modeled.",
+    defaults: {
+      mortgageRate: 0.045, mortgageTerm: 25, marginalTax: 0,  // No mortgage interest deduction in Canada
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.167,
+      capGainsExclusion: 999999999, sellingPct: 0.05, closingPct: 0.03,
+      investReturn: 0.08, inflation: 0.025, renterIns: 400,
+    },
+    national: {
+      medianPrice: 720000, typicalRent: 2100,
+      appreciation5yr: 0.035, appreciation10yr: 0.048, appreciationLR: 0.04,
+      rentGrowth: 0.04, propTaxRate: 0.01, insRate: 0.004, maintRate: 0.01,
+      sources: "CREA Jan 2024 forecast, RBC Housing Affordability Q4 2025, CMHC"
+    }
+  },
+  UK: {
+    name: "United Kingdom", currency: "GBP", sym: "£",
+    personalDefaults: { monthlyPayment: 1500, downPayment: 50000 },
+    taxNote: "No mortgage interest deduction on primary residences (restricted even for buy-to-let since 2020). Full Private Residence Relief (PRR) exempts primary home from CGT. Stamp duty applies at purchase — captured in closing costs.",
+    defaults: {
+      mortgageRate: 0.045, mortgageTerm: 25, marginalTax: 0,  // No mortgage interest deduction in UK
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.18,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.04,
+      investReturn: 0.08, inflation: 0.025, renterIns: 200,
+    },
+    national: {
+      medianPrice: 290000, typicalRent: 1200,
+      appreciation5yr: 0.03, appreciation10yr: 0.035, appreciationLR: 0.04,
+      rentGrowth: 0.035, propTaxRate: 0.005, insRate: 0.003, maintRate: 0.01,
+      sources: "ONS UK HPI, Rightmove, Halifax"
+    }
+  },
+  AU: {
+    name: "Australia", currency: "AUD", sym: "A$",
+    personalDefaults: { monthlyPayment: 3000, downPayment: 150000 },
+    taxNote: "No mortgage interest deduction on primary residences (negative gearing applies to investment properties only). Full main residence CGT exemption. Stamp duty varies by state — captured in closing costs.",
+    defaults: {
+      mortgageRate: 0.055, mortgageTerm: 30, marginalTax: 0,  // No mortgage interest deduction on primary residence
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.165,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
+      investReturn: 0.09, inflation: 0.03, renterIns: 400,
+    },
+    national: {
+      medianPrice: 985000, typicalRent: 2400,
+      appreciation5yr: 0.05, appreciation10yr: 0.055, appreciationLR: 0.06,
+      rentGrowth: 0.04, propTaxRate: 0.004, insRate: 0.004, maintRate: 0.01,
+      sources: "CoreLogic, ABS, RBA"
+    }
+  },
+  DE: {
+    name: "Germany", currency: "EUR", sym: "€",
+    personalDefaults: { monthlyPayment: 1500, downPayment: 60000 },
+    taxNote: "No mortgage interest deduction on owner-occupied housing. No capital gains tax after 10-year holding period. Grunderwerbsteuer (transfer tax, 3.5–6.5% by state) captured in closing costs (set to 10%).",
+    defaults: {
+      mortgageRate: 0.035, mortgageTerm: 20, marginalTax: 0,  // No mortgage interest deduction on owner-occupied
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
+      capGainsExclusion: 999999999, sellingPct: 0.04, closingPct: 0.10,
+      investReturn: 0.07, inflation: 0.02, renterIns: 200,
+    },
+    national: {
+      medianPrice: 320000, typicalRent: 1100,
+      appreciation5yr: 0.02, appreciation10yr: 0.045, appreciationLR: 0.03,
+      rentGrowth: 0.025, propTaxRate: 0.003, insRate: 0.002, maintRate: 0.015,
+      sources: "Destatis, Bundesbank, ImmoScout24"
+    }
+  },
+  IE: {
+    name: "Ireland", currency: "EUR", sym: "€",
+    personalDefaults: { monthlyPayment: 1800, downPayment: 60000 },
+    taxNote: "No mortgage interest deduction on primary residences (abolished 2021). Primary residence fully exempt from CGT. Stamp duty 1% on homes up to €1M, 2% above. Local Property Tax (LPT) is very low (~0.09%).",
+    defaults: {
+      mortgageRate: 0.039, mortgageTerm: 30, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.33,
+      capGainsExclusion: 999999999, sellingPct: 0.025, closingPct: 0.04,
+      investReturn: 0.08, inflation: 0.03, renterIns: 250,
+    },
+    national: {
+      medianPrice: 375000, typicalRent: 1600,
+      appreciation5yr: 0.06, appreciation10yr: 0.07, appreciationLR: 0.04,
+      rentGrowth: 0.04, propTaxRate: 0.001, insRate: 0.003, maintRate: 0.01,
+      sources: "CSO RPPI Aug 2025, Daft.ie, Revenue.ie LPT"
+    }
+  },
+  NZ: {
+    name: "New Zealand", currency: "NZD", sym: "NZ$",
+    personalDefaults: { monthlyPayment: 2800, downPayment: 150000 },
+    taxNote: "No mortgage interest deduction on owner-occupied homes. No capital gains tax on primary residence (bright-line test applies only to investment properties). KiwiSaver HomeStart grant available for first-home buyers — not modeled.",
+    defaults: {
+      mortgageRate: 0.055, mortgageTerm: 30, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.03,
+      investReturn: 0.08, inflation: 0.03, renterIns: 400,
+    },
+    national: {
+      medianPrice: 810000, typicalRent: 2400,
+      appreciation5yr: 0.005, appreciation10yr: 0.04, appreciationLR: 0.05,
+      rentGrowth: 0.035, propTaxRate: 0.004, insRate: 0.004, maintRate: 0.01,
+      sources: "REINZ HPI Dec 2025, Cotality NZ, RBNZ B20"
+    }
+  },
+  FR: {
+    name: "France", currency: "EUR", sym: "€",
+    personalDefaults: { monthlyPayment: 1500, downPayment: 60000 },
+    taxNote: "No mortgage interest deduction on primary residences. Primary residence fully exempt from CGT. Taxe foncière (property tax) varies by commune. Notaire fees (7–9% on existing properties) are captured in closing costs.",
+    defaults: {
+      mortgageRate: 0.033, mortgageTerm: 20, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.36,
+      capGainsExclusion: 999999999, sellingPct: 0.05, closingPct: 0.08,
+      investReturn: 0.07, inflation: 0.02, renterIns: 200,
+    },
+    national: {
+      medianPrice: 250000, typicalRent: 900,
+      appreciation5yr: 0.01, appreciation10yr: 0.02, appreciationLR: 0.03,
+      rentGrowth: 0.025, propTaxRate: 0.007, insRate: 0.002, maintRate: 0.01,
+      sources: "INSEE RPPI, Notaires de France, Investropa Jun 2025"
+    }
+  },
+  ES: {
+    name: "Spain", currency: "EUR", sym: "€",
+    personalDefaults: { monthlyPayment: 1200, downPayment: 50000 },
+    taxNote: "No mortgage interest deduction (abolished 2013). Primary residence exempt from CGT if proceeds reinvested in new primary residence within 2 years. ITP transfer tax (6–10% by region) captured in closing costs.",
+    defaults: {
+      mortgageRate: 0.030, mortgageTerm: 25, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.23,
+      capGainsExclusion: 999999999, sellingPct: 0.04, closingPct: 0.10,
+      investReturn: 0.07, inflation: 0.025, renterIns: 200,
+    },
+    national: {
+      medianPrice: 200000, typicalRent: 850,
+      appreciation5yr: 0.05, appreciation10yr: 0.04, appreciationLR: 0.03,
+      rentGrowth: 0.04, propTaxRate: 0.005, insRate: 0.002, maintRate: 0.01,
+      sources: "INE HPI, Idealista, ECB mortgage data"
+    }
+  },
+  NL: {
+    name: "Netherlands", currency: "EUR", sym: "€",
+    personalDefaults: { monthlyPayment: 2000, downPayment: 80000 },
+    taxNote: "⚠️ BUCKET B: Mortgage interest IS tax-deductible (hypotheekrenteaftrek), but being phased down to base rate (~37%). This model applies the deduction at the base rate. The Netherlands also taxes imputed rental income (eigenwoningforfait, ~0.35% of home value) — not modeled, which slightly overstates buyer advantage.",
+    defaults: {
+      mortgageRate: 0.037, mortgageTerm: 30, marginalTax: 0.37,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.06,
+      investReturn: 0.08, inflation: 0.02, renterIns: 200,
+    },
+    national: {
+      medianPrice: 490000, typicalRent: 1500,
+      appreciation5yr: 0.06, appreciation10yr: 0.07, appreciationLR: 0.04,
+      rentGrowth: 0.04, propTaxRate: 0.002, insRate: 0.002, maintRate: 0.01,
+      sources: "CBS Statline, ABN AMRO, Global Property Guide 2025"
+    }
+  },
+  IT: {
+    name: "Italy", currency: "EUR", sym: "€",
+    personalDefaults: { monthlyPayment: 1200, downPayment: 50000 },
+    taxNote: "A small mortgage interest deduction exists (19% of interest up to €4,000 = max ~€760/yr benefit), but it is too small to materially affect outcomes and is not modeled. Primary residence exempt from CGT after 5 years. IMU property tax waived on primary residence.",
+    defaults: {
+      mortgageRate: 0.032, mortgageTerm: 25, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.26,
+      capGainsExclusion: 999999999, sellingPct: 0.04, closingPct: 0.08,
+      investReturn: 0.07, inflation: 0.02, renterIns: 200,
+    },
+    national: {
+      medianPrice: 220000, typicalRent: 800,
+      appreciation5yr: 0.01, appreciation10yr: 0.0, appreciationLR: 0.02,
+      rentGrowth: 0.025, propTaxRate: 0.001, insRate: 0.002, maintRate: 0.01,
+      sources: "ISTAT, Immobiliare.it, Banca d'Italia"
+    }
+  },
+  SE: {
+    name: "Sweden", currency: "SEK", sym: "kr",
+    personalDefaults: { monthlyPayment: 15000, downPayment: 500000 },
+    taxNote: "⚠️ BUCKET B: Mortgage interest IS tax-deductible at 30% of interest paid. This model applies the deduction. Sweden also taxes imputed rental income on high-value properties — not modeled. No CGT on primary residence.",
+    defaults: {
+      mortgageRate: 0.035, mortgageTerm: 30, marginalTax: 0.30,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.22,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
+      investReturn: 0.08, inflation: 0.02, renterIns: 1500,
+    },
+    national: {
+      medianPrice: 3500000, typicalRent: 12000,
+      appreciation5yr: 0.02, appreciation10yr: 0.04, appreciationLR: 0.05,
+      rentGrowth: 0.03, propTaxRate: 0.003, insRate: 0.002, maintRate: 0.01,
+      sources: "Svensk Mäklarstatistik, SCB, Riksbanken"
+    }
+  },
+  CH: {
+    name: "Switzerland", currency: "CHF", sym: "CHF ",
+    personalDefaults: { monthlyPayment: 3000, downPayment: 200000 },
+    taxNote: "⚠️ BUCKET B: Complex system — imputed rental income (Eigenmietwert) is taxed as income, but mortgage interest and maintenance costs are deductible against it. Net effect is roughly neutral to slightly favorable for buyers. This model sets marginalTax to 0 as a simplification; actual benefit depends heavily on canton and income. No CGT on primary residence in most cantons.",
+    defaults: {
+      mortgageRate: 0.025, mortgageTerm: 25, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
+      investReturn: 0.07, inflation: 0.015, renterIns: 400,
+    },
+    national: {
+      medianPrice: 900000, typicalRent: 2200,
+      appreciation5yr: 0.03, appreciation10yr: 0.04, appreciationLR: 0.03,
+      rentGrowth: 0.02, propTaxRate: 0.001, insRate: 0.002, maintRate: 0.01,
+      sources: "BFS/FSO, SNB, Wüest Partner, UBS RE Bubble Index 2025"
+    }
+  },
+  JP: {
+    name: "Japan", currency: "JPY", sym: "¥",
+    personalDefaults: { monthlyPayment: 150000, downPayment: 5000000 },
+    taxNote: "⚠️ STRUCTURAL DISCLAIMER: Japanese buildings depreciate by law (22yr wooden, 47yr reinforced concrete). Land retains/gains value but structures go to zero. This model assumes total property appreciation, which is ONLY valid for Tokyo/Osaka condos where land value dominates. For detached houses, especially outside major cities, the model significantly overstates buyer wealth. A housing loan deduction (tax credit) exists but is capped and temporary — not modeled.",
+    defaults: {
+      mortgageRate: 0.015, mortgageTerm: 35, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.20,
+      capGainsExclusion: 30000000, sellingPct: 0.05, closingPct: 0.07,
+      investReturn: 0.06, inflation: 0.02, renterIns: 15000,
+    },
+    national: {
+      medianPrice: 45000000, typicalRent: 120000,
+      appreciation5yr: 0.05, appreciation10yr: 0.04, appreciationLR: 0.01,
+      rentGrowth: 0.02, propTaxRate: 0.014, insRate: 0.001, maintRate: 0.01,
+      sources: "MLIT, Land Institute of Japan, Global Property Guide, E-Housing"
+    }
+  },
+  SG: {
+    name: "Singapore", currency: "SGD", sym: "S$",
+    personalDefaults: { monthlyPayment: 3500, downPayment: 200000 },
+    taxNote: "⚠️ STRUCTURAL DISCLAIMER: Singapore's housing market is dominated by HDB public housing (~80% of residents). HDB has its own pricing rules, resale restrictions, and mandatory CPF (pension fund) usage that this model cannot capture. Results shown are for PRIVATE CONDOMINIUMS only. Foreign buyers face 60% Additional Buyer's Stamp Duty (ABSD) — not modeled. Use results directionally only.",
+    defaults: {
+      mortgageRate: 0.035, mortgageTerm: 25, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.04,
+      investReturn: 0.07, inflation: 0.02, renterIns: 300,
+    },
+    national: {
+      medianPrice: 1200000, typicalRent: 3500,
+      appreciation5yr: 0.04, appreciation10yr: 0.03, appreciationLR: 0.03,
+      rentGrowth: 0.03, propTaxRate: 0.004, insRate: 0.002, maintRate: 0.01,
+      sources: "URA, HDB, PropertyGuru, MAS"
+    }
+  },
+  KR: {
+    name: "South Korea", currency: "KRW", sym: "₩",
+    personalDefaults: { monthlyPayment: 1500000, downPayment: 100000000 },
+    taxNote: "⚠️ STRUCTURAL DISCLAIMER: South Korea's jeonse deposit system (large lump-sum deposit instead of monthly rent) is unique globally and fundamentally changes the rent-vs-buy calculus. This model assumes standard monthly rent, which does not capture jeonse dynamics. Heavy government intervention (DTI limits, multiple-home taxes) also affects outcomes. Use results directionally only.",
+    defaults: {
+      mortgageRate: 0.04, mortgageTerm: 30, marginalTax: 0,
+      stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
+      capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
+      investReturn: 0.07, inflation: 0.025, renterIns: 200000,
+    },
+    national: {
+      medianPrice: 600000000, typicalRent: 1200000,
+      appreciation5yr: 0.03, appreciation10yr: 0.05, appreciationLR: 0.04,
+      rentGrowth: 0.03, propTaxRate: 0.002, insRate: 0.001, maintRate: 0.01,
+      sources: "KOSIS, KB Kookmin Bank HPI, Bank of Korea"
+    }
+  }
+};
+
+const METROS = [
+  // ═══════ UNITED STATES ═══════
+  { id: "us-boston", country: "US", name: "Boston-Cambridge-Newton", state: "MA", appreciation5yr: 0.048, appreciation10yr: 0.06, rentGrowth: 0.035, propTaxRate: 0.0112, insRate: 0.005, sources: "Zillow Dec 2025, FHFA HPI, MA DOR" },
+  { id: "us-nyc", country: "US", name: "New York-Newark-Jersey City", state: "NY-NJ-PA", appreciation5yr: 0.042, appreciation10yr: 0.048, rentGrowth: 0.03, propTaxRate: 0.016, insRate: 0.004, sources: "Zillow Jan 2026, FHFA, Census ACS" },
+  { id: "us-sf", country: "US", name: "San Francisco-Oakland-Berkeley", state: "CA", appreciation5yr: 0.025, appreciation10yr: 0.05, rentGrowth: 0.02, propTaxRate: 0.0073, insRate: 0.004, sources: "Zillow, FHFA, CA BOE" },
+  { id: "us-la", country: "US", name: "Los Angeles-Long Beach-Anaheim", state: "CA", appreciation5yr: 0.04, appreciation10yr: 0.055, rentGrowth: 0.03, propTaxRate: 0.0076, insRate: 0.005, sources: "Zillow, FHFA" },
+  { id: "us-sj", country: "US", name: "San Jose-Sunnyvale-Santa Clara", state: "CA", appreciation5yr: 0.035, appreciation10yr: 0.06, rentGrowth: 0.025, propTaxRate: 0.007, insRate: 0.003, sources: "SmartAsset May 2025, FHFA" },
+  { id: "us-sea", country: "US", name: "Seattle-Tacoma-Bellevue", state: "WA", appreciation5yr: 0.035, appreciation10yr: 0.065, rentGrowth: 0.03, propTaxRate: 0.009, insRate: 0.004, sources: "Zillow, FHFA, WA DOR" },
+  { id: "us-dc", country: "US", name: "Washington-Arlington-Alexandria", state: "DC-VA-MD", appreciation5yr: 0.035, appreciation10yr: 0.045, rentGrowth: 0.03, propTaxRate: 0.0095, insRate: 0.004, sources: "Zillow, FHFA, DC OTR" },
+  { id: "us-chi", country: "US", name: "Chicago-Naperville-Elgin", state: "IL-IN-WI", appreciation5yr: 0.045, appreciation10yr: 0.035, rentGrowth: 0.03, propTaxRate: 0.0208, insRate: 0.005, sources: "Zillow, FHFA, LendingTree" },
+  { id: "us-den", country: "US", name: "Denver-Aurora-Lakewood", state: "CO", appreciation5yr: 0.03, appreciation10yr: 0.06, rentGrowth: 0.03, propTaxRate: 0.005, insRate: 0.008, sources: "Zillow, LendingTree, Bankrate" },
+  { id: "us-phx", country: "US", name: "Phoenix-Mesa-Chandler", state: "AZ", appreciation5yr: 0.06, appreciation10yr: 0.08, rentGrowth: 0.04, propTaxRate: 0.0048, insRate: 0.004, sources: "Zillow, LendingTree, FHFA" },
+  { id: "us-mia", country: "US", name: "Miami-Fort Lauderdale-Pompano Beach", state: "FL", appreciation5yr: 0.07, appreciation10yr: 0.075, rentGrowth: 0.05, propTaxRate: 0.009, insRate: 0.018, sources: "Zillow, Visual Capitalist Jan 2026, Insurance.com" },
+  { id: "us-tpa", country: "US", name: "Tampa-St. Petersburg-Clearwater", state: "FL", appreciation5yr: 0.055, appreciation10yr: 0.07, rentGrowth: 0.05, propTaxRate: 0.009, insRate: 0.018, sources: "Zillow Dec 2025, Visual Capitalist, FHFA" },
+  { id: "us-atl", country: "US", name: "Atlanta-Sandy Springs-Alpharetta", state: "GA", appreciation5yr: 0.05, appreciation10yr: 0.065, rentGrowth: 0.04, propTaxRate: 0.009, insRate: 0.006, sources: "Zillow Dec 2025, FHFA" },
+  { id: "us-dal", country: "US", name: "Dallas-Fort Worth-Arlington", state: "TX", appreciation5yr: 0.03, appreciation10yr: 0.055, rentGrowth: 0.03, propTaxRate: 0.018, insRate: 0.008, sources: "Zillow, Redfin, FHFA" },
+  { id: "us-hou", country: "US", name: "Houston-The Woodlands-Sugar Land", state: "TX", appreciation5yr: 0.025, appreciation10yr: 0.04, rentGrowth: 0.03, propTaxRate: 0.019, insRate: 0.009, sources: "Zillow, FHFA" },
+  { id: "us-aus", country: "US", name: "Austin-Round Rock-Georgetown", state: "TX", appreciation5yr: 0.04, appreciation10yr: 0.08, rentGrowth: 0.02, propTaxRate: 0.017, insRate: 0.007, sources: "Zillow, Visual Capitalist, FHFA" },
+  { id: "us-nas", country: "US", name: "Nashville-Davidson-Murfreesboro", state: "TN", appreciation5yr: 0.04, appreciation10yr: 0.07, rentGrowth: 0.035, propTaxRate: 0.006, insRate: 0.006, sources: "Zillow, FHFA" },
+  { id: "us-msp", country: "US", name: "Minneapolis-St. Paul-Bloomington", state: "MN-WI", appreciation5yr: 0.035, appreciation10yr: 0.045, rentGrowth: 0.03, propTaxRate: 0.011, insRate: 0.006, sources: "Zillow, FHFA" },
+  { id: "us-det", country: "US", name: "Detroit-Warren-Dearborn", state: "MI", appreciation5yr: 0.055, appreciation10yr: 0.065, rentGrowth: 0.035, propTaxRate: 0.016, insRate: 0.006, sources: "Zillow Dec 2025, FHFA" },
+  { id: "us-cle", country: "US", name: "Cleveland-Elyria", state: "OH", appreciation5yr: 0.05, appreciation10yr: 0.05, rentGrowth: 0.03, propTaxRate: 0.0174, insRate: 0.005, sources: "SmartAsset, LendingTree, FHFA" },
+  { id: "us-pit", country: "US", name: "Pittsburgh", state: "PA", appreciation5yr: 0.04, appreciation10yr: 0.04, rentGrowth: 0.025, propTaxRate: 0.013, insRate: 0.004, sources: "Zillow Dec 2025, HGTV/Zillow 2026" },
+  { id: "us-ind", country: "US", name: "Indianapolis-Carmel-Anderson", state: "IN", appreciation5yr: 0.045, appreciation10yr: 0.055, rentGrowth: 0.03, propTaxRate: 0.008, insRate: 0.005, sources: "Zillow Dec 2025, HGTV/Zillow" },
+  { id: "us-kc", country: "US", name: "Kansas City", state: "MO-KS", appreciation5yr: 0.05, appreciation10yr: 0.055, rentGrowth: 0.03, propTaxRate: 0.012, insRate: 0.007, sources: "Cotality Feb 2026, FHFA" },
+  { id: "us-mem", country: "US", name: "Memphis", state: "TN-MS-AR", appreciation5yr: 0.04, appreciation10yr: 0.045, rentGrowth: 0.03, propTaxRate: 0.012, insRate: 0.007, sources: "Zillow Dec 2025, HGTV/Zillow" },
+  // ═══════ CANADA ═══════
+  { id: "ca-tor", country: "CA", name: "Toronto", state: "ON", appreciation5yr: 0.02, appreciation10yr: 0.048, rentGrowth: 0.04, propTaxRate: 0.006, insRate: 0.003, sources: "CREA, RBC Q4 2025, UBS" },
+  { id: "ca-van", country: "CA", name: "Vancouver", state: "BC", appreciation5yr: 0.02, appreciation10yr: 0.04, rentGrowth: 0.04, propTaxRate: 0.003, insRate: 0.003, sources: "RBC, CREA, BC Assessment" },
+  { id: "ca-mtl", country: "CA", name: "Montréal", state: "QC", appreciation5yr: 0.045, appreciation10yr: 0.05, rentGrowth: 0.04, propTaxRate: 0.008, insRate: 0.003, sources: "CREA, RBC Q4 2025" },
+  { id: "ca-cal", country: "CA", name: "Calgary", state: "AB", appreciation5yr: 0.055, appreciation10yr: 0.04, rentGrowth: 0.05, propTaxRate: 0.007, insRate: 0.004, sources: "CREA, RBC Q4 2025" },
+  { id: "ca-ott", country: "CA", name: "Ottawa-Gatineau", state: "ON-QC", appreciation5yr: 0.035, appreciation10yr: 0.045, rentGrowth: 0.035, propTaxRate: 0.01, insRate: 0.003, sources: "CREA, RBC" },
+  // ═══════ UK ═══════
+  { id: "uk-lon", country: "UK", name: "London", state: "", appreciation5yr: 0.01, appreciation10yr: 0.02, rentGrowth: 0.04, propTaxRate: 0.004, insRate: 0.002, sources: "ONS UK HPI, UBS 2025" },
+  { id: "uk-man", country: "UK", name: "Manchester", state: "", appreciation5yr: 0.04, appreciation10yr: 0.05, rentGrowth: 0.04, propTaxRate: 0.005, insRate: 0.002, sources: "ONS, Rightmove" },
+  { id: "uk-edi", country: "UK", name: "Edinburgh", state: "", appreciation5yr: 0.04, appreciation10yr: 0.045, rentGrowth: 0.04, propTaxRate: 0.004, insRate: 0.002, sources: "Registers of Scotland, ONS" },
+  // ═══════ AUSTRALIA ═══════
+  { id: "au-syd", country: "AU", name: "Sydney", state: "NSW", appreciation5yr: 0.04, appreciation10yr: 0.05, rentGrowth: 0.04, propTaxRate: 0.003, insRate: 0.003, sources: "CoreLogic, SQM Research" },
+  { id: "au-mel", country: "AU", name: "Melbourne", state: "VIC", appreciation5yr: 0.02, appreciation10yr: 0.035, rentGrowth: 0.04, propTaxRate: 0.003, insRate: 0.003, sources: "CoreLogic, QBE" },
+  { id: "au-bne", country: "AU", name: "Brisbane", state: "QLD", appreciation5yr: 0.08, appreciation10yr: 0.065, rentGrowth: 0.05, propTaxRate: 0.003, insRate: 0.005, sources: "CoreLogic, QBE" },
+  { id: "au-per", country: "AU", name: "Perth", state: "WA", appreciation5yr: 0.08, appreciation10yr: 0.05, rentGrowth: 0.05, propTaxRate: 0.003, insRate: 0.003, sources: "CoreLogic, REIWA" },
+  // ═══════ GERMANY ═══════
+  { id: "de-mun", country: "DE", name: "Munich (München)", state: "BY", appreciation5yr: 0.02, appreciation10yr: 0.05, rentGrowth: 0.03, propTaxRate: 0.003, insRate: 0.002, sources: "Destatis, UBS 2025" },
+  { id: "de-ber", country: "DE", name: "Berlin", state: "BE", appreciation5yr: 0.02, appreciation10yr: 0.06, rentGrowth: 0.035, propTaxRate: 0.003, insRate: 0.002, sources: "Destatis, ImmoScout24" },
+  // ═══════ IRELAND ═══════
+  { id: "ie-dub", country: "IE", name: "Dublin", state: "", appreciation5yr: 0.055, appreciation10yr: 0.07, rentGrowth: 0.04, propTaxRate: 0.001, insRate: 0.003, sources: "CSO RPPI Aug 2025, Daft.ie" },
+  // ═══════ NEW ZEALAND ═══════
+  { id: "nz-akl", country: "NZ", name: "Auckland", state: "", appreciation5yr: -0.009, appreciation10yr: 0.028, rentGrowth: 0.03, propTaxRate: 0.004, insRate: 0.004, sources: "REINZ HPI Dec 2025, MoneyHub NZ, Opes Partners Feb 2026" },
+  { id: "nz-wlg", country: "NZ", name: "Wellington", state: "", appreciation5yr: -0.005, appreciation10yr: 0.03, rentGrowth: 0.03, propTaxRate: 0.005, insRate: 0.005, sources: "REINZ HPI Dec 2025, Cotality NZ" },
+  // ═══════ FRANCE ═══════
+  { id: "fr-par", country: "FR", name: "Paris (Île-de-France)", state: "", appreciation5yr: -0.01, appreciation10yr: 0.01, rentGrowth: 0.03, propTaxRate: 0.005, insRate: 0.002, sources: "INSEE, Notaires de France, Investropa" },
+  { id: "fr-lyo", country: "FR", name: "Lyon", state: "", appreciation5yr: 0.01, appreciation10yr: 0.03, rentGrowth: 0.03, propTaxRate: 0.008, insRate: 0.002, sources: "INSEE, Notaires de France" },
+  // ═══════ SPAIN ═══════
+  { id: "es-mad", country: "ES", name: "Madrid", state: "", appreciation5yr: 0.05, appreciation10yr: 0.04, rentGrowth: 0.048, propTaxRate: 0.005, insRate: 0.002, sources: "INE, Idealista, UBS RE Bubble Index 2025" },
+  { id: "es-bcn", country: "ES", name: "Barcelona", state: "", appreciation5yr: 0.04, appreciation10yr: 0.035, rentGrowth: 0.045, propTaxRate: 0.006, insRate: 0.002, sources: "INE, Idealista" },
+  // ═══════ NETHERLANDS ═══════
+  { id: "nl-ams", country: "NL", name: "Amsterdam", state: "", appreciation5yr: 0.05, appreciation10yr: 0.08, rentGrowth: 0.04, propTaxRate: 0.002, insRate: 0.002, sources: "CBS Statline, ABN AMRO, Global Property Guide" },
+  // ═══════ ITALY ═══════
+  { id: "it-mil", country: "IT", name: "Milan (Milano)", state: "", appreciation5yr: 0.03, appreciation10yr: 0.02, rentGrowth: 0.035, propTaxRate: 0.001, insRate: 0.002, sources: "ISTAT, Immobiliare.it, UBS 2025" },
+  { id: "it-rom", country: "IT", name: "Rome (Roma)", state: "", appreciation5yr: 0.01, appreciation10yr: 0.0, rentGrowth: 0.025, propTaxRate: 0.001, insRate: 0.002, sources: "ISTAT, Immobiliare.it" },
+  // ═══════ SWEDEN ═══════
+  { id: "se-sto", country: "SE", name: "Stockholm", state: "", appreciation5yr: 0.02, appreciation10yr: 0.04, rentGrowth: 0.03, propTaxRate: 0.003, insRate: 0.002, sources: "Svensk Mäklarstatistik, SCB" },
+  // ═══════ SWITZERLAND ═══════
+  { id: "ch-zur", country: "CH", name: "Zurich (Zürich)", state: "", appreciation5yr: 0.04, appreciation10yr: 0.05, rentGrowth: 0.025, propTaxRate: 0.001, insRate: 0.002, sources: "Wüest Partner, UBS RE Bubble Index 2025" },
+  // ═══════ JAPAN (⚠️ STRUCTURAL DISCLAIMER) ═══════
+  { id: "jp-tok", country: "JP", name: "Tokyo (23 Wards)", state: "", appreciation5yr: 0.07, appreciation10yr: 0.06, rentGrowth: 0.03, propTaxRate: 0.014, insRate: 0.001, sources: "MLIT, Land Institute of Japan, Tokyo Portfolio Q1 2025" },
+  { id: "jp-osa", country: "JP", name: "Osaka", state: "", appreciation5yr: 0.05, appreciation10yr: 0.04, rentGrowth: 0.025, propTaxRate: 0.014, insRate: 0.001, sources: "MLIT, E-Housing" },
+  // ═══════ SINGAPORE (⚠️ STRUCTURAL DISCLAIMER) ═══════
+  { id: "sg-sg", country: "SG", name: "Singapore (Private Condos)", state: "", appreciation5yr: 0.04, appreciation10yr: 0.03, rentGrowth: 0.03, propTaxRate: 0.004, insRate: 0.002, sources: "URA, PropertyGuru" },
+  // ═══════ SOUTH KOREA (⚠️ STRUCTURAL DISCLAIMER) ═══════
+  { id: "kr-sel", country: "KR", name: "Seoul", state: "", appreciation5yr: 0.03, appreciation10yr: 0.05, rentGrowth: 0.03, propTaxRate: 0.002, insRate: 0.001, sources: "KOSIS, KB Kookmin Bank HPI" },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// ENGINE
+// ═══════════════════════════════════════════════════════════════
+function backsolveLoan(monthlyPayment, annualRate, termYears) {
+  const r = annualRate / 12;
+  const n = termYears * 12;
+  if (r <= 0) return monthlyPayment * n;
+  const rn = Math.pow(1 + r, n);
+  return monthlyPayment * (rn - 1) / (r * rn);
+}
+
+function simulate(p) {
+  const loan = p.homePrice * (1 - p.downPct);
+  const downPayment = p.homePrice * p.downPct;
+  const closingCosts = p.homePrice * p.closingPct;
+  const upfront = downPayment + closingCosts;
+  const mr = p.mortgageRate / 12;
+  const nPmts = p.mortgageTerm * 12;
+  const monthlyPmt = loan > 0 && mr > 0
+    ? loan * (mr * Math.pow(1 + mr, nPmts)) / (Math.pow(1 + mr, nPmts) - 1)
+    : loan > 0 ? loan / nPmts : 0;
+  const startRent = monthlyPmt;
+
+  let balance = loan;
+  let renterPortfolio = upfront;
+  let renterBasis = upfront;
+  let buyerPortfolio = 0;
+  let buyerBasis = 0;
+  let totalBuyerUnrecoverable = 0;
+  let totalRenterUnrecoverable = 0;
+  const data = [];
+
+  for (let yr = 1; yr <= p.simYears; yr++) {
+    const homeVal = p.homePrice * Math.pow(1 + p.appreciation, yr);
+    const prevHomeVal = yr === 1 ? p.homePrice : p.homePrice * Math.pow(1 + p.appreciation, yr - 1);
+    let yrInterest = 0, yrPrincipal = 0, yrMtgPmt = 0;
+    for (let m = 0; m < 12; m++) {
+      if (balance <= 0.01) { balance = 0; break; }
+      const mi = balance * mr;
+      const mp = Math.min(monthlyPmt - mi, balance);
+      yrInterest += mi;
+      yrPrincipal += mp;
+      yrMtgPmt += monthlyPmt;
+      balance = Math.max(0, balance - mp);
+    }
+    const propTax = prevHomeVal * p.propTaxRate;
+    const hoIns = p.homePrice * p.insRate * Math.pow(1 + p.inflation, yr - 1);
+    const maint = homeVal * p.maintRate;
+    const totalBuyerCost = yrMtgPmt + propTax + hoIns + maint;
+    const itemized = yrInterest + Math.min(propTax, p.saltCap) + p.otherItemized;
+    const taxBenefit = Math.max(0, itemized - p.stdDeduction) * p.marginalTax;
+    const netBuyerCost = totalBuyerCost - taxBenefit;
+    const annualRent = startRent * 12 * Math.pow(1 + p.rentGrowth, yr - 1);
+    const rIns = p.renterIns * Math.pow(1 + p.inflation, yr - 1);
+    const totalRenterCost = annualRent + rIns;
+    totalBuyerUnrecoverable += yrInterest + propTax + hoIns + maint - taxBenefit;
+    totalRenterUnrecoverable += totalRenterCost;
+    const diff = netBuyerCost - totalRenterCost;
+    renterPortfolio *= (1 + p.investReturn);
+    buyerPortfolio *= (1 + p.investReturn);
+    if (diff > 0) { renterPortfolio += diff * p.discipline; renterBasis += diff * p.discipline; }
+    else { buyerPortfolio += Math.abs(diff) * p.discipline; buyerBasis += Math.abs(diff) * p.discipline; }
+    const equity = homeVal - balance;
+    const sellCosts = homeVal * p.sellingPct;
+    const homeGain = Math.max(0, homeVal - p.homePrice);
+    const homeTax = Math.max(0, homeGain - p.capGainsExclusion) * p.capGainsRate;
+    const buyerInvGain = Math.max(0, buyerPortfolio - buyerBasis);
+    const buyerWealth = equity - sellCosts - homeTax + buyerPortfolio - buyerInvGain * p.capGainsRate;
+    const renterGain = Math.max(0, renterPortfolio - renterBasis);
+    const renterWealth = renterPortfolio - renterGain * p.capGainsRate;
+    data.push({
+      year: yr, homeVal, balance: Math.max(0, balance), equity,
+      yrInterest, yrPrincipal, propTax, hoIns, maint,
+      totalBuyerCost, taxBenefit, netBuyerCost,
+      annualRent, totalRenterCost,
+      renterPortfolio, buyerPortfolio,
+      buyerWealth, renterWealth,
+      advantage: buyerWealth - renterWealth,
+    });
+  }
+  let breakeven = null;
+  for (const d of data) { if (d.advantage >= 0) { breakeven = d.year; break; } }
+  return { data, monthlyPmt, startRent, loan, upfront, breakeven, homePrice: p.homePrice, totalBuyerUnrecoverable, totalRenterUnrecoverable };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════
+const fmtC = (v, s = "$") => {
+  if (v == null || isNaN(v)) return "—";
+  const abs = Math.abs(v); const sign = v < 0 ? "-" : "";
+  if (abs >= 1e6) return sign + s + (abs / 1e6).toFixed(1) + "M";
+  if (abs >= 1e3) return sign + s + Math.round(abs).toLocaleString();
+  return sign + s + Math.round(abs);
+};
+const fmtFullC = (v, s = "$") => v == null ? "—" : (v < 0 ? "-" : "") + s + Math.round(Math.abs(v)).toLocaleString();
+const fmtPct = v => (v * 100).toFixed(1) + "%";
+
+function buildParams(country, metro, personal, rateOverride) {
+  const c = COUNTRIES[country];
+  const d = c.defaults;
+  const nat = c.national;
+  const rate = rateOverride ?? d.mortgageRate;
+  const term = personal.mortgageTerm ?? d.mortgageTerm;
+  const loan = backsolveLoan(personal.monthlyPayment, rate, term);
+  const homePrice = loan + personal.downPayment;
+  const downPct = personal.downPayment / homePrice;
+  return {
+    homePrice, downPct, mortgageRate: rate, mortgageTerm: term,
+    appreciation: metro?.appreciation5yr ?? nat.appreciation5yr,
+    rentGrowth: metro?.rentGrowth ?? nat.rentGrowth,
+    inflation: d.inflation, investReturn: d.investReturn,
+    propTaxRate: metro?.propTaxRate ?? nat.propTaxRate,
+    maintRate: nat.maintRate,
+    insRate: metro?.insRate ?? nat.insRate,
+    marginalTax: d.marginalTax, stdDeduction: d.stdDeduction,
+    saltCap: d.saltCap, otherItemized: personal.otherItemized ?? 0,
+    capGainsRate: d.capGainsRate, capGainsExclusion: d.capGainsExclusion,
+    sellingPct: d.sellingPct, closingPct: d.closingPct,
+    renterIns: d.renterIns, discipline: personal.discipline ?? 1.0,
+    simYears: personal.simYears ?? 30,
+    holdingPeriod: personal.holdingPeriod ?? 15,
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// STYLES
+// ═══════════════════════════════════════════════════════════════
+const S = {
+  page: { fontFamily: "'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif", maxWidth: 1400, margin: "0 auto", padding: "20px 24px", color: "#1a1a1a", background: "#fafafa" },
+  h1: { fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: "-0.5px" },
+  sub: { fontSize: 12, color: "#777", margin: "4px 0 20px", fontStyle: "italic" },
+  premise: { background: "#f0f4ff", border: "2px solid #2563eb", borderRadius: 8, padding: "12px 16px", marginBottom: 20 },
+  premiseLabel: { fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#2563eb", fontWeight: 700, marginBottom: 2 },
+  section: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: 12 },
+  sectionTitle: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, color: "#555", marginBottom: 8, paddingBottom: 6, borderBottom: "2px solid #e0e0e0" },
+  inputRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5, gap: 6 },
+  label: { fontSize: 11, color: "#444", flex: 1 },
+  input: { width: 80, padding: "3px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 12, textAlign: "right", fontFamily: "'IBM Plex Mono', monospace" },
+  inputLocked: { width: 80, padding: "3px 6px", border: "1px solid #e0e0e0", borderRadius: 4, fontSize: 12, textAlign: "right", fontFamily: "'IBM Plex Mono', monospace", background: "#f5f5f5", color: "#888" },
+  hint: { fontSize: 9, color: "#999", marginTop: -2, marginBottom: 4 },
+  chart: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "16px 12px", marginBottom: 20 },
+  chartTitle: { fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#333" },
+  chartSub: { fontSize: 10, color: "#888", marginBottom: 12 },
+  insight: { background: "#fffbe6", border: "1px solid #fadb14", borderRadius: 8, padding: "12px 16px", marginBottom: 20, fontSize: 13, lineHeight: 1.6 },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" },
+  th: { padding: "6px 8px", textAlign: "right", borderBottom: "2px solid #333", fontSize: 10, fontWeight: 700, color: "#555", position: "sticky", top: 0, background: "#fff" },
+  td: { padding: "4px 8px", textAlign: "right", borderBottom: "1px solid #eee" },
+  toggle: { cursor: "pointer", background: "none", border: "1px solid #ccc", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: "#555" },
+  select: { padding: "4px 8px", border: "1px solid #ccc", borderRadius: 4, fontSize: 12, fontFamily: "'IBM Plex Sans', sans-serif", background: "#fff" },
+  scenarioGrid: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 },
+  scenarioCol: { border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" },
+  scenarioHeader: { padding: "8px 12px", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
+  scenarioBody: { padding: 12 },
+  derived: { fontSize: 11, padding: "8px 10px", background: "#fafafa", borderRadius: 6, marginBottom: 10, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6 },
+};
+
+const NumInput = ({ label, hint, value, onChange, step, prefix, suffix, min, max, locked }) => (
+  <div>
+    <div style={S.inputRow}>
+      <span style={S.label}>{label} {locked && <span style={{ color: "#bbb", fontSize: 9 }}>🔒</span>}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+        {prefix && <span style={{ fontSize: 11, color: "#888" }}>{prefix}</span>}
+        <input style={locked ? S.inputLocked : S.input} type="number"
+          value={value} step={step || 1} min={min} max={max}
+          readOnly={locked} tabIndex={locked ? -1 : 0}
+          onChange={e => { if (!locked) { const v = parseFloat(e.target.value); if (!isNaN(v)) onChange(v); } }} />
+        {suffix && <span style={{ fontSize: 11, color: "#888" }}>{suffix}</span>}
+      </div>
+    </div>
+    {hint && <div style={S.hint}>{hint}</div>}
+  </div>
+);
+
+// ═══════════════════════════════════════════════════════════════
+// SCENARIO COLUMN
+// ═══════════════════════════════════════════════════════════════
+function ScenarioColumn({ label, color, params, result, holdingPeriod, locked, onParamChange, sym, showRate }) {
+  const atHold = result.data[Math.min(holdingPeriod, params.simYears) - 1];
+  const bg = color === "blue" ? "#eff6ff" : color === "green" ? "#f0fdf4" : "#fafafa";
+  const accent = color === "blue" ? "#2563eb" : color === "green" ? "#16a34a" : "#555";
+  const f = v => fmtC(v, sym);
+  const ff = v => fmtFullC(v, sym);
+
+  return (
+    <div style={S.scenarioCol}>
+      <div style={{ ...S.scenarioHeader, background: bg, color: accent, borderBottom: `2px solid ${accent}` }}>
+        {label}
+      </div>
+      <div style={S.scenarioBody}>
+        {/* Verdict */}
+        <div style={{ textAlign: "center", marginBottom: 10, padding: "8px 0", background: atHold?.advantage >= 0 ? "#eff6ff" : "#f0fdf4", borderRadius: 6, border: `2px solid ${atHold?.advantage >= 0 ? "#2563eb" : "#16a34a"}` }}>
+          <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'IBM Plex Mono', monospace", color: atHold?.advantage >= 0 ? "#2563eb" : "#16a34a" }}>
+            {atHold?.advantage >= 0 ? "BUY" : "RENT"}
+          </div>
+          <div style={{ fontSize: 10, color: "#666" }}>
+            {atHold?.advantage >= 0 ? "Buy" : "Rent"} wins by {ff(Math.abs(atHold?.advantage))} @ Yr {holdingPeriod}
+          </div>
+        </div>
+
+        {/* Derived values */}
+        <div style={S.derived}>
+          <div>Home: {ff(result.homePrice)} · Loan: {ff(result.loan)}</div>
+          <div>Upfront: {ff(result.upfront)} <span style={{ color: "#999" }}>(down + closing)</span></div>
+          <div>Breakeven: <strong>{result.breakeven ? `Year ${result.breakeven}` : "Never"}</strong></div>
+        </div>
+
+        {/* Key metrics */}
+        <div style={{ fontSize: 11, marginBottom: 10 }}>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
+            <span>Buyer Wealth:</span>
+            <span style={{ fontWeight: 600, color: "#2563eb", fontFamily: "'IBM Plex Mono', monospace" }}>{f(atHold?.buyerWealth)}</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
+            <span>Renter Wealth:</span>
+            <span style={{ fontWeight: 600, color: "#16a34a", fontFamily: "'IBM Plex Mono', monospace" }}>{f(atHold?.renterWealth)}</span>
+          </div>
+        </div>
+
+        {/* Market variables */}
+        <div style={{ ...S.sectionTitle, fontSize: 10 }}>Market Variables</div>
+        {showRate && <NumInput label="Mortgage Rate" value={(params.mortgageRate * 100).toFixed(1)} onChange={v => onParamChange("mortgageRate", v / 100)} step={0.1} suffix="%" locked={locked} hint={locked ? "Country default" : "Changes derived home price"} />}
+        <NumInput label="Appreciation" value={(params.appreciation * 100).toFixed(1)} onChange={v => onParamChange("appreciation", v / 100)} step={0.1} suffix="%" locked={locked} hint={locked ? "From reference data (5yr CAGR)" : ""} />
+        <NumInput label="Rent Growth" value={(params.rentGrowth * 100).toFixed(1)} onChange={v => onParamChange("rentGrowth", v / 100)} step={0.1} suffix="%" locked={locked} />
+        <NumInput label="Property Tax" value={(params.propTaxRate * 100).toFixed(2)} onChange={v => onParamChange("propTaxRate", v / 100)} step={0.01} suffix="%" locked={locked} />
+        <NumInput label="Insurance" value={(params.insRate * 100).toFixed(2)} onChange={v => onParamChange("insRate", v / 100)} step={0.01} suffix="%" locked={locked} />
+        <NumInput label="Maintenance" value={(params.maintRate * 100).toFixed(1)} onChange={v => onParamChange("maintRate", v / 100)} step={0.1} suffix="%" locked={locked} />
+        <NumInput label="Investment Return" value={(params.investReturn * 100).toFixed(1)} onChange={v => onParamChange("investReturn", v / 100)} step={0.1} suffix="%" locked={locked} />
+      </div>
+    </div>
+  );
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TOOLTIPS
+// ═══════════════════════════════════════════════════════════════
+const MultiTooltip = ({ active, payload, sym = "$" }) => {
+  if (!active || !payload?.length) return null;
+  const yr = payload[0]?.payload?.year;
+  return (
+    <div style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 6, padding: "10px 14px", fontSize: 11, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>Year {yr}</div>
+      {payload.map((p, i) => (
+        <div key={i} style={{ color: p.color, marginBottom: 2 }}>
+          {p.name}: {fmtFullC(p.value, sym)}
+        </div>
+      ))}
+    </div>
+  );
+};
+
+const CostTooltip = ({ active, payload, sym = "$" }) => {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  if (!d) return null;
+  return (
+    <div style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 6, padding: "10px 14px", fontSize: 11, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>Year {d.year}</div>
+      <div style={{ color: "#2563eb" }}>Buyer Net Cost: {fmtFullC(d.netBuyerCost, sym)}</div>
+      <div style={{ color: "#16a34a" }}>Renter Total Cost: {fmtFullC(d.totalRenterCost, sym)}</div>
+      <div style={{ marginTop: 4, color: "#888" }}>
+        Mtg: {fmtFullC(d.yrInterest + d.yrPrincipal, sym)} (Int: {fmtFullC(d.yrInterest, sym)})
+      </div>
+      <div style={{ color: "#888" }}>Tax+Ins+Maint: {fmtFullC(d.propTax + d.hoIns + d.maint, sym)} · Benefit: {fmtFullC(d.taxBenefit, sym)}</div>
+    </div>
+  );
+};
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN
+// ═══════════════════════════════════════════════════════════════
+function RentVsBuyV3() {
+  const [country, setCountry] = useState("US");
+  const [metroId, setMetroId] = useState("us-boston");
+  const [showTable, setShowTable] = useState(false);
+  const [showMethod, setShowMethod] = useState(false);
+  const [showSources, setShowSources] = useState(false);
+
+  const c = COUNTRIES[country];
+  const sym = c.sym;
+  const f = v => fmtC(v, sym);
+  const ff = v => fmtFullC(v, sym);
+
+  // Personal variables (shared across all scenarios)
+  const [personal, setPersonal] = useState({
+    monthlyPayment: c.personalDefaults.monthlyPayment,
+    downPayment: c.personalDefaults.downPayment,
+    mortgageTerm: c.defaults.mortgageTerm,
+    holdingPeriod: 15, simYears: 30, discipline: 1.0, otherItemized: 0,
+  });
+  const up = (key) => (val) => setPersonal(prev => ({ ...prev, [key]: val }));
+
+  // Custom column overrides
+  const [customOverrides, setCustomOverrides] = useState({});
+  const uc = (key, val) => setCustomOverrides(prev => ({ ...prev, [key]: val }));
+
+  const metro = METROS.find(m => m.id === metroId);
+  const countryMetros = METROS.filter(m => m.country === country);
+
+  // Build scenario params
+  const nationalParams = useMemo(() => buildParams(country, null, personal), [country, personal]);
+  const regionalParams = useMemo(() => buildParams(country, metro, personal), [country, metro, personal]);
+  const customParams = useMemo(() => {
+    const rateOverride = customOverrides.mortgageRate;
+    const base = buildParams(country, metro, personal, rateOverride);
+    const { mortgageRate: _, ...otherOverrides } = customOverrides;
+    return { ...base, ...otherOverrides };
+  }, [country, metro, personal, customOverrides]);
+
+  // Run simulations
+  const natResult = useMemo(() => simulate(nationalParams), [nationalParams]);
+  const regResult = useMemo(() => simulate(regionalParams), [regionalParams]);
+  const cusResult = useMemo(() => simulate(customParams), [customParams]);
+
+  // Chart data
+  const chartData = useMemo(() => natResult.data.map((d, i) => ({
+    year: d.year,
+    natAdv: d.advantage,
+    regAdv: regResult.data[i]?.advantage,
+    cusAdv: cusResult.data[i]?.advantage,
+    regBuyer: regResult.data[i]?.buyerWealth,
+    regRenter: regResult.data[i]?.renterWealth,
+    // Annual cost chart data (regional)
+    netBuyerCost: regResult.data[i]?.netBuyerCost,
+    totalRenterCost: regResult.data[i]?.totalRenterCost,
+    yrInterest: regResult.data[i]?.yrInterest,
+    yrPrincipal: regResult.data[i]?.yrPrincipal,
+    propTax: regResult.data[i]?.propTax,
+    hoIns: regResult.data[i]?.hoIns,
+    maint: regResult.data[i]?.maint,
+    taxBenefit: regResult.data[i]?.taxBenefit,
+    annualRent: regResult.data[i]?.annualRent,
+  })), [natResult, regResult, cusResult]);
+
+  // Insight builder
+  const buildInsight = (label, params, res) => {
+    const atHold = res.data[Math.min(personal.holdingPeriod, params.simYears) - 1];
+    const spread = ((params.investReturn - params.mortgageRate) * 100).toFixed(1);
+    const rentCrossover = res.data.find(d => d.totalRenterCost > d.netBuyerCost);
+    const mortgagePaidOff = res.data.find(d => d.balance === 0);
+    let text = `${label}: `;
+    if (res.breakeven && res.breakeven <= params.simYears) {
+      text += `Buying breaks even at year ${res.breakeven}. `;
+      if (mortgagePaidOff) text += `Mortgage paid off year ${mortgagePaidOff.year}. `;
+      if (rentCrossover) text += `Rent exceeds buyer costs from year ${rentCrossover.year}. `;
+    } else {
+      text += `Renting wins across all ${params.simYears} years. `;
+      text += `The ${spread}% spread (returns vs mortgage rate) drives the renter's portfolio. `;
+    }
+    text += atHold?.advantage >= 0
+      ? `At year ${personal.holdingPeriod}, buying wins by ${ff(atHold.advantage)}.`
+      : `At year ${personal.holdingPeriod}, renting wins by ${ff(Math.abs(atHold.advantage))}.`;
+    return text;
+  };
+
+  // Volatility drag display: geometric = arithmetic - σ²/2
+  const EQUITY_VOL = 0.16; // S&P 500 σ ≈ 15-20%, use 16% conservative
+  const HOUSING_VOL = 0.08; // Housing σ ≈ 6-8%
+  const equityDrag = (EQUITY_VOL * EQUITY_VOL) / 2;
+  const housingDrag = (HOUSING_VOL * HOUSING_VOL) / 2;
+
+  // Input validation warnings
+  const warnings = useMemo(() => {
+    const w = [];
+    const ir = customParams.investReturn;
+    const ap = customParams.appreciation;
+    const rg = customParams.rentGrowth;
+    const pt = customParams.propTaxRate;
+    const ins = customParams.insRate;
+    const mr = customParams.mortgageRate;
+    const hp = personal.holdingPeriod;
+    const dp = personal.downPayment;
+    const mp = personal.monthlyPayment;
+    const derivedPrice = cusResult.homePrice;
+    const downPctImpl = derivedPrice > 0 ? dp / derivedPrice : 0;
+    if (mp < 500) w.push("Monthly payment below " + sym + "500 produces a very small derived home price. Results may not be meaningful.");
+    if (ir > 0.12) w.push("Investment return exceeds the S&P 500 long-run arithmetic mean (~12%). The model compounds geometrically — 10% is the standard benchmark. At " + fmtPct(ir) + ", the renter's portfolio may be significantly overstated.");
+    if (ir < 0.05) w.push("Investment return below 5% implies a very conservative portfolio (below long-run bond returns). This strongly favors buying.");
+    if (ap > 0.08) w.push("No major US metro has sustained " + fmtPct(ap) + " appreciation over a full market cycle. Recent 5-year figures include the post-pandemic surge.");
+    if (ap < 0) w.push("Negative appreciation means the home loses value every year. Possible post-bubble, but unusual to plan for.");
+    if (rg > 0.06) w.push("Rent growth above 6% has only occurred in a few post-pandemic hotspots and is unlikely to persist long-term.");
+    if (pt > 0.025) w.push("Property tax of " + fmtPct(pt) + " would be among the highest in the US. NJ tops out ~2.2%.");
+    if (ins > 0.02) w.push("Insurance of " + fmtPct(ins) + " is FL/LA disaster-area territory. Verify with actual quotes.");
+    if (mr > 0.09) w.push("Mortgage rate of " + fmtPct(mr) + " hasn't been seen since the early 1990s.");
+    if (mr < 0.025 && mr > 0) w.push("Mortgage rate of " + fmtPct(mr) + " was briefly available in 2020–2021 but is unlikely in the current environment.");
+    if (hp < 3) w.push("At a " + hp + "-year hold, transaction costs (~9% round-trip) overwhelm almost any appreciation.");
+    if (downPctImpl > 0 && downPctImpl < 0.05) w.push("Implied down payment is " + (downPctImpl * 100).toFixed(0) + "% — PMI would apply (not modeled). Results may understate buyer costs.");
+    if (downPctImpl > 0.5) w.push("Implied down payment is " + (downPctImpl * 100).toFixed(0) + "% of home value — unusual. Most buyers finance a majority.");
+    return w;
+  }, [customParams, personal, cusResult, sym]);
+
+  return (
+    <div style={S.page}>
+      <h1 style={S.h1}>Rent vs. Buy: Financial Simulation Engine</h1>
+      <div style={S.sub}>v3 · Monthly-payment-first model · {METROS.length} metros · SALT cap {sym}{c.defaults.saltCap > 100000 ? "N/A" : c.defaults.saltCap.toLocaleString()} ({country === "US" ? "OBBBA 2026" : c.name})</div>
+
+      {/* ═══ HOW TO READ THIS ═══ */}
+      <details style={{ marginBottom: 16, background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "0 16px" }}>
+        <summary style={{ padding: "10px 0", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#555" }}>How to Read This Model</summary>
+        <div style={{ paddingBottom: 14, fontSize: 12, lineHeight: 1.7, color: "#555" }}>
+          <p style={{ marginTop: 8 }}><strong>What it does:</strong> This model compares two parallel financial paths — buying a home vs. renting and investing the difference — starting from the same monthly cash outflow. It shows which path builds more net wealth over your chosen time horizon.</p>
+          <p><strong>The three columns:</strong> National Average and your selected metro use real reference data (locked). Custom lets you override everything to test "what if" scenarios. All three share the same personal variables (payment, down payment, sell year, discipline).</p>
+          <p><strong>What to try first:</strong> Set your actual monthly rent as "Monthly Payment" and your realistic savings as "Down Payment." Adjust "Sell House in Year" to match how long you'd actually stay. Then experiment with Renter Discipline — at 100%, the renter perfectly invests all savings (theoretical best case for renting). At 70%, they invest 70% and spend 30%. Watch how the verdict changes.</p>
+          <p><strong>What the charts show:</strong> Chart 1 compares the buy-vs-rent advantage across all three scenarios. Chart 2 shows the two wealth paths diverging over time. Chart 3 shows annual costs — when the renter's rising rent crosses above the buyer's fixed mortgage, that's the inflection point.</p>
+          <p style={{ color: "#888", fontSize: 11 }}>All growth rates are geometric means (CAGRs), the correct metric for deterministic compounding. The model does not simulate year-to-year randomness. See the volatility drag callout below for why this matters.</p>
+        </div>
+      </details>
+
+      {/* ═══ LOCATION SELECTOR ═══ */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 600, color: "#555", display: "block", marginBottom: 3 }}>Country</label>
+          <select style={S.select} value={country} onChange={e => {
+            const nc = e.target.value;
+            setCountry(nc);
+            const first = METROS.find(m => m.country === nc);
+            if (first) setMetroId(first.id);
+            setCustomOverrides({});
+            const nd = COUNTRIES[nc];
+            setPersonal(prev => ({
+              ...prev,
+              monthlyPayment: nd.personalDefaults.monthlyPayment,
+              downPayment: nd.personalDefaults.downPayment,
+              mortgageTerm: nd.defaults.mortgageTerm,
+            }));
+          }}>
+            {Object.entries(COUNTRIES).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
+          </select>
+        </div>
+        <div>
+          <label style={{ fontSize: 10, fontWeight: 600, color: "#555", display: "block", marginBottom: 3 }}>Metro / MSA</label>
+          <select style={{ ...S.select, minWidth: 280 }} value={metroId} onChange={e => {
+            setMetroId(e.target.value);
+            setCustomOverrides({});
+          }}>
+            {countryMetros.map(m => <option key={m.id} value={m.id}>{m.name}{m.state ? ` (${m.state})` : ""}</option>)}
+          </select>
+        </div>
+        <div style={{ fontSize: 9, color: "#aaa", maxWidth: 250, lineHeight: 1.4 }}>
+          All values in {c.currency} ({sym}). MSAs = Census Bureau standard, used by FHFA & Case-Shiller.
+        </div>
+      </div>
+
+      {/* ═══ CORE PREMISE ═══ */}
+      <div style={S.premise}>
+        <div style={S.premiseLabel}>Core Premise</div>
+        <div style={{ fontSize: 14, fontWeight: 600 }}>
+          Starting Monthly Rent = Monthly Mortgage P&I = <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#2563eb" }}>{ff(personal.monthlyPayment)}/mo</span>
+        </div>
+        <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
+          Both paths start from the same monthly cash outflow. Rent grows; mortgage stays fixed.
+          Derived home price: National {ff(natResult.homePrice)} · {metro?.name} {ff(regResult.homePrice)} · Custom {ff(cusResult.homePrice)}
+        </div>
+      </div>
+
+      {/* ═══ PERSONAL VARIABLES HUB ═══ */}
+      <div style={{ ...S.section, marginBottom: 16 }}>
+        <div style={S.sectionTitle}>Your Situation (shared across all scenarios)</div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16 }}>
+          <div>
+            <NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} hint="Your current rent / mortgage P&I" />
+            <NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} hint={`Cash you'd put down · ~${regResult.homePrice > 0 ? (personal.downPayment / regResult.homePrice * 100).toFixed(0) : "—"}% of derived home price`} />
+          </div>
+          <div>
+            <NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" />
+            <NumInput label="Sell House in Year" value={personal.holdingPeriod} onChange={v => up("holdingPeriod")(Math.min(v, personal.simYears))} step={1} suffix="yr" hint="How long you'd own" />
+          </div>
+          <div>
+            <NumInput label="Simulation Length" value={personal.simYears} onChange={v => setPersonal(prev => ({ ...prev, simYears: v, holdingPeriod: Math.min(prev.holdingPeriod, v) }))} step={1} suffix="yr" min={1} max={65} />
+            <NumInput label="Renter Discipline" value={(personal.discipline * 100).toFixed(0)} onChange={v => up("discipline")(v / 100)} step={5} suffix="%" hint="% of savings actually invested. 60-75% realistic" />
+          </div>
+          <div>
+            <NumInput label="Marginal Tax Rate" value={(c.defaults.marginalTax * 100).toFixed(0)} onChange={() => {}} suffix="%" locked hint={c.defaults.marginalTax > 0 ? "Mortgage interest deductible" : "No mortgage interest deduction"} />
+            {c.defaults.marginalTax > 0 && <NumInput label="Other Itemized Ded." value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} hint="Charitable, medical, etc." />}
+          </div>
+        </div>
+        {/* Tax treatment note — prominent warning for disclaimer countries */}
+        {c.taxNote.includes("⚠️") ? (
+          <div style={{ fontSize: 12, color: "#7a4f00", marginTop: 8, padding: "10px 14px", background: "#fff3cd", borderRadius: 6, border: "2px solid #ffc107", lineHeight: 1.6, fontWeight: 500 }}>
+            <strong style={{ fontSize: 13 }}>⚠️ {c.name} — Important Disclaimer</strong>
+            <div style={{ marginTop: 4, fontWeight: 400 }}>{c.taxNote.replace("⚠️ ", "")}</div>
+          </div>
+        ) : (
+          <div style={{ fontSize: 11, color: "#666", marginTop: 8, padding: "8px 12px", background: "#f8f8f8", borderRadius: 6, lineHeight: 1.5 }}>
+            <strong>{c.name} tax treatment:</strong> {c.taxNote}
+          </div>
+        )}
+        {/* Volatility drag callout */}
+        <div style={{ fontSize: 11, color: "#555", marginTop: 8, padding: "8px 12px", background: "#f0f4ff", borderRadius: 6, border: "1px solid #d0d8f0", lineHeight: 1.6 }}>
+          <strong>Why the model uses geometric returns (CAGR), not arithmetic averages:</strong> Variable returns always compound to less than their average suggests — this is volatility drag.
+          Investment return {fmtPct(c.defaults.investReturn)} is the geometric mean. With equity σ ≈ {(EQUITY_VOL * 100).toFixed(0)}%, the arithmetic avg is ~{fmtPct(c.defaults.investReturn + equityDrag)}, but {fmtPct(equityDrag)} is lost to drag (½σ²).
+          Housing appreciation loses only ~{fmtPct(housingDrag)} to drag (σ ≈ {(HOUSING_VOL * 100).toFixed(0)}%).
+          Using 12% instead of 10% for stocks isn't optimism — it's a math error that overstates the renter's portfolio by ~50-70% over 30 years. <span style={{ color: "#888" }}>(Kitces, Jacquier-Kane-Marcus 2003, Ibbotson/SBBI)</span>
+        </div>
+        {/* Input warnings */}
+        {warnings.length > 0 && (
+          <div style={{ marginTop: 8, padding: "8px 12px", background: "#fff8e6", borderRadius: 6, border: "1px solid #f0d860", fontSize: 11, lineHeight: 1.6 }}>
+            <strong style={{ color: "#b8860b" }}>Heads up on your Custom scenario inputs:</strong>
+            {warnings.map((w, i) => <div key={i} style={{ marginTop: 4, color: "#7a6520" }}>• {w}</div>)}
+          </div>
+        )}
+      </div>
+
+      {/* ═══ THREE-COLUMN SCENARIOS ═══ */}
+      <div style={S.scenarioGrid}>
+        <ScenarioColumn label={`${c.name} National Avg`} color="blue" sym={sym}
+          params={nationalParams} result={natResult} holdingPeriod={personal.holdingPeriod}
+          locked={true} showRate={true} onParamChange={() => {}} />
+        <ScenarioColumn label={metro ? `${metro.name}${metro.state ? ` (${metro.state})` : ""}` : "Select Metro"} color="green" sym={sym}
+          params={regionalParams} result={regResult} holdingPeriod={personal.holdingPeriod}
+          locked={true} showRate={true} onParamChange={() => {}} />
+        <ScenarioColumn label="Custom Scenario" color="gray" sym={sym}
+          params={customParams} result={cusResult} holdingPeriod={personal.holdingPeriod}
+          locked={false} showRate={true} onParamChange={(k, v) => uc(k, v)} />
+      </div>
+
+      {/* ═══ DYNAMIC INSIGHT (all three) ═══ */}
+      <div style={S.insight}>
+        <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>Dynamic Insight</div>
+        <div style={{ marginBottom: 6 }}>{buildInsight(`${c.name} Avg`, nationalParams, natResult)}</div>
+        <div style={{ marginBottom: 6 }}>{buildInsight(metro?.name || "Regional", regionalParams, regResult)}</div>
+        <div style={{ marginBottom: 8 }}>{buildInsight("Custom", customParams, cusResult)}</div>
+        <div style={{ borderTop: "1px solid #e8d44d", paddingTop: 8, fontSize: 12, color: "#666" }}>
+          <strong>Unrecoverable costs ({metro?.name || "Regional"}, {personal.simYears}yr):</strong> The buyer "throws away" {ff(regResult.totalBuyerUnrecoverable)} in interest, tax, insurance, and maintenance (net of tax benefits). The renter pays {ff(regResult.totalRenterUnrecoverable)} in rent + insurance. Neither side's money is "free" — the question is which path builds more wealth after accounting for what's lost.
+        </div>
+      </div>
+
+      {/* ═══ ADVANTAGE CHART ═══ */}
+      <div style={S.chart}>
+        <div style={S.chartTitle}>Buy vs. Rent Advantage Across Scenarios</div>
+        <div style={S.chartSub}>Positive = buying wins · Negative = renting wins</div>
+        <ResponsiveContainer width="100%" height={320}>
+          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="year" tick={{ fontSize: 10 }} tickFormatter={v => v % 5 === 0 ? v : ""} />
+            <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmtC(v, sym)} width={65} />
+            <Tooltip content={<MultiTooltip sym={sym} />} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <ReferenceLine y={0} stroke="#333" strokeWidth={1} />
+            <ReferenceLine x={personal.holdingPeriod} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}
+              label={{ value: `Yr ${personal.holdingPeriod}`, position: "top", fontSize: 10, fill: "#f59e0b" }} />
+            <Line type="monotone" dataKey="natAdv" name={`${c.name} Avg`} stroke="#2563eb" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="regAdv" name={metro?.name || "Regional"} stroke="#16a34a" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="cusAdv" name="Custom" stroke="#888" strokeWidth={2} strokeDasharray="5 3" dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ═══ WEALTH CHART (Regional) ═══ */}
+      <div style={S.chart}>
+        <div style={S.chartTitle}>{metro?.name || "Regional"}: Buyer vs. Renter Net Wealth</div>
+        <div style={S.chartSub}>Buyer = Equity − Selling Costs − Cap Gains + Portfolio · Renter = Portfolio − Cap Gains</div>
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="year" tick={{ fontSize: 10 }} tickFormatter={v => v % 5 === 0 ? v : ""} />
+            <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmtC(v, sym)} width={65} />
+            <Tooltip content={<MultiTooltip sym={sym} />} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            <ReferenceLine x={personal.holdingPeriod} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} />
+            {regResult.breakeven && <ReferenceLine x={regResult.breakeven} stroke="#dc2626" strokeDasharray="4 4"
+              label={{ value: `Break-even`, position: "top", fontSize: 10, fill: "#dc2626" }} />}
+            <Line type="monotone" dataKey="regBuyer" name="Buyer Wealth" stroke="#2563eb" strokeWidth={2.5} dot={false} />
+            <Line type="monotone" dataKey="regRenter" name="Renter Wealth" stroke="#16a34a" strokeWidth={2.5} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ═══ ANNUAL COST CHART (Regional) — RESTORED FROM v1 ═══ */}
+      <div style={S.chart}>
+        <div style={S.chartTitle}>{metro?.name || "Regional"}: Annual Housing Cost — Buyer vs. Renter</div>
+        <div style={S.chartSub}>
+          Buyer = Mortgage P&I + Property Tax + Insurance + Maintenance − Tax Benefit · Renter = Rent + Insurance · When lines cross, the cost advantage flips — but note that the renter may have already built a compounding lead from earlier years of lower costs.
+        </div>
+        <ResponsiveContainer width="100%" height={280}>
+          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis dataKey="year" tick={{ fontSize: 10 }} tickFormatter={v => v % 5 === 0 ? v : ""} />
+            <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmtC(v, sym)} width={65} />
+            <Tooltip content={<CostTooltip sym={sym} />} />
+            <Legend wrapperStyle={{ fontSize: 11 }} />
+            {regionalParams.mortgageTerm <= regionalParams.simYears && (
+              <ReferenceLine x={regionalParams.mortgageTerm} stroke="#888" strokeDasharray="4 4"
+                label={{ value: "Mortgage paid off", position: "top", fontSize: 10, fill: "#888" }} />
+            )}
+            <Line type="monotone" dataKey="netBuyerCost" name="Buyer Net Cost" stroke="#2563eb" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="totalRenterCost" name="Renter Total Cost" stroke="#16a34a" strokeWidth={2} dot={false} />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* ═══ LOCATION DATA SOURCES ═══ */}
+      <div style={{ marginBottom: 16 }}>
+        <button style={S.toggle} onClick={() => setShowSources(!showSources)}>
+          {showSources ? "▼ Hide" : "▶ Show"} Location Reference Data & Sources ({countryMetros.length} metros)
+        </button>
+        {showSources && (
+          <div style={{ ...S.section, marginTop: 10, maxHeight: 400, overflowY: "auto" }}>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  <th style={{ ...S.th, textAlign: "left" }}>Metro</th>
+                  <th style={S.th}>Appr 5yr</th>
+                  <th style={S.th}>Appr 10yr</th>
+                  <th style={S.th}>Rent Gr</th>
+                  <th style={S.th}>Prop Tax</th>
+                  <th style={S.th}>Ins Rate</th>
+                  <th style={{ ...S.th, textAlign: "left" }}>Sources</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr style={{ background: "#f0f4ff", fontWeight: 600 }}>
+                  <td style={{ ...S.td, textAlign: "left" }}>{c.name} National</td>
+                  <td style={S.td}>{fmtPct(c.national.appreciation5yr)}</td>
+                  <td style={S.td}>{fmtPct(c.national.appreciation10yr)}</td>
+                  <td style={S.td}>{fmtPct(c.national.rentGrowth)}</td>
+                  <td style={S.td}>{fmtPct(c.national.propTaxRate)}</td>
+                  <td style={S.td}>{fmtPct(c.national.insRate)}</td>
+                  <td style={{ ...S.td, textAlign: "left", fontSize: 9 }}>{c.national.sources}</td>
+                </tr>
+                {countryMetros.map(m => (
+                  <tr key={m.id} style={{ background: m.id === metroId ? "#f0fdf4" : undefined }}>
+                    <td style={{ ...S.td, textAlign: "left", fontWeight: m.id === metroId ? 700 : 400 }}>{m.name}</td>
+                    <td style={S.td}>{fmtPct(m.appreciation5yr)}</td>
+                    <td style={S.td}>{fmtPct(m.appreciation10yr)}</td>
+                    <td style={S.td}>{fmtPct(m.rentGrowth)}</td>
+                    <td style={S.td}>{fmtPct(m.propTaxRate)}</td>
+                    <td style={S.td}>{fmtPct(m.insRate)}</td>
+                    <td style={{ ...S.td, textAlign: "left", fontSize: 9 }}>{m.sources}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ fontSize: 9, color: "#999", marginTop: 10, lineHeight: 1.5 }}>
+              <strong>Data notes:</strong> Appreciation = 5-year nominal CAGR from FHFA HPI (US) or equivalent national indices. Property tax = effective rate (taxes paid ÷ home value) from Census ACS 2024. Insurance from Bankrate/NerdWallet Nov 2025, as % of home value. All data Q4 2025 – Q1 2026.
+              {country === "US" && <><br /><br /><strong>SALT Cap (OBBBA 2026):</strong> Raised from $10,000 → $40,400. Phases down for MAGI above $500,000. Reverts to $10,000 in 2030. PMI now treated as deductible mortgage interest starting 2026 (not yet modeled).</>}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ DATA TABLE ═══ */}
+      <div style={{ marginBottom: 16 }}>
+        <button style={S.toggle} onClick={() => setShowTable(!showTable)}>
+          {showTable ? "▼ Hide" : "▶ Show"} Year-by-Year Data ({metro?.name || "Regional"})
+        </button>
+        {showTable && (
+          <div style={{ maxHeight: 400, overflowY: "auto", marginTop: 10, border: "1px solid #e0e0e0", borderRadius: 8 }}>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  {["Yr", "Home", "Equity", "Int", "Princ", "Buyer$", "TaxBen", "NetBuy", "Rent$", "RentCost",
+                    "BuyInv", "RntInv", "BuyerW", "RenterW", "Adv"].map(h => (
+                    <th key={h} style={{ ...S.th, ...(h === "Yr" ? { textAlign: "center" } : {}) }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {regResult.data.map(d => {
+                  const isHold = d.year === personal.holdingPeriod;
+                  const isBE = d.year === regResult.breakeven;
+                  const bg = isHold ? "#fff7ed" : isBE ? "#fef2f2" : d.year % 2 === 0 ? "#fafafa" : "#fff";
+                  return (
+                    <tr key={d.year} style={{ background: bg }}>
+                      <td style={{ ...S.td, textAlign: "center", fontWeight: isHold || isBE ? 700 : 400 }}>{d.year}</td>
+                      <td style={S.td}>{f(d.homeVal)}</td>
+                      <td style={S.td}>{f(d.equity)}</td>
+                      <td style={S.td}>{f(d.yrInterest)}</td>
+                      <td style={S.td}>{f(d.yrPrincipal)}</td>
+                      <td style={S.td}>{f(d.totalBuyerCost)}</td>
+                      <td style={S.td}>{f(d.taxBenefit)}</td>
+                      <td style={{ ...S.td, fontWeight: 600 }}>{f(d.netBuyerCost)}</td>
+                      <td style={S.td}>{f(d.annualRent)}</td>
+                      <td style={{ ...S.td, fontWeight: 600 }}>{f(d.totalRenterCost)}</td>
+                      <td style={S.td}>{f(d.buyerPortfolio)}</td>
+                      <td style={S.td}>{f(d.renterPortfolio)}</td>
+                      <td style={{ ...S.td, fontWeight: 700, color: "#2563eb" }}>{f(d.buyerWealth)}</td>
+                      <td style={{ ...S.td, fontWeight: 700, color: "#16a34a" }}>{f(d.renterWealth)}</td>
+                      <td style={{ ...S.td, fontWeight: 700, color: d.advantage >= 0 ? "#2563eb" : "#16a34a" }}>{f(d.advantage)}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ METHODOLOGY ═══ */}
+      <div style={{ marginBottom: 24 }}>
+        <button style={S.toggle} onClick={() => setShowMethod(!showMethod)}>
+          {showMethod ? "▼ Hide" : "▶ Show"} Methodology & Sources
+        </button>
+        {showMethod && (
+          <div style={{ ...S.section, marginTop: 10, fontSize: 12, lineHeight: 1.8, color: "#555" }}>
+            <p><strong>Monthly-Payment-First Model (v3):</strong> You input your monthly payment and down payment. The engine backsolves the loan amount: L = M × [(1+r)^n − 1] / [r × (1+r)^n], then derives homePrice = L + downPayment. This ensures the comparison starts from the same cash outflow. When the Custom column uses a different rate, the derived home price changes — showing what the same payment buys at different rates.</p>
+            <p><strong>Three-Scenario Structure:</strong> National and Regional columns use reference data (locked). Custom is fully editable. Personal variables (payment, down, sell year, discipline) are shared across all three.</p>
+            <p><strong>Amortization:</strong> Month-precise. Interest = Balance × (Rate/12), Principal = Payment − Interest. Aggregated annually.</p>
+            <p><strong>Tax Benefit:</strong> Excess itemization. Benefit = max(0, Itemized − Std Deduction) × Marginal Rate. Itemized = Mortgage Interest + min(Property Tax, SALT Cap) + Other. Many homeowners get zero incremental benefit.</p>
+            <p><strong>Symmetric Surplus Investing:</strong> Whoever has lower costs in a given year invests the difference (adjusted by discipline %). This correctly captures the buyer's post-mortgage-payoff advantage.</p>
+            <p><strong>Renter Discipline:</strong> At 100%, assumes perfect investment of all surplus — theoretical ideal. Bernstein & Koudijs (QJE 2024): mortgage payments translate ~1:1 to wealth via forced savings. Set 60-75% for behavioral realism.</p>
+            <p><strong>Capital Gains:</strong> Home: max(0, gain − exclusion) × rate. Investments: (portfolio − basis) × rate. US exclusion: $500K MFJ (§121). Canada: primary residence fully exempt. UK: PPR relief. Australia: 50% CGT discount. Germany: exempt after 10yr hold.</p>
+            <p><strong>International Tax Model:</strong> Most countries fall into two buckets. <em>Bucket A (almost everyone)</em>: no mortgage interest deduction on primary residences — Canada, UK, Australia, Germany, and most of the developed world. The US is the global outlier. The engine handles these by setting marginalTax to 0, which correctly produces $0 tax benefit. <em>Bucket B (rare)</em>: Netherlands and Denmark allow partial mortgage interest deductions. Not currently modeled. A few markets (Japan, Singapore) have fundamentally different housing structures (depreciating homes, government housing dominance) that this model cannot reliably capture — use results for those markets directionally, not precisely.</p>
+            <p style={{ marginTop: 12, color: "#888", fontSize: 11 }}>
+              <strong>Academic sources:</strong> Poterba (QJE 1984) · Shiller Case-Shiller Index · Jordà, Schularick & Taylor (QJE 2019) · Himmelberg, Mayer & Sinai (JEP 2005) · Gallin (Fed 2004) · Bernstein & Koudijs (QJE 2024) · Ben Felix / PWL Capital · UBS Global Real Estate Bubble Index 2025
+            </p>
+            <p style={{ color: "#dc2626", fontSize: 11, marginTop: 8 }}>This model is for educational and discussion purposes only and does not constitute financial advice.</p>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<RentVsBuyV3 />);
+  </script>
+</body>
+</html>

@@ -23,6 +23,11 @@
     input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #2563eb; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
     details summary { list-style: none; }
     details summary::-webkit-details-marker { display: none; }
+    .tut { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; font-size: 13px; color: #1e40af; margin-bottom: 10px; line-height: 1.4; font-weight: 500; animation: tutFade 0.4s ease-out; }
+    .tut b { background: #2563eb; color: #fff; min-width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    @keyframes tutFade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
+    button:hover { filter: brightness(0.97); }
+    button:active { transform: scale(0.98); }
   </style>
 </head>
 <body>
@@ -435,7 +440,7 @@ function simulate(p) {
       const mp = Math.min(monthlyPmt - mi, balance);
       yrInterest += mi;
       yrPrincipal += mp;
-      yrMtgPmt += monthlyPmt;
+      yrMtgPmt += mi + mp;
       balance = Math.max(0, balance - mp);
     }
     const propTax = prevHomeVal * p.propTaxRate;
@@ -457,7 +462,7 @@ function simulate(p) {
     else { buyerPortfolio += Math.abs(diff) * p.discipline; buyerBasis += Math.abs(diff) * p.discipline; }
     const equity = homeVal - balance;
     const sellCosts = homeVal * p.sellingPct;
-    const homeGain = Math.max(0, homeVal - p.homePrice);
+    const homeGain = Math.max(0, homeVal - sellCosts - p.homePrice);
     const homeTax = Math.max(0, homeGain - p.capGainsExclusion) * p.capGainsRate;
     const buyerInvGain = Math.max(0, buyerPortfolio - buyerBasis);
     const buyerWealth = equity - sellCosts - homeTax + buyerPortfolio - buyerInvGain * p.capGainsRate;
@@ -554,12 +559,14 @@ const TIPS = {
 };
 const FX = { USD:1,CAD:0.72,GBP:1.27,AUD:0.65,EUR:1.08,NZD:0.58,SEK:0.095,CHF:1.12,JPY:0.0067,SGD:0.75,KRW:0.00073 };
 const CUR_NAMES = { USD:"US dollars",CAD:"Canadian dollars",GBP:"British pounds",AUD:"Australian dollars",EUR:"euros",NZD:"NZ dollars",SEK:"Swedish kronor",CHF:"Swiss francs",JPY:"Japanese yen",SGD:"Singapore dollars",KRW:"South Korean won" };
+const TABLE_TIPS = {Yr:"Simulation year",Home:"Current home value (price × appreciation)",Equity:"Home value minus mortgage balance",Int:"Mortgage interest paid this year",Princ:"Principal paid this year (builds equity)",Cost:"Total buyer cost: mortgage + tax + ins + maint",TaxB:"Tax benefit from excess itemization",NetBuy:"Buyer cost after tax benefit",Rent:"Annual rent (starts = mortgage pmt, grows yearly)",RntCst:"Total renter cost: rent + renter's insurance",BInv:"Buyer's investment portfolio (surplus after payoff)",RInv:"Renter's portfolio (seeded with down + closing costs)","Buyer W":"Buyer total: equity − sell costs − taxes + portfolio","Renter W":"Renter total: portfolio − cap gains tax",BuyW:"Buyer total: equity − sell costs − taxes + portfolio",RntW:"Renter total: portfolio − cap gains tax",Adv:"Buyer minus renter wealth. Positive = buying wins.",Advantage:"Buyer minus renter wealth. Positive = buying wins.","Home Value":"Current home market value","Yr Principal":"Principal paid this year",Balance:"Remaining mortgage balance","Buyer Cost":"Buyer annual net cost","Renter Cost":"Renter annual total cost","Buyer Inv":"Buyer's investment portfolio","Renter Inv":"Renter's investment portfolio"};
 const RESEARCH_BASE = "https://github.com/allancomeau/rent-vs-buy/blob/main/";
 const RESEARCH_FILES = [
   { name: "Research Report: Academic Foundations", file: "rent_vs_buy_research_report.md" },
   { name: "Research Report: Volatility Drag & Returns", file: "rent_vs_buy_research_report_v2.md" },
   { name: "Defaults Rationale: Every Number Sourced", file: "defaults_rationale.md" },
   { name: "What the Model Doesn't Capture", file: "what_model_doesnt_capture.md" },
+  { name: "Math Verification & Bug Audit", file: "rent-vs-buy-sim-audit.md" },
 ];
 
 function runSensitivity(params, hp) {
@@ -689,6 +696,9 @@ const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params
     </div>
     <div style={S.pB}>
       <VerdictBox advantage={hd?.advantage} homePrice={result.homePrice} holdYr={holdYr} sym={sym}/>
+      {active&&<div style={{fontSize:10,color:T.text3,padding:"4px 8px",background:"rgba(0,0,0,0.02)",borderRadius:4,marginBottom:6}}>
+        {Object.entries(overrides).map(([k,v],i)=><span key={k}>{i>0&&" · "}{({mortgageRate:"Rate",appreciation:"Appr",rentGrowth:"Rent↑",investReturn:"Invest",propTaxRate:"Tax",insRate:"Ins",maintRate:"Maint"})[k]||k} {typeof v==="number"&&Math.abs(v)<1?fmtPct(v):v}</span>)}
+      </div>}
       <div style={S.derived}>
         Home {fmtFullC(result.homePrice,sym)} · BE {result.breakeven?`Yr ${result.breakeven}`:"Never"}
         {beSens&&beSens.lo!==result.breakeven&&<span style={{color:T.text3}}> (appr ±1%: {beSens.lo||"N"}/{beSens.hi||"N"})</span>}
@@ -715,6 +725,7 @@ function RentVsBuyV3() {
   const [guideTab,setGuideTab]=useState("overview");
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
+  const [tutorial,setTutorial]=useState(false);
 
   const c=COUNTRIES[country],sym=c.sym,cur=c.currency;
   const f=v=>fmtC(v,sym), ff=v=>fmtFullC(v,sym);
@@ -822,10 +833,14 @@ function RentVsBuyV3() {
       {/* HEADER */}
       <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
         <div><h1 style={{fontSize:28,fontWeight:700,letterSpacing:"-0.03em"}}>Rent vs. Buy</h1><div style={{fontSize:13,color:T.text2,marginTop:4}}>Research-backed financial simulation · {METROS.length} metros · 16 countries</div></div>
-        <div style={{textAlign:"right"}}><button onClick={share} style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px 18px",fontSize:13,fontWeight:600,boxShadow:T.shadow}}>{copied?"✓ Link Copied!":"📋 Copy Shareable Link"}</button><div style={{fontSize:10,color:T.text3,marginTop:4}}>Saves your exact inputs into a URL. Send it to anyone.</div></div>
+        <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+          <div style={{textAlign:"center"}}><button onClick={()=>setTutorial(!tutorial)} style={{cursor:"pointer",background:tutorial?"#1e40af":T.card,color:tutorial?"#fff":T.text2,border:`1px solid ${tutorial?"#1e40af":T.border}`,borderRadius:8,padding:"10px 16px",fontSize:13,fontWeight:600,transition:"all 200ms"}}>{tutorial?"✕ Exit Tutorial":"🎓 Tutorial"}</button></div>
+          <div style={{textAlign:"center"}}><button onClick={share} style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px 16px",fontSize:13,fontWeight:600,boxShadow:T.shadow}}>{copied?"✓ Copied!":"📋 Share Link"}</button><div style={{fontSize:9,color:T.text3,marginTop:3}}>Saves your inputs as a URL</div></div>
+        </div>
       </div>
 
       {/* GUIDE */}
+      {tutorial&&<div className="tut"><b>1</b>Start with the Guide — it explains the model's logic and academic sources in about 2 minutes.</div>}
       <details open style={{...S.card,padding:0}}>
         <summary style={{padding:"14px 20px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.text1}}>📖 Guide, Methodology & Sources — Read This First</summary>
         <div style={{borderTop:`1px solid ${T.border}`}}>
@@ -867,17 +882,19 @@ function RentVsBuyV3() {
       </details>
 
       {/* PERSONAL */}
+      {tutorial&&<div className="tut"><b>2</b>Set your real numbers — what you pay (or would pay) monthly, how much you've saved, and how long you'd stay. These are shared across all scenarios below.</div>}
       <div style={S.card}>
         <div style={S.sTitle}>Your Situation</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))",gap:20}}>
           <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment}/></div>
-          <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={40}/></div>
+          <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears}/></div>
           <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Renter Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={100} hint="60-75% realistic"/></div>
           <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
       </div>
 
       {/* BOTTOM LINE */}
+      {tutorial&&<div className="tut"><b>3</b>Your result — one sentence telling you who wins, by how much, and whether the verdict is robust or fragile. The colored icons (🟢🟡🔴) rate confidence.</div>}
       <div style={{...S.card,background:cusH?.advantage>=0?"rgba(37,99,235,0.04)":"rgba(22,163,74,0.04)",borderColor:cusH?.advantage>=0?T.accent:T.green}}>
         <div style={{fontSize:18,fontWeight:700,marginBottom:6}}>
           {cusH?.advantage>=0?"Buying":"Renting"} wins by {ff(Math.abs(cusH?.advantage))} at year {hp}.
@@ -900,6 +917,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* THREE PANELS */}
+      {tutorial&&<div className="tut"><b>4</b>Three scenarios side by side — <strong>Location</strong> uses real sourced data (locked). <strong>Scenario</strong> tests presets like "low rate era" or "housing correction." <strong>Custom</strong> is your sandbox — drag sliders or type exact values.</div>}
       <div style={S.panels}>
         {/* LOCATION */}
         <div style={S.panel}>
@@ -932,6 +950,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* CHART */}
+      {tutorial&&<div className="tut"><b>5</b>Visualize the math — use the dropdown to switch between 6 chart views. "Advantage" shows all scenarios. "Wealth paths" shows buyer vs renter total wealth. "Sensitivity tornado" shows which single assumption matters most.</div>}
       <div style={S.card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
           <div><div style={{fontSize:15,fontWeight:700}}>{CHARTS[chartType]?.title}</div><div style={{fontSize:11,color:T.text3,marginTop:2}}>{CHARTS[chartType]?.sub}</div></div>
@@ -1004,6 +1023,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* BOTTOM: SYNCED TABLE */}
+      {tutorial&&<div className="tut"><b>6</b>Verify every number — "Synced to chart" shows the data behind the current chart. "Full data" shows the complete year-by-year audit with all 15 columns. Click any column header's <strong style={{color:"#2563eb"}}>?</strong> for an explanation.</div>}
       <div style={S.card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
           <div style={{display:"flex",gap:0}}>
@@ -1016,7 +1036,7 @@ function RentVsBuyV3() {
         {/* Synced table */}
         {tableSync && chartType!=="tornado" && TABLE_COLS[chartType] && (
           <div style={{maxHeight:400,overflowY:"auto"}}>
-            <table style={S.table}><thead><tr>{TABLE_COLS[chartType].h.map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}>{h}</th>)}</tr></thead>
+            <table style={S.table}><thead><tr>{TABLE_COLS[chartType].h.map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><Tip text={TABLE_TIPS[h]}>{h}</Tip></th>)}</tr></thead>
             <tbody>{chartData.map(d=><tr key={d.year} style={{background:d.year===hp?"rgba(245,158,11,0.08)":d.year%2===0?T.muted:T.card}}>
               {TABLE_COLS[chartType].k.map((k,i)=><td key={k} style={{...S.td,...(i===0?{textAlign:"center",fontWeight:d.year===hp?700:500}:{})}}>{i===0?d[k]:f(d[k])}</td>)}
             </tr>)}</tbody></table>
@@ -1034,7 +1054,7 @@ function RentVsBuyV3() {
 
         {/* Full data table */}
         {!tableSync && <div style={{maxHeight:400,overflowY:"auto"}}>
-          <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}>{h}</th>)}</tr></thead>
+          <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><Tip text={TABLE_TIPS[h]}>{h}</Tip></th>)}</tr></thead>
           <tbody>{cusR.data.map(d=>{const isH=d.year===hp,isBE=d.year===cusR.breakeven;return<tr key={d.year} style={{background:isH?"rgba(245,158,11,0.08)":isBE?"rgba(220,38,38,0.05)":d.year%2===0?T.muted:T.card}}>
             <td style={{...S.td,textAlign:"center",fontWeight:isH||isBE?700:500}}>{d.year}</td>
             <td style={S.td}>{f(d.homeVal)}</td><td style={S.td}>{f(d.equity)}</td><td style={S.td}>{f(d.yrInterest)}</td><td style={S.td}>{f(d.yrPrincipal)}</td>

@@ -4,43 +4,30 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Rent vs. Buy: Financial Simulation Engine</title>
-  <!-- React core (order matters — each depends on the previous) -->
   <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
   <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
-  <!-- Recharts dependencies (required per official docs) -->
   <script src="https://unpkg.com/react-is@18.2.0/umd/react-is.production.min.js"></script>
   <script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
-  <!-- Recharts itself -->
   <script src="https://unpkg.com/recharts@2.15.3/umd/Recharts.js"></script>
-  <!-- Babel for JSX compilation -->
   <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: #fafafa; }
     #root { min-height: 100vh; }
-    #loading { display: flex; align-items: center; justify-content: center; height: 100vh; font-family: system-ui; color: #888; font-size: 16px; }
+    #loading { display:flex;align-items:center;justify-content:center;height:100vh;font-family:system-ui;color:#888;font-size:16px; }
   </style>
 </head>
 <body>
-  <div id="root"><div id="loading">Loading Rent vs. Buy Engine...</div></div>
+  <div id="root"><div id="loading">Loading Rent vs. Buy Engine…</div></div>
   <script>
-    // Verify all dependencies loaded before running
-    window.addEventListener('DOMContentLoaded', function() {
-      var missing = [];
-      if (!window.React) missing.push('React');
-      if (!window.ReactDOM) missing.push('ReactDOM');
-      if (!window.Recharts) missing.push('Recharts');
-      if (missing.length > 0) {
-        document.getElementById('root').innerHTML =
-          '<div style="padding:40px;font-family:system-ui;color:#dc2626">' +
-          '<h2>Failed to load: ' + missing.join(', ') + '</h2>' +
-          '<p style="margin-top:12px;color:#666">This usually means a CDN is blocked by your browser or network. ' +
-          'Try disabling ad blockers or opening in a different browser.</p></div>';
-      }
+    window.addEventListener('DOMContentLoaded',function(){
+      var m=[];
+      if(!window.React)m.push('React');if(!window.ReactDOM)m.push('ReactDOM');if(!window.Recharts)m.push('Recharts');
+      if(m.length>0)document.getElementById('root').innerHTML='<div style="padding:40px;font-family:system-ui;color:#dc2626"><h2>Failed to load: '+m.join(', ')+'</h2><p style="margin-top:12px;color:#666">Try disabling ad blockers or opening in a different browser.</p></div>';
     });
   </script>
   <script type="text/babel" data-type="module">
-const { useState, useMemo } = React;
+const { useState, useMemo, useEffect, useCallback } = React;
 const { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid, ReferenceLine } = Recharts;
 
 // ═══════════════════════════════════════════════════════════════
@@ -524,41 +511,144 @@ function buildParams(country, metro, personal, rateOverride) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// PRESETS — load into Custom panel
+// ═══════════════════════════════════════════════════════════════
+const PRESETS = [
+  { id: "ref", name: "Match reference data", overrides: {} },
+  { id: "low", name: "Low rate era (2020–21)", overrides: { mortgageRate: 0.03, appreciation: 0.06, rentGrowth: 0.04 } },
+  { id: "high", name: "High rate era (2023–24)", overrides: { mortgageRate: 0.075, appreciation: 0.02, rentGrowth: 0.025 } },
+  { id: "conservative", name: "Conservative assumptions", overrides: { investReturn: 0.07, appreciation: 0.03, rentGrowth: 0.025 } },
+  { id: "hot", name: "Hot market", overrides: { appreciation: 0.06, rentGrowth: 0.05 } },
+  { id: "flat", name: "Stagnant / flat market", overrides: { appreciation: 0.015, rentGrowth: 0.02, investReturn: 0.08 } },
+];
+
+const DEFAULT_METROS = {
+  US:"us-nyc",CA:"ca-tor",UK:"uk-lon",AU:"au-syd",DE:"de-ber",IE:"ie-dub",
+  NZ:"nz-akl",FR:"fr-par",ES:"es-mad",NL:"nl-ams",IT:"it-mil",SE:"se-sto",
+  CH:"ch-zur",JP:"jp-tok",SG:"sg-sg",KR:"kr-sel"
+};
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORICAL RANGES — for input markers
+// ═══════════════════════════════════════════════════════════════
+const RANGES = {
+  investReturn: { lo: 0.05, hi: 0.12, unit: "%" },
+  appreciation: { lo: -0.02, hi: 0.08, unit: "%" },
+  rentGrowth: { lo: 0.01, hi: 0.06, unit: "%" },
+  propTaxRate: { lo: 0.001, hi: 0.025, unit: "%" },
+  insRate: { lo: 0.001, hi: 0.02, unit: "%" },
+  mortgageRate: { lo: 0.025, hi: 0.09, unit: "%" },
+  maintRate: { lo: 0.005, hi: 0.025, unit: "%" },
+};
+
+// ═══════════════════════════════════════════════════════════════
+// SENSITIVITY — runs simulate() with ±delta on each variable
+// ═══════════════════════════════════════════════════════════════
+function runSensitivity(params, hp) {
+  const idx = Math.min(hp, params.simYears) - 1;
+  const base = simulate(params).data[idx]?.advantage ?? 0;
+  const tests = [
+    { name: "Investment Return", key: "investReturn", delta: 0.01, fmt: "±1%" },
+    { name: "Home Appreciation", key: "appreciation", delta: 0.01, fmt: "±1%" },
+    { name: "Mortgage Rate", key: "mortgageRate", delta: 0.01, fmt: "±1%" },
+    { name: "Rent Growth", key: "rentGrowth", delta: 0.01, fmt: "±1%" },
+    { name: "Property Tax", key: "propTaxRate", delta: 0.005, fmt: "±0.5%" },
+    { name: "Renter Discipline", key: "discipline", delta: 0.10, fmt: "±10%" },
+  ];
+  return tests.map(t => {
+    const upA = simulate({ ...params, [t.key]: params[t.key] + t.delta }).data[idx]?.advantage ?? 0;
+    const dnA = simulate({ ...params, [t.key]: params[t.key] - t.delta }).data[idx]?.advantage ?? 0;
+    return { ...t, upA, dnA, swing: Math.abs(upA - dnA), base };
+  }).sort((a, b) => b.swing - a.swing);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// URL STATE — shareable links
+// ═══════════════════════════════════════════════════════════════
+function encodeURL(country, metroId, showNat, showMetro, personal, overrides) {
+  try {
+    const s = { c: country, m: metroId, sn: showNat, sm: showMetro, p: personal, o: overrides };
+    return window.location.pathname + "#" + btoa(JSON.stringify(s));
+  } catch { return window.location.pathname; }
+}
+function decodeURL() {
+  try {
+    const h = window.location.hash;
+    if (!h || h.length < 2) return null;
+    return JSON.parse(atob(h.slice(1)));
+  } catch { return null; }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// VERDICT CONFIDENCE
+// ═══════════════════════════════════════════════════════════════
+function verdictLabel(advantage, homePrice) {
+  const pct = homePrice > 0 ? Math.abs(advantage) / homePrice : 0;
+  const dir = advantage >= 0 ? "Buy" : "Rent";
+  if (pct < 0.02) return { text: "Too close to call", color: "#888", strength: 0 };
+  if (pct < 0.05) return { text: `Marginal ${dir}`, color: advantage >= 0 ? "#60a5fa" : "#86efac", strength: 1 };
+  if (pct < 0.15) return { text: dir, color: advantage >= 0 ? "#2563eb" : "#16a34a", strength: 2 };
+  return { text: `Strong ${dir}`, color: advantage >= 0 ? "#1d4ed8" : "#15803d", strength: 3 };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // STYLES
 // ═══════════════════════════════════════════════════════════════
 const S = {
-  page: { fontFamily: "'IBM Plex Sans', 'Segoe UI', system-ui, sans-serif", maxWidth: 1400, margin: "0 auto", padding: "20px 24px", color: "#1a1a1a", background: "#fafafa" },
+  page: { fontFamily: "'IBM Plex Sans','Segoe UI',system-ui,sans-serif", maxWidth: 1400, margin: "0 auto", padding: "20px 24px", color: "#1a1a1a", background: "#fafafa" },
   h1: { fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: "-0.5px" },
-  sub: { fontSize: 12, color: "#777", margin: "4px 0 20px", fontStyle: "italic" },
-  premise: { background: "#f0f4ff", border: "2px solid #2563eb", borderRadius: 8, padding: "12px 16px", marginBottom: 20 },
+  sub: { fontSize: 12, color: "#777", margin: "4px 0 0", fontStyle: "italic" },
+  premise: { background: "#f0f4ff", border: "2px solid #2563eb", borderRadius: 8, padding: "12px 16px", marginBottom: 16 },
   premiseLabel: { fontSize: 10, textTransform: "uppercase", letterSpacing: 1, color: "#2563eb", fontWeight: 700, marginBottom: 2 },
   section: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: 12 },
   sectionTitle: { fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.8, color: "#555", marginBottom: 8, paddingBottom: 6, borderBottom: "2px solid #e0e0e0" },
   inputRow: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 5, gap: 6 },
   label: { fontSize: 11, color: "#444", flex: 1 },
-  input: { width: 80, padding: "3px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 12, textAlign: "right", fontFamily: "'IBM Plex Mono', monospace" },
-  inputLocked: { width: 80, padding: "3px 6px", border: "1px solid #e0e0e0", borderRadius: 4, fontSize: 12, textAlign: "right", fontFamily: "'IBM Plex Mono', monospace", background: "#f5f5f5", color: "#888" },
+  input: { width: 80, padding: "3px 6px", border: "1px solid #ccc", borderRadius: 4, fontSize: 12, textAlign: "right", fontFamily: "'IBM Plex Mono',monospace" },
+  inputLocked: { width: 80, padding: "3px 6px", border: "1px solid #e0e0e0", borderRadius: 4, fontSize: 12, textAlign: "right", fontFamily: "'IBM Plex Mono',monospace", background: "#f5f5f5", color: "#888" },
   hint: { fontSize: 9, color: "#999", marginTop: -2, marginBottom: 4 },
-  chart: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "16px 12px", marginBottom: 20 },
+  chart: { background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "16px 12px", marginBottom: 16 },
   chartTitle: { fontSize: 13, fontWeight: 700, marginBottom: 4, color: "#333" },
   chartSub: { fontSize: 10, color: "#888", marginBottom: 12 },
-  insight: { background: "#fffbe6", border: "1px solid #fadb14", borderRadius: 8, padding: "12px 16px", marginBottom: 20, fontSize: 13, lineHeight: 1.6 },
-  table: { width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "'IBM Plex Mono', monospace" },
+  insight: { background: "#fffbe6", border: "1px solid #fadb14", borderRadius: 8, padding: "12px 16px", marginBottom: 16, fontSize: 13, lineHeight: 1.6 },
+  table: { width: "100%", borderCollapse: "collapse", fontSize: 11, fontFamily: "'IBM Plex Mono',monospace" },
   th: { padding: "6px 8px", textAlign: "right", borderBottom: "2px solid #333", fontSize: 10, fontWeight: 700, color: "#555", position: "sticky", top: 0, background: "#fff" },
   td: { padding: "4px 8px", textAlign: "right", borderBottom: "1px solid #eee" },
   toggle: { cursor: "pointer", background: "none", border: "1px solid #ccc", borderRadius: 6, padding: "6px 14px", fontSize: 12, fontWeight: 600, color: "#555" },
-  select: { padding: "4px 8px", border: "1px solid #ccc", borderRadius: 4, fontSize: 12, fontFamily: "'IBM Plex Sans', sans-serif", background: "#fff" },
-  scenarioGrid: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 20 },
-  scenarioCol: { border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" },
-  scenarioHeader: { padding: "8px 12px", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
-  scenarioBody: { padding: 12 },
-  derived: { fontSize: 11, padding: "8px 10px", background: "#fafafa", borderRadius: 6, marginBottom: 10, fontFamily: "'IBM Plex Mono', monospace", lineHeight: 1.6 },
+  select: { padding: "4px 8px", border: "1px solid #ccc", borderRadius: 4, fontSize: 12, fontFamily: "'IBM Plex Sans',sans-serif", background: "#fff" },
+  panels: { display: "grid", gridTemplateColumns: "1fr 1.6fr", gap: 16, marginBottom: 16 },
+  panel: { border: "1px solid #e0e0e0", borderRadius: 8, overflow: "hidden" },
+  panelHead: { padding: "8px 12px", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5 },
+  panelBody: { padding: 12 },
+  derived: { fontSize: 11, padding: "8px 10px", background: "#fafafa", borderRadius: 6, marginBottom: 10, fontFamily: "'IBM Plex Mono',monospace", lineHeight: 1.6 },
+  rangeBar: { display: "flex", alignItems: "center", gap: 4, height: 8, marginTop: 1, marginBottom: 4 },
+  btn: { cursor: "pointer", background: "#2563eb", color: "#fff", border: "none", borderRadius: 4, padding: "4px 10px", fontSize: 11, fontWeight: 600 },
 };
 
-const NumInput = ({ label, hint, value, onChange, step, prefix, suffix, min, max, locked }) => (
+// ═══════════════════════════════════════════════════════════════
+// COMPONENTS
+// ═══════════════════════════════════════════════════════════════
+const RangeMarker = ({ value, rangeKey }) => {
+  const r = RANGES[rangeKey];
+  if (!r) return null;
+  const lo = r.lo * 100, hi = r.hi * 100, v = value;
+  const pct = hi > lo ? Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100)) : 50;
+  const inRange = v >= lo && v <= hi;
+  return (
+    <div style={S.rangeBar}>
+      <span style={{ fontSize: 8, color: "#bbb", width: 24, textAlign: "right" }}>{lo.toFixed(0)}</span>
+      <div style={{ flex: 1, height: 3, background: "#eee", borderRadius: 2, position: "relative" }}>
+        <div style={{ position: "absolute", left: `calc(${pct}% - 3px)`, width: 6, height: 6, borderRadius: "50%", background: inRange ? "#16a34a" : "#f59e0b", top: -1.5, border: "1px solid #fff" }} />
+      </div>
+      <span style={{ fontSize: 8, color: "#bbb", width: 24 }}>{hi.toFixed(0)}</span>
+    </div>
+  );
+};
+
+const NumInput = ({ label, hint, value, onChange, step, prefix, suffix, min, max, locked, rangeKey }) => (
   <div>
     <div style={S.inputRow}>
-      <span style={S.label}>{label} {locked && <span style={{ color: "#bbb", fontSize: 9 }}>🔒</span>}</span>
+      <span style={S.label}>{label}{locked && <span style={{ color: "#bbb", fontSize: 9 }}> 🔒</span>}</span>
       <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
         {prefix && <span style={{ fontSize: 11, color: "#888" }}>{prefix}</span>}
         <input style={locked ? S.inputLocked : S.input} type="number"
@@ -568,83 +658,28 @@ const NumInput = ({ label, hint, value, onChange, step, prefix, suffix, min, max
         {suffix && <span style={{ fontSize: 11, color: "#888" }}>{suffix}</span>}
       </div>
     </div>
+    {rangeKey && !locked && <RangeMarker value={parseFloat(value)} rangeKey={rangeKey} />}
     {hint && <div style={S.hint}>{hint}</div>}
   </div>
 );
 
-// ═══════════════════════════════════════════════════════════════
-// SCENARIO COLUMN
-// ═══════════════════════════════════════════════════════════════
-function ScenarioColumn({ label, color, params, result, holdingPeriod, locked, onParamChange, sym, showRate }) {
-  const atHold = result.data[Math.min(holdingPeriod, params.simYears) - 1];
-  const bg = color === "blue" ? "#eff6ff" : color === "green" ? "#f0fdf4" : "#fafafa";
-  const accent = color === "blue" ? "#2563eb" : color === "green" ? "#16a34a" : "#555";
-  const f = v => fmtC(v, sym);
-  const ff = v => fmtFullC(v, sym);
-
+const VerdictBox = ({ advantage, homePrice, holdYr, sym }) => {
+  const v = verdictLabel(advantage, homePrice);
+  const ff = val => fmtFullC(val, sym);
   return (
-    <div style={S.scenarioCol}>
-      <div style={{ ...S.scenarioHeader, background: bg, color: accent, borderBottom: `2px solid ${accent}` }}>
-        {label}
-      </div>
-      <div style={S.scenarioBody}>
-        {/* Verdict */}
-        <div style={{ textAlign: "center", marginBottom: 10, padding: "8px 0", background: atHold?.advantage >= 0 ? "#eff6ff" : "#f0fdf4", borderRadius: 6, border: `2px solid ${atHold?.advantage >= 0 ? "#2563eb" : "#16a34a"}` }}>
-          <div style={{ fontSize: 24, fontWeight: 800, fontFamily: "'IBM Plex Mono', monospace", color: atHold?.advantage >= 0 ? "#2563eb" : "#16a34a" }}>
-            {atHold?.advantage >= 0 ? "BUY" : "RENT"}
-          </div>
-          <div style={{ fontSize: 10, color: "#666" }}>
-            {atHold?.advantage >= 0 ? "Buy" : "Rent"} wins by {ff(Math.abs(atHold?.advantage))} @ Yr {holdingPeriod}
-          </div>
-        </div>
-
-        {/* Derived values */}
-        <div style={S.derived}>
-          <div>Home: {ff(result.homePrice)} · Loan: {ff(result.loan)}</div>
-          <div>Upfront: {ff(result.upfront)} <span style={{ color: "#999" }}>(down + closing)</span></div>
-          <div>Breakeven: <strong>{result.breakeven ? `Year ${result.breakeven}` : "Never"}</strong></div>
-        </div>
-
-        {/* Key metrics */}
-        <div style={{ fontSize: 11, marginBottom: 10 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
-            <span>Buyer Wealth:</span>
-            <span style={{ fontWeight: 600, color: "#2563eb", fontFamily: "'IBM Plex Mono', monospace" }}>{f(atHold?.buyerWealth)}</span>
-          </div>
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "2px 0" }}>
-            <span>Renter Wealth:</span>
-            <span style={{ fontWeight: 600, color: "#16a34a", fontFamily: "'IBM Plex Mono', monospace" }}>{f(atHold?.renterWealth)}</span>
-          </div>
-        </div>
-
-        {/* Market variables */}
-        <div style={{ ...S.sectionTitle, fontSize: 10 }}>Market Variables</div>
-        {showRate && <NumInput label="Mortgage Rate" value={(params.mortgageRate * 100).toFixed(1)} onChange={v => onParamChange("mortgageRate", v / 100)} step={0.1} suffix="%" locked={locked} hint={locked ? "Country default" : "Changes derived home price"} />}
-        <NumInput label="Appreciation" value={(params.appreciation * 100).toFixed(1)} onChange={v => onParamChange("appreciation", v / 100)} step={0.1} suffix="%" locked={locked} hint={locked ? "From reference data (5yr CAGR)" : ""} />
-        <NumInput label="Rent Growth" value={(params.rentGrowth * 100).toFixed(1)} onChange={v => onParamChange("rentGrowth", v / 100)} step={0.1} suffix="%" locked={locked} />
-        <NumInput label="Property Tax" value={(params.propTaxRate * 100).toFixed(2)} onChange={v => onParamChange("propTaxRate", v / 100)} step={0.01} suffix="%" locked={locked} />
-        <NumInput label="Insurance" value={(params.insRate * 100).toFixed(2)} onChange={v => onParamChange("insRate", v / 100)} step={0.01} suffix="%" locked={locked} />
-        <NumInput label="Maintenance" value={(params.maintRate * 100).toFixed(1)} onChange={v => onParamChange("maintRate", v / 100)} step={0.1} suffix="%" locked={locked} />
-        <NumInput label="Investment Return" value={(params.investReturn * 100).toFixed(1)} onChange={v => onParamChange("investReturn", v / 100)} step={0.1} suffix="%" locked={locked} />
-      </div>
+    <div style={{ textAlign: "center", padding: "10px 0", background: advantage >= 0 ? "#eff6ff" : "#f0fdf4", borderRadius: 6, border: `2px solid ${v.color}`, marginBottom: 10 }}>
+      <div style={{ fontSize: 22, fontWeight: 800, fontFamily: "'IBM Plex Mono',monospace", color: v.color }}>{v.text.toUpperCase()}</div>
+      <div style={{ fontSize: 10, color: "#666" }}>{advantage >= 0 ? "Buy" : "Rent"} wins by {ff(Math.abs(advantage))} @ Yr {holdYr}</div>
     </div>
   );
-}
+};
 
-// ═══════════════════════════════════════════════════════════════
-// TOOLTIPS
-// ═══════════════════════════════════════════════════════════════
 const MultiTooltip = ({ active, payload, sym = "$" }) => {
   if (!active || !payload?.length) return null;
-  const yr = payload[0]?.payload?.year;
   return (
     <div style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 6, padding: "10px 14px", fontSize: 11, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
-      <div style={{ fontWeight: 700, marginBottom: 6 }}>Year {yr}</div>
-      {payload.map((p, i) => (
-        <div key={i} style={{ color: p.color, marginBottom: 2 }}>
-          {p.name}: {fmtFullC(p.value, sym)}
-        </div>
-      ))}
+      <div style={{ fontWeight: 700, marginBottom: 6 }}>Year {payload[0]?.payload?.year}</div>
+      {payload.map((p, i) => <div key={i} style={{ color: p.color, marginBottom: 2 }}>{p.name}: {fmtFullC(p.value, sym)}</div>)}
     </div>
   );
 };
@@ -656,12 +691,8 @@ const CostTooltip = ({ active, payload, sym = "$" }) => {
   return (
     <div style={{ background: "#fff", border: "1px solid #ccc", borderRadius: 6, padding: "10px 14px", fontSize: 11, boxShadow: "0 2px 8px rgba(0,0,0,0.1)" }}>
       <div style={{ fontWeight: 700, marginBottom: 6 }}>Year {d.year}</div>
-      <div style={{ color: "#2563eb" }}>Buyer Net Cost: {fmtFullC(d.netBuyerCost, sym)}</div>
-      <div style={{ color: "#16a34a" }}>Renter Total Cost: {fmtFullC(d.totalRenterCost, sym)}</div>
-      <div style={{ marginTop: 4, color: "#888" }}>
-        Mtg: {fmtFullC(d.yrInterest + d.yrPrincipal, sym)} (Int: {fmtFullC(d.yrInterest, sym)})
-      </div>
-      <div style={{ color: "#888" }}>Tax+Ins+Maint: {fmtFullC(d.propTax + d.hoIns + d.maint, sym)} · Benefit: {fmtFullC(d.taxBenefit, sym)}</div>
+      <div style={{ color: "#2563eb" }}>Buyer Net Cost: {fmtFullC(d.cusNetBuyer, sym)}</div>
+      <div style={{ color: "#16a34a" }}>Renter Total Cost: {fmtFullC(d.cusRenterCost, sym)}</div>
     </div>
   );
 };
@@ -670,19 +701,26 @@ const CostTooltip = ({ active, payload, sym = "$" }) => {
 // MAIN
 // ═══════════════════════════════════════════════════════════════
 function RentVsBuyV3() {
-  const [country, setCountry] = useState("US");
-  const [metroId, setMetroId] = useState("us-boston");
+  // Restore from URL or use defaults
+  const saved = useMemo(() => decodeURL(), []);
+
+  const [country, setCountry] = useState(saved?.c || "US");
+  const [metroId, setMetroId] = useState(saved?.m || DEFAULT_METROS["US"]);
+  const [showNat, setShowNat] = useState(saved?.sn ?? true);
+  const [showMetro, setShowMetro] = useState(saved?.sm ?? true);
   const [showTable, setShowTable] = useState(false);
   const [showMethod, setShowMethod] = useState(false);
   const [showSources, setShowSources] = useState(false);
+  const [showSensitivity, setShowSensitivity] = useState(false);
+  const [presetId, setPresetId] = useState("ref");
+  const [copied, setCopied] = useState(false);
 
   const c = COUNTRIES[country];
   const sym = c.sym;
   const f = v => fmtC(v, sym);
   const ff = v => fmtFullC(v, sym);
 
-  // Personal variables (shared across all scenarios)
-  const [personal, setPersonal] = useState({
+  const [personal, setPersonal] = useState(saved?.p || {
     monthlyPayment: c.personalDefaults.monthlyPayment,
     downPayment: c.personalDefaults.downPayment,
     mortgageTerm: c.defaults.mortgageTerm,
@@ -690,154 +728,159 @@ function RentVsBuyV3() {
   });
   const up = (key) => (val) => setPersonal(prev => ({ ...prev, [key]: val }));
 
-  // Custom column overrides
-  const [customOverrides, setCustomOverrides] = useState({});
+  const [customOverrides, setCustomOverrides] = useState(saved?.o || {});
   const uc = (key, val) => setCustomOverrides(prev => ({ ...prev, [key]: val }));
 
   const metro = METROS.find(m => m.id === metroId);
   const countryMetros = METROS.filter(m => m.country === country);
 
-  // Build scenario params
+  // Build params — national, metro (optional), custom
   const nationalParams = useMemo(() => buildParams(country, null, personal), [country, personal]);
-  const regionalParams = useMemo(() => buildParams(country, metro, personal), [country, metro, personal]);
+  const regionalParams = useMemo(() => metro ? buildParams(country, metro, personal) : null, [country, metro, personal]);
   const customParams = useMemo(() => {
     const rateOverride = customOverrides.mortgageRate;
     const base = buildParams(country, metro, personal, rateOverride);
-    const { mortgageRate: _, ...otherOverrides } = customOverrides;
-    return { ...base, ...otherOverrides };
+    const { mortgageRate: _, ...rest } = customOverrides;
+    return { ...base, ...rest };
   }, [country, metro, personal, customOverrides]);
 
   // Run simulations
   const natResult = useMemo(() => simulate(nationalParams), [nationalParams]);
-  const regResult = useMemo(() => simulate(regionalParams), [regionalParams]);
+  const regResult = useMemo(() => regionalParams ? simulate(regionalParams) : null, [regionalParams]);
   const cusResult = useMemo(() => simulate(customParams), [customParams]);
 
+  const hp = personal.holdingPeriod;
+  const cusAtHold = cusResult.data[Math.min(hp, customParams.simYears) - 1];
+  const natAtHold = natResult.data[Math.min(hp, nationalParams.simYears) - 1];
+  const regAtHold = regResult?.data[Math.min(hp, (regionalParams?.simYears || 30)) - 1];
+
   // Chart data
-  const chartData = useMemo(() => natResult.data.map((d, i) => ({
+  const chartData = useMemo(() => cusResult.data.map((d, i) => ({
     year: d.year,
-    natAdv: d.advantage,
-    regAdv: regResult.data[i]?.advantage,
-    cusAdv: cusResult.data[i]?.advantage,
-    regBuyer: regResult.data[i]?.buyerWealth,
-    regRenter: regResult.data[i]?.renterWealth,
-    // Annual cost chart data (regional)
-    netBuyerCost: regResult.data[i]?.netBuyerCost,
-    totalRenterCost: regResult.data[i]?.totalRenterCost,
-    yrInterest: regResult.data[i]?.yrInterest,
-    yrPrincipal: regResult.data[i]?.yrPrincipal,
-    propTax: regResult.data[i]?.propTax,
-    hoIns: regResult.data[i]?.hoIns,
-    maint: regResult.data[i]?.maint,
-    taxBenefit: regResult.data[i]?.taxBenefit,
-    annualRent: regResult.data[i]?.annualRent,
-  })), [natResult, regResult, cusResult]);
+    cusAdv: d.advantage,
+    cusBuyer: d.buyerWealth,
+    cusRenter: d.renterWealth,
+    cusNetBuyer: d.netBuyerCost,
+    cusRenterCost: d.totalRenterCost,
+    ...(showNat ? { natAdv: natResult.data[i]?.advantage } : {}),
+    ...(showMetro && regResult ? { regAdv: regResult.data[i]?.advantage } : {}),
+  })), [cusResult, natResult, regResult, showNat, showMetro]);
+
+  // Sensitivity
+  const sensitivity = useMemo(() => showSensitivity ? runSensitivity(customParams, hp) : [], [customParams, hp, showSensitivity]);
+
+  // Break-even sensitivity sentence
+  const beSens = useMemo(() => {
+    const lo = simulate({ ...customParams, appreciation: customParams.appreciation - 0.01 });
+    const hi = simulate({ ...customParams, appreciation: customParams.appreciation + 0.01 });
+    return { loBE: lo.breakeven, hiBE: hi.breakeven };
+  }, [customParams]);
+
+  // Input warnings (custom scenario)
+  const warnings = useMemo(() => {
+    const w = [];
+    const { investReturn: ir, appreciation: ap, rentGrowth: rg, propTaxRate: pt, insRate: ins, mortgageRate: mr } = customParams;
+    const dp = personal.downPayment;
+    const derivedPrice = cusResult.homePrice;
+    const downPctImpl = derivedPrice > 0 ? dp / derivedPrice : 0;
+    if (personal.monthlyPayment < 500) w.push("Monthly payment below " + sym + "500 produces a very small derived home price.");
+    if (ir > 0.12) w.push("Investment return " + fmtPct(ir) + " exceeds the S&P 500 arithmetic mean (~12%). The model compounds geometrically — 10% is the benchmark.");
+    if (ir < 0.05) w.push("Investment return below 5% is below long-run bond returns. Strongly favors buying.");
+    if (ap > 0.08) w.push("No major metro has sustained " + fmtPct(ap) + " appreciation over a full cycle.");
+    if (ap < 0) w.push("Negative appreciation assumes the home loses value every year.");
+    if (rg > 0.06) w.push("Rent growth above 6% has only been seen in a few post-pandemic hotspots.");
+    if (pt > 0.025) w.push("Property tax " + fmtPct(pt) + " would be among the highest in the US (NJ ~2.2%).");
+    if (ins > 0.02) w.push("Insurance " + fmtPct(ins) + " is FL/LA disaster-area territory.");
+    if (mr > 0.09) w.push("Mortgage rate " + fmtPct(mr) + " hasn't been seen since the early 1990s.");
+    if (hp < 3) w.push("At a " + hp + "-year hold, ~9% round-trip transaction costs overwhelm appreciation.");
+    if (downPctImpl > 0 && downPctImpl < 0.05) w.push("Implied down payment is " + (downPctImpl * 100).toFixed(0) + "% — PMI would apply (not modeled).");
+    if (downPctImpl > 0.5) w.push("Implied down payment is " + (downPctImpl * 100).toFixed(0) + "% — unusual.");
+    return w;
+  }, [customParams, personal, cusResult, sym, hp]);
+
+  // URL sharing
+  const shareURL = useCallback(() => {
+    const url = encodeURL(country, metroId, showNat, showMetro, personal, customOverrides);
+    history.replaceState(null, "", url);
+    navigator.clipboard?.writeText(window.location.origin + url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  }, [country, metroId, showNat, showMetro, personal, customOverrides]);
 
   // Insight builder
   const buildInsight = (label, params, res) => {
-    const atHold = res.data[Math.min(personal.holdingPeriod, params.simYears) - 1];
+    const at = res.data[Math.min(hp, params.simYears) - 1];
     const spread = ((params.investReturn - params.mortgageRate) * 100).toFixed(1);
-    const rentCrossover = res.data.find(d => d.totalRenterCost > d.netBuyerCost);
-    const mortgagePaidOff = res.data.find(d => d.balance === 0);
-    let text = `${label}: `;
+    const cross = res.data.find(d => d.totalRenterCost > d.netBuyerCost);
+    const paid = res.data.find(d => d.balance === 0);
+    let t = `${label}: `;
     if (res.breakeven && res.breakeven <= params.simYears) {
-      text += `Buying breaks even at year ${res.breakeven}. `;
-      if (mortgagePaidOff) text += `Mortgage paid off year ${mortgagePaidOff.year}. `;
-      if (rentCrossover) text += `Rent exceeds buyer costs from year ${rentCrossover.year}. `;
+      t += `Breakeven year ${res.breakeven}. `;
+      if (paid) t += `Mortgage paid off year ${paid.year}. `;
+      if (cross) t += `Rent exceeds buyer costs from year ${cross.year}. `;
     } else {
-      text += `Renting wins across all ${params.simYears} years. `;
-      text += `The ${spread}% spread (returns vs mortgage rate) drives the renter's portfolio. `;
+      t += `Renting wins across all ${params.simYears} years (${spread}% return-rate spread). `;
     }
-    text += atHold?.advantage >= 0
-      ? `At year ${personal.holdingPeriod}, buying wins by ${ff(atHold.advantage)}.`
-      : `At year ${personal.holdingPeriod}, renting wins by ${ff(Math.abs(atHold.advantage))}.`;
-    return text;
+    t += at?.advantage >= 0 ? `At year ${hp}: buying wins by ${ff(at.advantage)}.` : `At year ${hp}: renting wins by ${ff(Math.abs(at.advantage))}.`;
+    return t;
   };
 
-  // Volatility drag display: geometric = arithmetic - σ²/2
-  const EQUITY_VOL = 0.16; // S&P 500 σ ≈ 15-20%, use 16% conservative
-  const HOUSING_VOL = 0.08; // Housing σ ≈ 6-8%
-  const equityDrag = (EQUITY_VOL * EQUITY_VOL) / 2;
-  const housingDrag = (HOUSING_VOL * HOUSING_VOL) / 2;
-
-  // Input validation warnings
-  const warnings = useMemo(() => {
-    const w = [];
-    const ir = customParams.investReturn;
-    const ap = customParams.appreciation;
-    const rg = customParams.rentGrowth;
-    const pt = customParams.propTaxRate;
-    const ins = customParams.insRate;
-    const mr = customParams.mortgageRate;
-    const hp = personal.holdingPeriod;
-    const dp = personal.downPayment;
-    const mp = personal.monthlyPayment;
-    const derivedPrice = cusResult.homePrice;
-    const downPctImpl = derivedPrice > 0 ? dp / derivedPrice : 0;
-    if (mp < 500) w.push("Monthly payment below " + sym + "500 produces a very small derived home price. Results may not be meaningful.");
-    if (ir > 0.12) w.push("Investment return exceeds the S&P 500 long-run arithmetic mean (~12%). The model compounds geometrically — 10% is the standard benchmark. At " + fmtPct(ir) + ", the renter's portfolio may be significantly overstated.");
-    if (ir < 0.05) w.push("Investment return below 5% implies a very conservative portfolio (below long-run bond returns). This strongly favors buying.");
-    if (ap > 0.08) w.push("No major US metro has sustained " + fmtPct(ap) + " appreciation over a full market cycle. Recent 5-year figures include the post-pandemic surge.");
-    if (ap < 0) w.push("Negative appreciation means the home loses value every year. Possible post-bubble, but unusual to plan for.");
-    if (rg > 0.06) w.push("Rent growth above 6% has only occurred in a few post-pandemic hotspots and is unlikely to persist long-term.");
-    if (pt > 0.025) w.push("Property tax of " + fmtPct(pt) + " would be among the highest in the US. NJ tops out ~2.2%.");
-    if (ins > 0.02) w.push("Insurance of " + fmtPct(ins) + " is FL/LA disaster-area territory. Verify with actual quotes.");
-    if (mr > 0.09) w.push("Mortgage rate of " + fmtPct(mr) + " hasn't been seen since the early 1990s.");
-    if (mr < 0.025 && mr > 0) w.push("Mortgage rate of " + fmtPct(mr) + " was briefly available in 2020–2021 but is unlikely in the current environment.");
-    if (hp < 3) w.push("At a " + hp + "-year hold, transaction costs (~9% round-trip) overwhelm almost any appreciation.");
-    if (downPctImpl > 0 && downPctImpl < 0.05) w.push("Implied down payment is " + (downPctImpl * 100).toFixed(0) + "% — PMI would apply (not modeled). Results may understate buyer costs.");
-    if (downPctImpl > 0.5) w.push("Implied down payment is " + (downPctImpl * 100).toFixed(0) + "% of home value — unusual. Most buyers finance a majority.");
-    return w;
-  }, [customParams, personal, cusResult, sym]);
+  // Volatility drag constants
+  const EQ_VOL = 0.16, HO_VOL = 0.08;
+  const eqDrag = (EQ_VOL * EQ_VOL) / 2, hoDrag = (HO_VOL * HO_VOL) / 2;
 
   return (
     <div style={S.page}>
-      <h1 style={S.h1}>Rent vs. Buy: Financial Simulation Engine</h1>
-      <div style={S.sub}>v3 · Monthly-payment-first model · {METROS.length} metros · SALT cap {sym}{c.defaults.saltCap > 100000 ? "N/A" : c.defaults.saltCap.toLocaleString()} ({country === "US" ? "OBBBA 2026" : c.name})</div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+        <div>
+          <h1 style={S.h1}>Rent vs. Buy: Financial Simulation Engine</h1>
+          <div style={S.sub}>v3 · {METROS.length} metros · 16 countries · Sensitivity analysis · Shareable URLs</div>
+        </div>
+        <button style={S.btn} onClick={shareURL}>{copied ? "✓ Copied!" : "Share Link"}</button>
+      </div>
 
       {/* ═══ HOW TO READ THIS ═══ */}
-      <details style={{ marginBottom: 16, background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "0 16px" }}>
+      <details style={{ marginBottom: 12, background: "#fff", border: "1px solid #e0e0e0", borderRadius: 8, padding: "0 16px" }}>
         <summary style={{ padding: "10px 0", cursor: "pointer", fontSize: 13, fontWeight: 600, color: "#555" }}>How to Read This Model</summary>
         <div style={{ paddingBottom: 14, fontSize: 12, lineHeight: 1.7, color: "#555" }}>
-          <p style={{ marginTop: 8 }}><strong>What it does:</strong> This model compares two parallel financial paths — buying a home vs. renting and investing the difference — starting from the same monthly cash outflow. It shows which path builds more net wealth over your chosen time horizon.</p>
-          <p><strong>The three columns:</strong> National Average and your selected metro use real reference data (locked). Custom lets you override everything to test "what if" scenarios. All three share the same personal variables (payment, down payment, sell year, discipline).</p>
-          <p><strong>What to try first:</strong> Set your actual monthly rent as "Monthly Payment" and your realistic savings as "Down Payment." Adjust "Sell House in Year" to match how long you'd actually stay. Then experiment with Renter Discipline — at 100%, the renter perfectly invests all savings (theoretical best case for renting). At 70%, they invest 70% and spend 30%. Watch how the verdict changes.</p>
-          <p><strong>What the charts show:</strong> Chart 1 compares the buy-vs-rent advantage across all three scenarios. Chart 2 shows the two wealth paths diverging over time. Chart 3 shows annual costs — when the renter's rising rent crosses above the buyer's fixed mortgage, that's the inflection point.</p>
-          <p style={{ color: "#888", fontSize: 11 }}>All growth rates are geometric means (CAGRs), the correct metric for deterministic compounding. The model does not simulate year-to-year randomness. See the volatility drag callout below for why this matters.</p>
+          <p style={{ marginTop: 8 }}><strong>What it does:</strong> Compares two wealth paths — buying a home vs. renting and investing the difference — starting from the same monthly payment. Shows which builds more net wealth over your chosen time horizon.</p>
+          <p><strong>Two panels:</strong> The Reference panel shows real market data (locked). Your Scenario panel lets you override everything and test "what if" cases. Load a preset or build your own.</p>
+          <p><strong>Start here:</strong> Set your actual rent as "Monthly Payment" and realistic savings as "Down Payment." Adjust "Sell House in Year" to how long you'd stay. Then change Renter Discipline — 100% = theoretical best case for renting, 70% = realistic.</p>
+          <p><strong>The dot on each input</strong> shows where your value sits in the historical range (green = within bounds, amber = outside). The sensitivity table shows which variables actually matter most for YOUR numbers.</p>
         </div>
       </details>
 
-      {/* ═══ LOCATION SELECTOR ═══ */}
-      <div style={{ display: "flex", gap: 16, marginBottom: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+      {/* ═══ LOCATION + TOGGLES ═══ */}
+      <div style={{ display: "flex", gap: 16, marginBottom: 12, alignItems: "flex-end", flexWrap: "wrap" }}>
         <div>
           <label style={{ fontSize: 10, fontWeight: 600, color: "#555", display: "block", marginBottom: 3 }}>Country</label>
           <select style={S.select} value={country} onChange={e => {
             const nc = e.target.value;
             setCountry(nc);
-            const first = METROS.find(m => m.country === nc);
-            if (first) setMetroId(first.id);
+            setMetroId(DEFAULT_METROS[nc] || "");
             setCustomOverrides({});
+            setPresetId("ref");
             const nd = COUNTRIES[nc];
-            setPersonal(prev => ({
-              ...prev,
-              monthlyPayment: nd.personalDefaults.monthlyPayment,
-              downPayment: nd.personalDefaults.downPayment,
-              mortgageTerm: nd.defaults.mortgageTerm,
-            }));
+            setPersonal(prev => ({ ...prev, monthlyPayment: nd.personalDefaults.monthlyPayment, downPayment: nd.personalDefaults.downPayment, mortgageTerm: nd.defaults.mortgageTerm }));
           }}>
             {Object.entries(COUNTRIES).map(([k, v]) => <option key={k} value={k}>{v.name}</option>)}
           </select>
         </div>
         <div>
-          <label style={{ fontSize: 10, fontWeight: 600, color: "#555", display: "block", marginBottom: 3 }}>Metro / MSA</label>
-          <select style={{ ...S.select, minWidth: 280 }} value={metroId} onChange={e => {
-            setMetroId(e.target.value);
-            setCustomOverrides({});
-          }}>
+          <label style={{ fontSize: 10, fontWeight: 600, color: "#555", display: "block", marginBottom: 3 }}>Metro</label>
+          <select style={{ ...S.select, minWidth: 240 }} value={metroId} onChange={e => { setMetroId(e.target.value); setCustomOverrides({}); setPresetId("ref"); }}>
             {countryMetros.map(m => <option key={m.id} value={m.id}>{m.name}{m.state ? ` (${m.state})` : ""}</option>)}
           </select>
         </div>
-        <div style={{ fontSize: 9, color: "#aaa", maxWidth: 250, lineHeight: 1.4 }}>
-          All values in {c.currency} ({sym}). MSAs = Census Bureau standard, used by FHFA & Case-Shiller.
+        <label style={{ fontSize: 11, color: "#555", display: "flex", alignItems: "center", gap: 4 }}>
+          <input type="checkbox" checked={showNat} onChange={e => setShowNat(e.target.checked)} /> Show national avg
+        </label>
+        <label style={{ fontSize: 11, color: "#555", display: "flex", alignItems: "center", gap: 4 }}>
+          <input type="checkbox" checked={showMetro} onChange={e => setShowMetro(e.target.checked)} /> Show metro
+        </label>
+        <div style={{ fontSize: 9, color: "#aaa", maxWidth: 200, lineHeight: 1.4 }}>
+          All values in {c.currency} ({sym}).
         </div>
       </div>
 
@@ -845,36 +888,36 @@ function RentVsBuyV3() {
       <div style={S.premise}>
         <div style={S.premiseLabel}>Core Premise</div>
         <div style={{ fontSize: 14, fontWeight: 600 }}>
-          Starting Monthly Rent = Monthly Mortgage P&I = <span style={{ fontFamily: "'IBM Plex Mono', monospace", color: "#2563eb" }}>{ff(personal.monthlyPayment)}/mo</span>
+          Starting Monthly Rent = Monthly Mortgage P&I = <span style={{ fontFamily: "'IBM Plex Mono',monospace", color: "#2563eb" }}>{ff(personal.monthlyPayment)}/mo</span>
         </div>
         <div style={{ fontSize: 11, color: "#666", marginTop: 2 }}>
-          Both paths start from the same monthly cash outflow. Rent grows; mortgage stays fixed.
-          Derived home price: National {ff(natResult.homePrice)} · {metro?.name} {ff(regResult.homePrice)} · Custom {ff(cusResult.homePrice)}
+          Both paths start from the same cash outflow. Rent grows; mortgage stays fixed.
+          Derived home price: {showNat && <>National {ff(natResult.homePrice)} · </>}{showMetro && regResult && <>{metro?.name} {ff(regResult.homePrice)} · </>}Custom {ff(cusResult.homePrice)}
         </div>
       </div>
 
-      {/* ═══ PERSONAL VARIABLES HUB ═══ */}
-      <div style={{ ...S.section, marginBottom: 16 }}>
+      {/* ═══ PERSONAL VARIABLES ═══ */}
+      <div style={{ ...S.section, marginBottom: 12 }}>
         <div style={S.sectionTitle}>Your Situation (shared across all scenarios)</div>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 16 }}>
           <div>
             <NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} hint="Your current rent / mortgage P&I" />
-            <NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} hint={`Cash you'd put down · ~${regResult.homePrice > 0 ? (personal.downPayment / regResult.homePrice * 100).toFixed(0) : "—"}% of derived home price`} />
+            <NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} hint={`Cash · ~${cusResult.homePrice > 0 ? (personal.downPayment / cusResult.homePrice * 100).toFixed(0) : "—"}% of derived price`} />
           </div>
           <div>
             <NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" />
-            <NumInput label="Sell House in Year" value={personal.holdingPeriod} onChange={v => up("holdingPeriod")(Math.min(v, personal.simYears))} step={1} suffix="yr" hint="How long you'd own" />
+            <NumInput label="Sell House in Year" value={hp} onChange={v => up("holdingPeriod")(Math.min(v, personal.simYears))} step={1} suffix="yr" hint="How long you'd own" />
           </div>
           <div>
             <NumInput label="Simulation Length" value={personal.simYears} onChange={v => setPersonal(prev => ({ ...prev, simYears: v, holdingPeriod: Math.min(prev.holdingPeriod, v) }))} step={1} suffix="yr" min={1} max={65} />
-            <NumInput label="Renter Discipline" value={(personal.discipline * 100).toFixed(0)} onChange={v => up("discipline")(v / 100)} step={5} suffix="%" hint="% of savings actually invested. 60-75% realistic" />
+            <NumInput label="Renter Discipline" value={(personal.discipline * 100).toFixed(0)} onChange={v => up("discipline")(v / 100)} step={5} suffix="%" hint="% of savings invested. 60-75% realistic" />
           </div>
           <div>
-            <NumInput label="Marginal Tax Rate" value={(c.defaults.marginalTax * 100).toFixed(0)} onChange={() => {}} suffix="%" locked hint={c.defaults.marginalTax > 0 ? "Mortgage interest deductible" : "No mortgage interest deduction"} />
-            {c.defaults.marginalTax > 0 && <NumInput label="Other Itemized Ded." value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} hint="Charitable, medical, etc." />}
+            <NumInput label="Marginal Tax Rate" value={(c.defaults.marginalTax * 100).toFixed(0)} onChange={() => {}} suffix="%" locked hint={c.defaults.marginalTax > 0 ? "Mortgage interest deductible" : "No deduction in this country"} />
+            {c.defaults.marginalTax > 0 && <NumInput label="Other Itemized Ded." value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} />}
           </div>
         </div>
-        {/* Tax treatment note — prominent warning for disclaimer countries */}
+        {/* Tax note */}
         {c.taxNote.includes("⚠️") ? (
           <div style={{ fontSize: 12, color: "#7a4f00", marginTop: 8, padding: "10px 14px", background: "#fff3cd", borderRadius: 6, border: "2px solid #ffc107", lineHeight: 1.6, fontWeight: 500 }}>
             <strong style={{ fontSize: 13 }}>⚠️ {c.name} — Important Disclaimer</strong>
@@ -882,52 +925,106 @@ function RentVsBuyV3() {
           </div>
         ) : (
           <div style={{ fontSize: 11, color: "#666", marginTop: 8, padding: "8px 12px", background: "#f8f8f8", borderRadius: 6, lineHeight: 1.5 }}>
-            <strong>{c.name} tax treatment:</strong> {c.taxNote}
+            <strong>{c.name}:</strong> {c.taxNote}
           </div>
         )}
-        {/* Volatility drag callout */}
+        {/* Volatility drag */}
         <div style={{ fontSize: 11, color: "#555", marginTop: 8, padding: "8px 12px", background: "#f0f4ff", borderRadius: 6, border: "1px solid #d0d8f0", lineHeight: 1.6 }}>
-          <strong>Why the model uses geometric returns (CAGR), not arithmetic averages:</strong> Variable returns always compound to less than their average suggests — this is volatility drag.
-          Investment return {fmtPct(c.defaults.investReturn)} is the geometric mean. With equity σ ≈ {(EQUITY_VOL * 100).toFixed(0)}%, the arithmetic avg is ~{fmtPct(c.defaults.investReturn + equityDrag)}, but {fmtPct(equityDrag)} is lost to drag (½σ²).
-          Housing appreciation loses only ~{fmtPct(housingDrag)} to drag (σ ≈ {(HOUSING_VOL * 100).toFixed(0)}%).
-          Using 12% instead of 10% for stocks isn't optimism — it's a math error that overstates the renter's portfolio by ~50-70% over 30 years. <span style={{ color: "#888" }}>(Kitces, Jacquier-Kane-Marcus 2003, Ibbotson/SBBI)</span>
+          <strong>Why geometric returns (CAGR):</strong> Stocks lose ~{fmtPct(eqDrag)} to volatility drag (σ≈{(EQ_VOL*100).toFixed(0)}%), housing loses only ~{fmtPct(hoDrag)} (σ≈{(HO_VOL*100).toFixed(0)}%). Using 12% instead of 10% for stocks overstates the renter's portfolio by ~50-70% over 30 years. <span style={{ color: "#888" }}>(Kitces, Jacquier-Kane-Marcus 2003)</span>
         </div>
-        {/* Input warnings */}
+        {/* Warnings */}
         {warnings.length > 0 && (
           <div style={{ marginTop: 8, padding: "8px 12px", background: "#fff8e6", borderRadius: 6, border: "1px solid #f0d860", fontSize: 11, lineHeight: 1.6 }}>
-            <strong style={{ color: "#b8860b" }}>Heads up on your Custom scenario inputs:</strong>
-            {warnings.map((w, i) => <div key={i} style={{ marginTop: 4, color: "#7a6520" }}>• {w}</div>)}
+            <strong style={{ color: "#b8860b" }}>Heads up:</strong>
+            {warnings.map((w, i) => <div key={i} style={{ marginTop: 3, color: "#7a6520" }}>• {w}</div>)}
           </div>
         )}
       </div>
 
-      {/* ═══ THREE-COLUMN SCENARIOS ═══ */}
-      <div style={S.scenarioGrid}>
-        <ScenarioColumn label={`${c.name} National Avg`} color="blue" sym={sym}
-          params={nationalParams} result={natResult} holdingPeriod={personal.holdingPeriod}
-          locked={true} showRate={true} onParamChange={() => {}} />
-        <ScenarioColumn label={metro ? `${metro.name}${metro.state ? ` (${metro.state})` : ""}` : "Select Metro"} color="green" sym={sym}
-          params={regionalParams} result={regResult} holdingPeriod={personal.holdingPeriod}
-          locked={true} showRate={true} onParamChange={() => {}} />
-        <ScenarioColumn label="Custom Scenario" color="gray" sym={sym}
-          params={customParams} result={cusResult} holdingPeriod={personal.holdingPeriod}
-          locked={false} showRate={true} onParamChange={(k, v) => uc(k, v)} />
+      {/* ═══ TWO-PANEL LAYOUT ═══ */}
+      <div style={S.panels}>
+        {/* LEFT — REFERENCE */}
+        <div style={S.panel}>
+          <div style={{ ...S.panelHead, background: "#f0f4ff", color: "#2563eb", borderBottom: "2px solid #2563eb" }}>Reference Data</div>
+          <div style={S.panelBody}>
+            {showNat && (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 6 }}>{c.name} National</div>
+                <VerdictBox advantage={natAtHold?.advantage} homePrice={natResult.homePrice} holdYr={hp} sym={sym} />
+                <div style={S.derived}>
+                  <div>Home: {ff(natResult.homePrice)} · Loan: {ff(natResult.loan)}</div>
+                  <div>Breakeven: <strong>{natResult.breakeven ? `Year ${natResult.breakeven}` : "Never"}</strong></div>
+                </div>
+                <div style={{ fontSize: 10, color: "#888" }}>
+                  Appr {fmtPct(nationalParams.appreciation)} · Rent gr {fmtPct(nationalParams.rentGrowth)} · Prop tax {fmtPct(nationalParams.propTaxRate)} · Ins {fmtPct(nationalParams.insRate)}
+                </div>
+              </div>
+            )}
+            {showMetro && regResult && (
+              <div style={{ marginBottom: 8, ...(showNat ? { borderTop: "1px solid #eee", paddingTop: 12 } : {}) }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: "#555", marginBottom: 6 }}>{metro?.name}</div>
+                <VerdictBox advantage={regAtHold?.advantage} homePrice={regResult.homePrice} holdYr={hp} sym={sym} />
+                <div style={S.derived}>
+                  <div>Home: {ff(regResult.homePrice)} · Loan: {ff(regResult.loan)}</div>
+                  <div>Breakeven: <strong>{regResult.breakeven ? `Year ${regResult.breakeven}` : "Never"}</strong></div>
+                </div>
+                <div style={{ fontSize: 10, color: "#888" }}>
+                  Appr {fmtPct(regionalParams.appreciation)} · Rent gr {fmtPct(regionalParams.rentGrowth)} · Prop tax {fmtPct(regionalParams.propTaxRate)} · Ins {fmtPct(regionalParams.insRate)}
+                </div>
+              </div>
+            )}
+            {!showNat && !showMetro && <div style={{ fontSize: 12, color: "#aaa", padding: 20, textAlign: "center" }}>Toggle national or metro above to show reference data.</div>}
+          </div>
+        </div>
+
+        {/* RIGHT — CUSTOM */}
+        <div style={S.panel}>
+          <div style={{ ...S.panelHead, background: "#fafafa", color: "#555", borderBottom: "2px solid #555", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <span>Your Scenario</span>
+            <select style={{ ...S.select, fontSize: 11 }} value={presetId} onChange={e => {
+              const p = PRESETS.find(x => x.id === e.target.value);
+              setPresetId(e.target.value);
+              setCustomOverrides(p ? { ...p.overrides } : {});
+            }}>
+              {PRESETS.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          </div>
+          <div style={S.panelBody}>
+            <VerdictBox advantage={cusAtHold?.advantage} homePrice={cusResult.homePrice} holdYr={hp} sym={sym} />
+            <div style={S.derived}>
+              <div>Home: {ff(cusResult.homePrice)} · Loan: {ff(cusResult.loan)} · Upfront: {ff(cusResult.upfront)}</div>
+              <div>Breakeven: <strong>{cusResult.breakeven ? `Year ${cusResult.breakeven}` : "Never"}</strong>
+                {beSens.loBE !== cusResult.breakeven && <span style={{ fontSize: 10, color: "#888" }}> (at appr {fmtPct(customParams.appreciation - 0.01)}: {beSens.loBE ? `Yr ${beSens.loBE}` : "Never"} · at {fmtPct(customParams.appreciation + 0.01)}: {beSens.hiBE ? `Yr ${beSens.hiBE}` : "Never"})</span>}
+              </div>
+            </div>
+            <div style={{ ...S.sectionTitle, fontSize: 10 }}>Market Variables</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0 16px" }}>
+              <NumInput label="Mortgage Rate" value={(customParams.mortgageRate * 100).toFixed(1)} onChange={v => uc("mortgageRate", v / 100)} step={0.1} suffix="%" rangeKey="mortgageRate" hint="Changes derived home price" />
+              <NumInput label="Investment Return" value={(customParams.investReturn * 100).toFixed(1)} onChange={v => uc("investReturn", v / 100)} step={0.1} suffix="%" rangeKey="investReturn" />
+              <NumInput label="Appreciation" value={(customParams.appreciation * 100).toFixed(1)} onChange={v => uc("appreciation", v / 100)} step={0.1} suffix="%" rangeKey="appreciation" />
+              <NumInput label="Rent Growth" value={(customParams.rentGrowth * 100).toFixed(1)} onChange={v => uc("rentGrowth", v / 100)} step={0.1} suffix="%" rangeKey="rentGrowth" />
+              <NumInput label="Property Tax" value={(customParams.propTaxRate * 100).toFixed(2)} onChange={v => uc("propTaxRate", v / 100)} step={0.01} suffix="%" rangeKey="propTaxRate" />
+              <NumInput label="Insurance" value={(customParams.insRate * 100).toFixed(2)} onChange={v => uc("insRate", v / 100)} step={0.01} suffix="%" rangeKey="insRate" />
+              <NumInput label="Maintenance" value={(customParams.maintRate * 100).toFixed(1)} onChange={v => uc("maintRate", v / 100)} step={0.1} suffix="%" rangeKey="maintRate" />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* ═══ DYNAMIC INSIGHT (all three) ═══ */}
+      {/* ═══ INSIGHT ═══ */}
       <div style={S.insight}>
         <div style={{ fontWeight: 700, marginBottom: 6, fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5 }}>Dynamic Insight</div>
-        <div style={{ marginBottom: 6 }}>{buildInsight(`${c.name} Avg`, nationalParams, natResult)}</div>
-        <div style={{ marginBottom: 6 }}>{buildInsight(metro?.name || "Regional", regionalParams, regResult)}</div>
-        <div style={{ marginBottom: 8 }}>{buildInsight("Custom", customParams, cusResult)}</div>
+        {showNat && <div style={{ marginBottom: 4 }}>{buildInsight(`${c.name} National`, nationalParams, natResult)}</div>}
+        {showMetro && regResult && <div style={{ marginBottom: 4 }}>{buildInsight(metro?.name || "Metro", regionalParams, regResult)}</div>}
+        <div style={{ marginBottom: 8 }}>{buildInsight("Your Scenario", customParams, cusResult)}</div>
         <div style={{ borderTop: "1px solid #e8d44d", paddingTop: 8, fontSize: 12, color: "#666" }}>
-          <strong>Unrecoverable costs ({metro?.name || "Regional"}, {personal.simYears}yr):</strong> The buyer "throws away" {ff(regResult.totalBuyerUnrecoverable)} in interest, tax, insurance, and maintenance (net of tax benefits). The renter pays {ff(regResult.totalRenterUnrecoverable)} in rent + insurance. Neither side's money is "free" — the question is which path builds more wealth after accounting for what's lost.
+          <strong>Unrecoverable costs (Your Scenario, {customParams.simYears}yr):</strong> Buyer "throws away" {ff(cusResult.totalBuyerUnrecoverable)} (interest, tax, insurance, maintenance − tax benefit). Renter pays {ff(cusResult.totalRenterUnrecoverable)} in rent + insurance. Neither side's money is "free."
         </div>
       </div>
 
       {/* ═══ ADVANTAGE CHART ═══ */}
       <div style={S.chart}>
-        <div style={S.chartTitle}>Buy vs. Rent Advantage Across Scenarios</div>
+        <div style={S.chartTitle}>Buy vs. Rent Advantage Over Time</div>
         <div style={S.chartSub}>Positive = buying wins · Negative = renting wins</div>
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -937,18 +1034,17 @@ function RentVsBuyV3() {
             <Tooltip content={<MultiTooltip sym={sym} />} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
             <ReferenceLine y={0} stroke="#333" strokeWidth={1} />
-            <ReferenceLine x={personal.holdingPeriod} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}
-              label={{ value: `Yr ${personal.holdingPeriod}`, position: "top", fontSize: 10, fill: "#f59e0b" }} />
-            <Line type="monotone" dataKey="natAdv" name={`${c.name} Avg`} stroke="#2563eb" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="regAdv" name={metro?.name || "Regional"} stroke="#16a34a" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="cusAdv" name="Custom" stroke="#888" strokeWidth={2} strokeDasharray="5 3" dot={false} />
+            <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{ value: `Yr ${hp}`, position: "top", fontSize: 10, fill: "#f59e0b" }} />
+            <Line type="monotone" dataKey="cusAdv" name="Your Scenario" stroke="#555" strokeWidth={2.5} dot={false} />
+            {showNat && <Line type="monotone" dataKey="natAdv" name={`${c.name} Avg`} stroke="#2563eb" strokeWidth={1.5} dot={false} strokeDasharray="5 3" />}
+            {showMetro && regResult && <Line type="monotone" dataKey="regAdv" name={metro?.name || "Metro"} stroke="#16a34a" strokeWidth={1.5} dot={false} strokeDasharray="5 3" />}
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* ═══ WEALTH CHART (Regional) ═══ */}
+      {/* ═══ WEALTH CHART ═══ */}
       <div style={S.chart}>
-        <div style={S.chartTitle}>{metro?.name || "Regional"}: Buyer vs. Renter Net Wealth</div>
+        <div style={S.chartTitle}>Your Scenario: Buyer vs. Renter Net Wealth</div>
         <div style={S.chartSub}>Buyer = Equity − Selling Costs − Cap Gains + Portfolio · Renter = Portfolio − Cap Gains</div>
         <ResponsiveContainer width="100%" height={280}>
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
@@ -957,123 +1053,131 @@ function RentVsBuyV3() {
             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmtC(v, sym)} width={65} />
             <Tooltip content={<MultiTooltip sym={sym} />} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            <ReferenceLine x={personal.holdingPeriod} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} />
-            {regResult.breakeven && <ReferenceLine x={regResult.breakeven} stroke="#dc2626" strokeDasharray="4 4"
-              label={{ value: `Break-even`, position: "top", fontSize: 10, fill: "#dc2626" }} />}
-            <Line type="monotone" dataKey="regBuyer" name="Buyer Wealth" stroke="#2563eb" strokeWidth={2.5} dot={false} />
-            <Line type="monotone" dataKey="regRenter" name="Renter Wealth" stroke="#16a34a" strokeWidth={2.5} dot={false} />
+            <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} />
+            {cusResult.breakeven && <ReferenceLine x={cusResult.breakeven} stroke="#dc2626" strokeDasharray="4 4" label={{ value: "Break-even", position: "top", fontSize: 10, fill: "#dc2626" }} />}
+            <Line type="monotone" dataKey="cusBuyer" name="Buyer Wealth" stroke="#2563eb" strokeWidth={2.5} dot={false} />
+            <Line type="monotone" dataKey="cusRenter" name="Renter Wealth" stroke="#16a34a" strokeWidth={2.5} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* ═══ ANNUAL COST CHART (Regional) — RESTORED FROM v1 ═══ */}
+      {/* ═══ ANNUAL COST CHART ═══ */}
       <div style={S.chart}>
-        <div style={S.chartTitle}>{metro?.name || "Regional"}: Annual Housing Cost — Buyer vs. Renter</div>
-        <div style={S.chartSub}>
-          Buyer = Mortgage P&I + Property Tax + Insurance + Maintenance − Tax Benefit · Renter = Rent + Insurance · When lines cross, the cost advantage flips — but note that the renter may have already built a compounding lead from earlier years of lower costs.
-        </div>
-        <ResponsiveContainer width="100%" height={280}>
+        <div style={S.chartTitle}>Your Scenario: Annual Housing Cost — Buyer vs. Renter</div>
+        <div style={S.chartSub}>When lines cross, the cost advantage flips — but the renter may already have a compounding lead.</div>
+        <ResponsiveContainer width="100%" height={260}>
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
             <XAxis dataKey="year" tick={{ fontSize: 10 }} tickFormatter={v => v % 5 === 0 ? v : ""} />
             <YAxis tick={{ fontSize: 10 }} tickFormatter={v => fmtC(v, sym)} width={65} />
             <Tooltip content={<CostTooltip sym={sym} />} />
             <Legend wrapperStyle={{ fontSize: 11 }} />
-            {regionalParams.mortgageTerm <= regionalParams.simYears && (
-              <ReferenceLine x={regionalParams.mortgageTerm} stroke="#888" strokeDasharray="4 4"
-                label={{ value: "Mortgage paid off", position: "top", fontSize: 10, fill: "#888" }} />
-            )}
-            <Line type="monotone" dataKey="netBuyerCost" name="Buyer Net Cost" stroke="#2563eb" strokeWidth={2} dot={false} />
-            <Line type="monotone" dataKey="totalRenterCost" name="Renter Total Cost" stroke="#16a34a" strokeWidth={2} dot={false} />
+            {customParams.mortgageTerm <= customParams.simYears && <ReferenceLine x={customParams.mortgageTerm} stroke="#888" strokeDasharray="4 4" label={{ value: "Mortgage paid off", position: "top", fontSize: 10, fill: "#888" }} />}
+            <Line type="monotone" dataKey="cusNetBuyer" name="Buyer Net Cost" stroke="#2563eb" strokeWidth={2} dot={false} />
+            <Line type="monotone" dataKey="cusRenterCost" name="Renter Total Cost" stroke="#16a34a" strokeWidth={2} dot={false} />
           </LineChart>
         </ResponsiveContainer>
       </div>
 
-      {/* ═══ LOCATION DATA SOURCES ═══ */}
+      {/* ═══ SENSITIVITY TABLE ═══ */}
       <div style={{ marginBottom: 16 }}>
+        <button style={S.toggle} onClick={() => setShowSensitivity(!showSensitivity)}>
+          {showSensitivity ? "▼ Hide" : "▶ Show"} Sensitivity Analysis — Which assumptions matter most?
+        </button>
+        {showSensitivity && sensitivity.length > 0 && (
+          <div style={{ ...S.section, marginTop: 10 }}>
+            <div style={{ fontSize: 11, color: "#666", marginBottom: 10 }}>Each row shows how much the outcome swings when one variable changes, holding everything else constant. Sorted by impact.</div>
+            <table style={S.table}>
+              <thead>
+                <tr>
+                  <th style={{ ...S.th, textAlign: "left" }}>Variable</th>
+                  <th style={S.th}>Change</th>
+                  <th style={S.th}>If Higher</th>
+                  <th style={S.th}>If Lower</th>
+                  <th style={S.th}>Total Swing</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sensitivity.map((s, i) => (
+                  <tr key={s.key} style={{ background: i === 0 ? "#fff7ed" : i % 2 === 0 ? "#fafafa" : "#fff" }}>
+                    <td style={{ ...S.td, textAlign: "left", fontWeight: i < 2 ? 700 : 400 }}>{s.name}{i === 0 && " ★"}</td>
+                    <td style={S.td}>{s.fmt}</td>
+                    <td style={{ ...S.td, color: s.upA >= 0 ? "#2563eb" : "#16a34a" }}>{f(s.upA)}</td>
+                    <td style={{ ...S.td, color: s.dnA >= 0 ? "#2563eb" : "#16a34a" }}>{f(s.dnA)}</td>
+                    <td style={{ ...S.td, fontWeight: 700 }}>{f(s.swing)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <div style={{ fontSize: 10, color: "#999", marginTop: 8 }}>
+              ★ = Most impactful variable. If the top two variables' swings exceed your advantage, the verdict is fragile — small assumption changes flip it.
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* ═══ SOURCES ═══ */}
+      <div style={{ marginBottom: 12 }}>
         <button style={S.toggle} onClick={() => setShowSources(!showSources)}>
           {showSources ? "▼ Hide" : "▶ Show"} Location Reference Data & Sources ({countryMetros.length} metros)
         </button>
         {showSources && (
           <div style={{ ...S.section, marginTop: 10, maxHeight: 400, overflowY: "auto" }}>
             <table style={S.table}>
-              <thead>
-                <tr>
-                  <th style={{ ...S.th, textAlign: "left" }}>Metro</th>
-                  <th style={S.th}>Appr 5yr</th>
-                  <th style={S.th}>Appr 10yr</th>
-                  <th style={S.th}>Rent Gr</th>
-                  <th style={S.th}>Prop Tax</th>
-                  <th style={S.th}>Ins Rate</th>
-                  <th style={{ ...S.th, textAlign: "left" }}>Sources</th>
-                </tr>
-              </thead>
+              <thead><tr>
+                <th style={{ ...S.th, textAlign: "left" }}>Metro</th>
+                <th style={S.th}>Appr 5yr</th><th style={S.th}>Appr 10yr</th>
+                <th style={S.th}>Rent Gr</th><th style={S.th}>Prop Tax</th><th style={S.th}>Ins</th>
+                <th style={{ ...S.th, textAlign: "left" }}>Sources</th>
+              </tr></thead>
               <tbody>
                 <tr style={{ background: "#f0f4ff", fontWeight: 600 }}>
                   <td style={{ ...S.td, textAlign: "left" }}>{c.name} National</td>
-                  <td style={S.td}>{fmtPct(c.national.appreciation5yr)}</td>
-                  <td style={S.td}>{fmtPct(c.national.appreciation10yr)}</td>
-                  <td style={S.td}>{fmtPct(c.national.rentGrowth)}</td>
-                  <td style={S.td}>{fmtPct(c.national.propTaxRate)}</td>
-                  <td style={S.td}>{fmtPct(c.national.insRate)}</td>
+                  <td style={S.td}>{fmtPct(c.national.appreciation5yr)}</td><td style={S.td}>{fmtPct(c.national.appreciation10yr)}</td>
+                  <td style={S.td}>{fmtPct(c.national.rentGrowth)}</td><td style={S.td}>{fmtPct(c.national.propTaxRate)}</td><td style={S.td}>{fmtPct(c.national.insRate)}</td>
                   <td style={{ ...S.td, textAlign: "left", fontSize: 9 }}>{c.national.sources}</td>
                 </tr>
                 {countryMetros.map(m => (
                   <tr key={m.id} style={{ background: m.id === metroId ? "#f0fdf4" : undefined }}>
                     <td style={{ ...S.td, textAlign: "left", fontWeight: m.id === metroId ? 700 : 400 }}>{m.name}</td>
-                    <td style={S.td}>{fmtPct(m.appreciation5yr)}</td>
-                    <td style={S.td}>{fmtPct(m.appreciation10yr)}</td>
-                    <td style={S.td}>{fmtPct(m.rentGrowth)}</td>
-                    <td style={S.td}>{fmtPct(m.propTaxRate)}</td>
-                    <td style={S.td}>{fmtPct(m.insRate)}</td>
+                    <td style={S.td}>{fmtPct(m.appreciation5yr)}</td><td style={S.td}>{fmtPct(m.appreciation10yr)}</td>
+                    <td style={S.td}>{fmtPct(m.rentGrowth)}</td><td style={S.td}>{fmtPct(m.propTaxRate)}</td><td style={S.td}>{fmtPct(m.insRate)}</td>
                     <td style={{ ...S.td, textAlign: "left", fontSize: 9 }}>{m.sources}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-            <div style={{ fontSize: 9, color: "#999", marginTop: 10, lineHeight: 1.5 }}>
-              <strong>Data notes:</strong> Appreciation = 5-year nominal CAGR from FHFA HPI (US) or equivalent national indices. Property tax = effective rate (taxes paid ÷ home value) from Census ACS 2024. Insurance from Bankrate/NerdWallet Nov 2025, as % of home value. All data Q4 2025 – Q1 2026.
-              {country === "US" && <><br /><br /><strong>SALT Cap (OBBBA 2026):</strong> Raised from $10,000 → $40,400. Phases down for MAGI above $500,000. Reverts to $10,000 in 2030. PMI now treated as deductible mortgage interest starting 2026 (not yet modeled).</>}
-            </div>
           </div>
         )}
       </div>
 
       {/* ═══ DATA TABLE ═══ */}
-      <div style={{ marginBottom: 16 }}>
+      <div style={{ marginBottom: 12 }}>
         <button style={S.toggle} onClick={() => setShowTable(!showTable)}>
-          {showTable ? "▼ Hide" : "▶ Show"} Year-by-Year Data ({metro?.name || "Regional"})
+          {showTable ? "▼ Hide" : "▶ Show"} Year-by-Year Data (Your Scenario)
         </button>
         {showTable && (
           <div style={{ maxHeight: 400, overflowY: "auto", marginTop: 10, border: "1px solid #e0e0e0", borderRadius: 8 }}>
             <table style={S.table}>
-              <thead>
-                <tr>
-                  {["Yr", "Home", "Equity", "Int", "Princ", "Buyer$", "TaxBen", "NetBuy", "Rent$", "RentCost",
-                    "BuyInv", "RntInv", "BuyerW", "RenterW", "Adv"].map(h => (
-                    <th key={h} style={{ ...S.th, ...(h === "Yr" ? { textAlign: "center" } : {}) }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
+              <thead><tr>
+                {["Yr","Home","Equity","Int","Princ","Buyer$","TaxBen","NetBuy","Rent$","RntCost","BuyInv","RntInv","BuyerW","RenterW","Adv"].map(h => (
+                  <th key={h} style={{ ...S.th, ...(h === "Yr" ? { textAlign: "center" } : {}) }}>{h}</th>
+                ))}
+              </tr></thead>
               <tbody>
-                {regResult.data.map(d => {
-                  const isHold = d.year === personal.holdingPeriod;
-                  const isBE = d.year === regResult.breakeven;
-                  const bg = isHold ? "#fff7ed" : isBE ? "#fef2f2" : d.year % 2 === 0 ? "#fafafa" : "#fff";
+                {cusResult.data.map(d => {
+                  const isH = d.year === hp, isBE = d.year === cusResult.breakeven;
+                  const bg = isH ? "#fff7ed" : isBE ? "#fef2f2" : d.year % 2 === 0 ? "#fafafa" : "#fff";
                   return (
                     <tr key={d.year} style={{ background: bg }}>
-                      <td style={{ ...S.td, textAlign: "center", fontWeight: isHold || isBE ? 700 : 400 }}>{d.year}</td>
-                      <td style={S.td}>{f(d.homeVal)}</td>
-                      <td style={S.td}>{f(d.equity)}</td>
-                      <td style={S.td}>{f(d.yrInterest)}</td>
-                      <td style={S.td}>{f(d.yrPrincipal)}</td>
-                      <td style={S.td}>{f(d.totalBuyerCost)}</td>
-                      <td style={S.td}>{f(d.taxBenefit)}</td>
+                      <td style={{ ...S.td, textAlign: "center", fontWeight: isH || isBE ? 700 : 400 }}>{d.year}</td>
+                      <td style={S.td}>{f(d.homeVal)}</td><td style={S.td}>{f(d.equity)}</td>
+                      <td style={S.td}>{f(d.yrInterest)}</td><td style={S.td}>{f(d.yrPrincipal)}</td>
+                      <td style={S.td}>{f(d.totalBuyerCost)}</td><td style={S.td}>{f(d.taxBenefit)}</td>
                       <td style={{ ...S.td, fontWeight: 600 }}>{f(d.netBuyerCost)}</td>
                       <td style={S.td}>{f(d.annualRent)}</td>
                       <td style={{ ...S.td, fontWeight: 600 }}>{f(d.totalRenterCost)}</td>
-                      <td style={S.td}>{f(d.buyerPortfolio)}</td>
-                      <td style={S.td}>{f(d.renterPortfolio)}</td>
+                      <td style={S.td}>{f(d.buyerPortfolio)}</td><td style={S.td}>{f(d.renterPortfolio)}</td>
                       <td style={{ ...S.td, fontWeight: 700, color: "#2563eb" }}>{f(d.buyerWealth)}</td>
                       <td style={{ ...S.td, fontWeight: 700, color: "#16a34a" }}>{f(d.renterWealth)}</td>
                       <td style={{ ...S.td, fontWeight: 700, color: d.advantage >= 0 ? "#2563eb" : "#16a34a" }}>{f(d.advantage)}</td>
@@ -1093,18 +1197,16 @@ function RentVsBuyV3() {
         </button>
         {showMethod && (
           <div style={{ ...S.section, marginTop: 10, fontSize: 12, lineHeight: 1.8, color: "#555" }}>
-            <p><strong>Monthly-Payment-First Model (v3):</strong> You input your monthly payment and down payment. The engine backsolves the loan amount: L = M × [(1+r)^n − 1] / [r × (1+r)^n], then derives homePrice = L + downPayment. This ensures the comparison starts from the same cash outflow. When the Custom column uses a different rate, the derived home price changes — showing what the same payment buys at different rates.</p>
-            <p><strong>Three-Scenario Structure:</strong> National and Regional columns use reference data (locked). Custom is fully editable. Personal variables (payment, down, sell year, discipline) are shared across all three.</p>
-            <p><strong>Amortization:</strong> Month-precise. Interest = Balance × (Rate/12), Principal = Payment − Interest. Aggregated annually.</p>
-            <p><strong>Tax Benefit:</strong> Excess itemization. Benefit = max(0, Itemized − Std Deduction) × Marginal Rate. Itemized = Mortgage Interest + min(Property Tax, SALT Cap) + Other. Many homeowners get zero incremental benefit.</p>
-            <p><strong>Symmetric Surplus Investing:</strong> Whoever has lower costs in a given year invests the difference (adjusted by discipline %). This correctly captures the buyer's post-mortgage-payoff advantage.</p>
-            <p><strong>Renter Discipline:</strong> At 100%, assumes perfect investment of all surplus — theoretical ideal. Bernstein & Koudijs (QJE 2024): mortgage payments translate ~1:1 to wealth via forced savings. Set 60-75% for behavioral realism.</p>
-            <p><strong>Capital Gains:</strong> Home: max(0, gain − exclusion) × rate. Investments: (portfolio − basis) × rate. US exclusion: $500K MFJ (§121). Canada: primary residence fully exempt. UK: PPR relief. Australia: 50% CGT discount. Germany: exempt after 10yr hold.</p>
-            <p><strong>International Tax Model:</strong> Most countries fall into two buckets. <em>Bucket A (almost everyone)</em>: no mortgage interest deduction on primary residences — Canada, UK, Australia, Germany, and most of the developed world. The US is the global outlier. The engine handles these by setting marginalTax to 0, which correctly produces $0 tax benefit. <em>Bucket B (rare)</em>: Netherlands and Denmark allow partial mortgage interest deductions. Not currently modeled. A few markets (Japan, Singapore) have fundamentally different housing structures (depreciating homes, government housing dominance) that this model cannot reliably capture — use results for those markets directionally, not precisely.</p>
-            <p style={{ marginTop: 12, color: "#888", fontSize: 11 }}>
-              <strong>Academic sources:</strong> Poterba (QJE 1984) · Shiller Case-Shiller Index · Jordà, Schularick & Taylor (QJE 2019) · Himmelberg, Mayer & Sinai (JEP 2005) · Gallin (Fed 2004) · Bernstein & Koudijs (QJE 2024) · Ben Felix / PWL Capital · UBS Global Real Estate Bubble Index 2025
-            </p>
-            <p style={{ color: "#dc2626", fontSize: 11, marginTop: 8 }}>This model is for educational and discussion purposes only and does not constitute financial advice.</p>
+            <p><strong>Monthly-Payment-First:</strong> Input monthly payment + down payment. Engine backsolves loan: L = M × [(1+r)^n − 1] / [r × (1+r)^n], derives homePrice = L + down. Same payment at different rates → different home prices.</p>
+            <p><strong>Two-Panel Layout:</strong> Reference panel shows locked national/metro data (toggleable). Your Scenario panel is fully editable with preset market conditions. Personal variables shared across all.</p>
+            <p><strong>Sensitivity Analysis:</strong> Runs simulate() with ±delta on each variable, measures swing at your holding period. Sorted by impact. If the top variable's swing exceeds your advantage, the verdict is fragile.</p>
+            <p><strong>Verdict Confidence:</strong> Based on advantage as % of home price. &lt;2% = too close to call, &lt;5% = marginal, &lt;15% = moderate, ≥15% = strong.</p>
+            <p><strong>Amortization:</strong> Month-precise. Interest = Balance × (Rate/12), Principal = Payment − Interest.</p>
+            <p><strong>Tax Benefit:</strong> Excess itemization: max(0, Itemized − Std Deduction) × Rate. US only — all other countries correctly produce $0 benefit (marginalTax = 0). Netherlands and Sweden have partial deductions modeled.</p>
+            <p><strong>Symmetric Surplus Investing:</strong> Whoever has lower costs invests the difference (adjusted by discipline %).</p>
+            <p><strong>International Tax Buckets:</strong> Bucket A (no deduction): CA, UK, AU, DE, IE, NZ, FR, ES, IT, and most of the world. Bucket B (partial deduction): NL, SE, CH. US is the global outlier with full mortgage interest deduction. Japan, Singapore, South Korea have structural disclaimers.</p>
+            <p style={{ color: "#888", fontSize: 11 }}><strong>Sources:</strong> Poterba (QJE 1984) · Shiller · Jordà-Schularick-Taylor (QJE 2019) · Himmelberg-Mayer-Sinai (JEP 2005) · Bernstein-Koudijs (QJE 2024) · Ben Felix / PWL Capital · UBS RE Bubble Index 2025</p>
+            <p style={{ color: "#dc2626", fontSize: 11, marginTop: 8 }}>Educational and discussion purposes only. Not financial advice.</p>
           </div>
         )}
       </div>

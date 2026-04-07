@@ -579,6 +579,7 @@ const RESEARCH_FILES = [
   { name: "What the Model Doesn't Capture", file: "what_model_doesnt_capture.md" },
   { name: "Math Verification & Bug Audit", file: "rent-vs-buy-sim-audit.md" },
   { name: "UI/UX Design Research", file: "UI_and_UX_Research_Report.md" },
+  { name: "FAQ: 115 Research-Backed Questions", file: "FAQ.md" },
 ];
 
 function runSensitivity(params, hp) {
@@ -744,6 +745,8 @@ function RentVsBuyV3() {
   const [cusOvr,setCusOvr]=useState(saved?.co||{});
   const [chartType,setChartType]=useState("advantage");
   const [showData,setShowData]=useState(false);
+  const [chartDescOpen,setChartDescOpen]=useState(true);
+  const [bannerOpen,setBannerOpen]=useState(true);
   const [guideTab,setGuideTab]=useState("overview");
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
@@ -753,6 +756,8 @@ function RentVsBuyV3() {
   // Dynamic theme — update module-level T and S on each render
   T = THEMES[theme]||THEMES.light;
   S = buildS(T);
+  // Re-open chart description when chart type changes
+  useEffect(()=>setChartDescOpen(true),[chartType]);
   // Update body background and CSS custom props for slider theming
   document.body.style.background = T.bg;
   document.documentElement.style.setProperty("--slider-bg",T.slider);
@@ -859,7 +864,15 @@ function RentVsBuyV3() {
       <div style={{textAlign:"center",marginBottom:20,paddingTop:8}}>
         <h1 style={{fontSize:32,fontWeight:700,letterSpacing:"-0.03em",marginBottom:6}}>Should I Rent or Buy?</h1>
         <div style={{fontSize:14,color:T.text2,marginBottom:12}}>Research-backed financial simulation · {METROS.length} metros · 16 countries</div>
-        <div style={{display:"flex",justifyContent:"center",gap:8,alignItems:"center",flexWrap:"wrap",marginBottom:8}}>
+        <div style={{display:"flex",justifyContent:"center",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:8}}>
+          {/* Tutorial toggle switch */}
+          <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer"}} onClick={()=>setTutorial(!tutorial)} title="Step-by-step guide through each section">
+            <span style={{fontSize:12,fontWeight:600,color:tutorial?T.accent:T.text3}}>Tutorial</span>
+            <div style={{width:40,height:22,borderRadius:11,background:tutorial?T.accent:T.border,padding:2,transition:"all 200ms",display:"flex",alignItems:tutorial?"center":"center",justifyContent:tutorial?"flex-end":"flex-start"}}>
+              <div style={{width:18,height:18,borderRadius:9,background:"#fff",boxShadow:"0 1px 3px rgba(0,0,0,0.2)",transition:"all 200ms"}}/>
+            </div>
+          </div>
+          {/* Theme selector */}
           <div style={{display:"flex",gap:4,alignItems:"center",background:T.muted,borderRadius:8,padding:"4px 6px",border:`1px solid ${T.border}`}} title="Color theme">
             {Object.entries(THEMES).map(([k,v])=>{
               const active=k===theme;
@@ -867,11 +880,19 @@ function RentVsBuyV3() {
               return <button key={k} onClick={()=>setTheme(k)} style={{width:active?"auto":22,height:22,borderRadius:11,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:dots[k]||T.muted,cursor:"pointer",fontSize:10,fontWeight:600,color:active?T.text1:"transparent",padding:active?"0 8px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>;
             })}
           </div>
-          <button onClick={()=>setTutorial(!tutorial)} style={{cursor:"pointer",background:tutorial?"#1e40af":T.card,color:tutorial?"#fff":T.text2,border:`1px solid ${tutorial?"#1e40af":T.border}`,borderRadius:8,padding:"10px 16px",fontSize:13,fontWeight:600,transition:"all 200ms"}}>{tutorial?"✕ Exit Tutorial":"🎓 Tutorial"}</button>
-          <div><button onClick={share} style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px 16px",fontSize:13,fontWeight:600,boxShadow:T.shadow}}>{copied?"✓ Copied!":"📋 Share Link"}</button></div>
+          {/* Share link */}
+          <button onClick={share} title="Saves all your inputs as a shareable URL" style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 14px",fontSize:12,fontWeight:600,boxShadow:T.shadow,transition:"all 200ms"}}>{copied?"Copied!":"Share Link"}</button>
         </div>
         <div style={{fontSize:11,color:T.text3,fontStyle:"italic"}}>Educational only — not financial advice</div>
       </div>
+
+      {/* OPEN SOURCE BANNER — dismissible per session */}
+      {bannerOpen&&<div style={{background:`${T.accent}11`,border:`1px solid ${T.accent}44`,borderRadius:10,padding:"10px 16px",marginBottom:16,display:"flex",alignItems:"flex-start",gap:10}}>
+        <div style={{flex:1,fontSize:12,lineHeight:1.7,color:T.text2}}>
+          <strong style={{color:T.text1}}>Open source, open research, nothing hidden.</strong> Every formula, default, and data source is documented. <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,fontWeight:600,textDecoration:"none"}}>View the source code and research docs on GitHub</a>, or download and start your own project from where this one left off.
+        </div>
+        <button onClick={()=>setBannerOpen(false)} style={{background:"none",border:"none",color:T.text3,cursor:"pointer",fontSize:16,padding:"0 4px",lineHeight:1}} title="Dismiss">✕</button>
+      </div>}
 
       {/* SUBTLE TUTORIAL NUDGE — only when tutorial is off */}
       {!tutorial&&<div style={{textAlign:"center",marginBottom:10,fontSize:12,color:T.text3}}>New here? The <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>setTutorial(true)}>Tutorial</strong> walks through each section, and the <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>{setGuideTab("faq");document.querySelector("details")?.setAttribute("open","");}}>FAQ</strong> below addresses common questions before you dive in.</div>}
@@ -879,7 +900,7 @@ function RentVsBuyV3() {
       {/* GUIDE */}
       {tutorial&&<div className="tut"><b>1</b>Start with the Guide — it explains the model's logic and academic sources in about 2 minutes.</div>}
       <details open style={{...S.card,padding:0}}>
-        <summary style={{padding:"14px 20px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.text1}}>📖 Guide, Methodology & Sources — Read This First</summary>
+        <summary style={{padding:"14px 20px",cursor:"pointer",fontSize:14,fontWeight:600,color:T.text1}}>Guide, Methodology & Sources — Read This First</summary>
         <div style={{borderTop:`1px solid ${T.border}`}}>
           <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,padding:"0 20px",flexWrap:"wrap"}}>
             {[["overview","How It Works"],["method","Methodology"],["limits","Sources & Limitations"],["faq","FAQ"]].map(([id,lbl])=>
@@ -905,7 +926,7 @@ function RentVsBuyV3() {
             {guideTab==="limits"&&<>
               <p style={{fontWeight:600,color:T.text1,fontSize:14,marginBottom:8}}>Full Research Reports</p>
               <div style={{marginBottom:12}}>
-                {RESEARCH_FILES.map((rf,i)=><div key={i} style={{marginBottom:4}}><a href={RESEARCH_BASE+rf.file} target="_blank" rel="noopener" style={{color:T.accent,fontWeight:500,textDecoration:"none"}}>📄 {rf.name}</a></div>)}
+                {RESEARCH_FILES.map((rf,i)=><div key={i} style={{marginBottom:4}}><a href={RESEARCH_BASE+rf.file} target="_blank" rel="noopener" style={{color:T.accent,fontWeight:500,textDecoration:"none"}}>{rf.name}</a></div>)}
               </div>
               <p style={{fontWeight:600,color:T.text1}}>What's NOT captured:</p>
               <p style={{marginTop:6}}><strong style={{color:T.text1}}>Favors buying:</strong> Refinancing optionality, HELOC access, home improvements, emotional stability, forced savings beyond principal.</p>
@@ -915,7 +936,8 @@ function RentVsBuyV3() {
               <p style={{marginTop:6,color:"#dc2626",fontSize:11,fontWeight:600}}>Educational only. Not financial advice.</p>
             </>}
             {guideTab==="faq"&&<>
-              <p style={{fontWeight:600,color:T.text1,fontSize:14,marginBottom:12}}>Common Questions & Different Approaches</p>
+              <p style={{fontWeight:600,color:T.text1,fontSize:14,marginBottom:6}}>Common Questions & Different Approaches</p>
+              <p style={{fontSize:11,color:T.text3,marginBottom:12}}>7 key questions below · <a href={RESEARCH_BASE+"FAQ.md"} target="_blank" rel="noopener" style={{color:T.accent,fontWeight:600,textDecoration:"none"}}>Full FAQ with 115 research-backed questions on GitHub</a> (use Ctrl+F to search)</p>
 
               <p><strong style={{color:T.text1}}>"Why not just compare investment returns vs. home appreciation?"</strong></p>
               <p style={{marginTop:4}}>Because that misses the three biggest forces: leverage (you control a $400K asset with $80K down — a 5× multiplier), transaction costs (6% selling + 3% closing = ~$36K on that same home), and tax treatment ($500K cap gains exclusion on a primary residence vs. 15% on investment profits). A pure returns comparison omits all three.</p>
@@ -965,6 +987,7 @@ function RentVsBuyV3() {
           {ff(personal.monthlyPayment)}/mo in {CUR_NAMES[cur]||cur}{toUSD(personal.monthlyPayment)} + {ff(personal.downPayment)} down → {ff(cusR.homePrice)} home{toUSD(cusR.homePrice)}.
         </div>
         {insights.map((ins,i)=><div key={i} style={{fontSize:13,marginBottom:4,color:T.text1}}>{ins.icon} {ins.text}</div>)}
+        {Math.abs(cusH?.advantage)>200000&&personal.discipline>=0.99&&<div style={{fontSize:12,color:T.text3,marginTop:6,padding:"6px 10px",background:T.muted,borderRadius:6,lineHeight:1.6}}>Why so large? At 100% discipline, your {ff(personal.downPayment)} down payment compounds at {fmtPct(cusP.investReturn)} for {hp} years. The ~{((cusP.investReturn-cusP.mortgageRate)*100).toFixed(0)}% spread between investment return and mortgage rate compounds monthly savings over decades. Try discipline at 70% for a reality check.</div>}
         {c.taxNote.includes("⚠️")&&<div style={{marginTop:8,fontSize:12,color:"#7a4f00",padding:"8px 12px",background:"#fff3cd",borderRadius:6,border:"2px solid #ffc107",fontWeight:500}}>⚠️ {c.name}: {c.taxNote.replace(/⚠️\s*\w+\s*\w*:\s*/i,"")}</div>}
         {warnings.length>0&&<div style={{marginTop:6,fontSize:11,color:"#7a6520",padding:"6px 10px",background:"#fff8e6",borderRadius:6,border:"1px solid #f0d860"}}>{warnings.map((w,i)=><span key={i}>⚠ {w} </span>)}</div>}
         {cur!=="USD"&&<div style={{display:"flex",alignItems:"center",gap:8,marginTop:6,flexWrap:"wrap"}}>
@@ -1014,8 +1037,12 @@ function RentVsBuyV3() {
       {/* CHART */}
       {tutorial&&<div className="tut"><b>5</b>Visualize the math — the dropdown switches between 6 views. <strong>"Advantage"</strong> = buyer wealth minus renter wealth (positive means buying wins). "Wealth paths" shows each side's total net worth. "Tornado" reveals which single assumption drives your result most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</div>}
       <div style={S.card}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div><div style={{fontSize:15,fontWeight:700}}>{CHARTS[chartType]?.title}</div><div style={{fontSize:11,color:T.text3,marginTop:2}}>{CHARTS[chartType]?.sub}</div></div>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:12}}>
+          <div style={{flex:1}}>
+            <div style={{fontSize:15,fontWeight:700}}>{CHARTS[chartType]?.title}</div>
+            {chartDescOpen&&<div style={{fontSize:11,color:T.text3,marginTop:4,lineHeight:1.6,background:T.muted,padding:"8px 10px",borderRadius:6,cursor:"pointer"}} onClick={()=>setChartDescOpen(false)}>{CHARTS[chartType]?.sub} <span style={{color:T.text3,fontSize:10}}>(click to collapse)</span></div>}
+            {!chartDescOpen&&<div style={{fontSize:10,color:T.accent,marginTop:2,cursor:"pointer"}} onClick={()=>setChartDescOpen(true)}>What does this chart show?</div>}
+          </div>
           <select style={S.select} value={chartType} onChange={e=>setChartType(e.target.value)}>
             {Object.entries(CHARTS).map(([k,v])=><option key={k} value={k}>{v.label}</option>)}
           </select>
@@ -1105,7 +1132,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.5 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.7 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div>This tool is for educational and discussion purposes only and does not constitute financial, tax, or investment advice.</div>
         <div style={{marginTop:2}}>Consult a qualified financial advisor before making real estate or investment decisions.</div>
       </div>

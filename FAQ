@@ -1,0 +1,394 @@
+# Rent vs. Buy FAQ: 115 Research-Backed Questions
+
+## How to use this FAQ
+
+This FAQ supports an interactive rent-vs-buy financial simulation tool. Questions are organized into 10 sections matching the most common areas of user confusion, criticism, and debate. Each answer is 2–4 sentences with citations where available. Tool-specific features are referenced in **[brackets]** where relevant. Use Ctrl+F to search by keyword.
+
+---
+
+## 1. Common criticisms of rent-vs-buy calculators
+
+**Q1. Why do different rent-vs-buy calculators give wildly different answers for the same inputs?**
+A Wall Street Journal test found that for identical inputs on a $320K home, Freddie Mac projected $56.6K in buyer savings, NerdWallet showed $76K, and Realtor.com showed $95K — a nearly 2.5× spread. This happens because calculators embed different hidden assumptions about tax treatment, opportunity cost, and which costs to include. The tool addresses this with full transparency: every assumption is editable, and the **[verdict confidence system]** (🟢🟡🔴) tells you whether the result is robust to reasonable variation.
+
+**Q2. Are most rent-vs-buy calculators biased toward buying?**
+Yes. The National Multifamily Housing Council (NMHC) conducted a systematic review and found "most are seriously flawed, with a bias toward ownership." They noted that all reviewed products were designed to help renters decide whether to buy — none helped owners evaluate whether they should rent instead. Common biases include overstating tax benefits, understating maintenance, and ignoring the opportunity cost of the down payment.
+
+**Q3. Why are results so sensitive to small assumption changes?**
+Because the calculation compounds over decades, a 1-percentage-point change in home appreciation or investment returns can shift the outcome by tens of thousands of dollars. The **[sensitivity tornado]** in this tool shows exactly how much each variable moves the needle, ranked by impact. Academic research consistently shows that appreciation rate, investment return, and time horizon dominate all other variables.
+
+**Q4. Do these calculators properly account for the opportunity cost of the down payment?**
+Most simple calculators ignore that a $60K–$200K+ down payment could be invested in stocks or index funds. The Independent Institute built their calculator specifically to address this: "These calculators greatly underestimate the opportunity costs of the road not taken." This tool models the full opportunity cost by having the **[renter invest the down payment equivalent]** from month one.
+
+**Q5. Don't these tools just tell people what they want to hear based on the assumptions they plug in?**
+This is the most universal criticism — "garbage in, garbage out." The solution is not to trust any single scenario but to stress-test assumptions. This tool's **[12 preset scenarios]** provide research-grounded starting points, and the **[sensitivity tornado]** reveals which assumptions actually matter. The **[verdict confidence system]** explicitly flags when the result is 🔴 Highly assumption-dependent.
+
+**Q6. Why don't calculators show a range of outcomes instead of a single number?**
+Most consumer calculators give a single deterministic answer, which creates false precision. The NMHC compared this to retirement planning where "it is useful to consider a range of possibilities." This tool uses the **[sensitivity tornado]** to show the range of plausible outcomes across each variable, helping users understand the full distribution of possibilities.
+
+**Q7. Are the default assumptions in most calculators accurate for my local market?**
+Rarely. A Bogleheads user found that "Zillow and Redfin's assumptions for property taxes are just straight-up wrong in Miami-Dade County — it's 2.1%, not the massively lower numbers they use." Insurance defaults are similarly unreliable, especially in climate-affected states. This tool includes **[54 metro-specific sourced data defaults]** to address this, but users should always verify local inputs.
+
+**Q8. Do calculators account for rising property taxes, insurance, and maintenance over time?**
+Many simple calculators treat these costs as fixed, which the NMHC specifically flagged as a major flaw. In reality, property taxes rise with assessed value, insurance premiums have surged 24% from 2021–2024 (Consumer Federation of America), and maintenance costs escalate with home age. Good models inflate these annually — this tool does so based on the appreciation and inflation assumptions.
+
+**Q9. Why don't calculators capture the time and labor costs of homeownership?**
+No calculator quantifies the hundreds of hours homeowners spend on maintenance, repairs, yard work, and renovation projects. As one Bogleheads user noted: "Time working on a house could be spent starting another business or doing things you enjoy." This is a genuine limitation — the tool captures financial costs but cannot assign a dollar value to personal time preferences.
+
+**Q10. Isn't comparing a 1-bedroom rental to a 3-bedroom house an apples-to-oranges problem?**
+Yes, and it is one of the most common analytical errors. Kellogg professor Craig Furfine (2025) showed that when comparing truly identical properties, the result in efficient markets tends toward indifference between renting and buying. This tool's **[monthly-payment-first architecture]** helps by anchoring on what you'd actually spend, but users should ensure they're comparing equivalent living situations.
+
+**Q11. Can I trust a calculator made by a mortgage lender or real estate company?**
+Be cautious. The NMHC found systematic pro-ownership bias in calculators hosted by industry players. Lender-hosted tools have a financial incentive to show buying is favorable. This tool is independent — it has no commercial affiliation with lenders, realtors, or rental platforms, and every assumption is user-editable and transparent.
+
+**Q12. Why does the time horizon matter so much more than any other input?**
+Transaction costs of 8–10% of home value must be amortized over the holding period. If you stay 5 years, those costs eat 1.6–2% per year of returns; at 20 years, only 0.4–0.5%. The Bogleheads wiki states plainly: "If you do not know if you will be in a property for more than 5 years, there is no financial advantage to owning." The tool models this month by month with **[month-precise amortization]**.
+
+---
+
+## 2. Investment return assumptions
+
+**Q13. Should I use 10%, 7%, or some other number for stock market returns?**
+The ~10% figure is the long-term nominal compound annual growth rate (CAGR) of the S&P 500 from Ibbotson/SBBI data (1926–present). After inflation, it is ~7%. The arithmetic average is ~12%. For a rent-vs-buy model, **7% nominal** (or ~4% real) is a defensible moderate assumption, as forward-looking estimates from Vanguard, BlackRock, and Morningstar cluster around 5–7% nominal for the next decade.
+
+**Q14. What is the difference between arithmetic and geometric mean returns, and why does it matter here?**
+The arithmetic mean is the simple average of annual returns; the geometric mean (CAGR) reflects actual compounded growth. With any volatility, geometric is always lower — the gap is approximately σ²/2 (~2 percentage points for stocks). Jacquier, Kane, and Marcus (2003, *Financial Analysts Journal*) showed that using arithmetic means for long-term projections creates upwardly biased forecasts that can differ by more than a factor of 2 at 40-year horizons.
+
+**Q15. What is volatility drag, and does it affect my calculation?**
+Volatility drag (or "variance drain," coined by Messmore, 1995, *Journal of Portfolio Management*) is the reduction in compound returns caused by fluctuations, approximated as σ²/2. For a portfolio with 15–20% standard deviation, the drag is about 1–2 percentage points. If the tool's investment return input represents a CAGR (geometric return), volatility drag is already embedded — no further adjustment is needed.
+
+**Q16. Why does Vanguard project only 3–5% for US stocks when the historical average is 10%?**
+Vanguard's Capital Markets Model (VCMM, Nov 2024) projects 2.8–4.8% nominal for US equities over the next 10 years. This is driven by elevated starting valuations — the Shiller CAPE ratio is strongly predictive of subsequent 10–20 year returns. Notably, international stocks are projected at 6.9–8.9%. Over 30+ year horizons, returns tend to mean-revert closer to historical averages (Kitces, 2016).
+
+**Q17. What does Aswath Damodaran's research say about expected returns?**
+Damodaran (NYU Stern) computes both historical and implied equity risk premiums. His implied ERP at the start of 2026 was 4.23% over US Treasury bonds, suggesting total expected equity returns of roughly 8.5–9%. He warns that the historical ERP of 5.4–7.0% comes with a standard error of 2.12%, creating a massive confidence interval, and advocates for implied (forward-looking) premiums over historical ones.
+
+**Q18. What does Michael Kitces recommend for return assumptions?**
+Kitces recommends a "regime-based" approach: project below-average returns for the first 10–15 years when starting valuations are high, then higher returns as valuations revert. He cautions against uniformly reducing long-term averages by a small amount, as this understates near-term risk while overstating long-term pessimism. In high-valuation environments, reducing equity return assumptions by ~1 percentage point below historical averages is reasonable.
+
+**Q19. Should I use historical returns or forward-looking estimates?**
+Forward-looking returns are more defensible but harder to pin down. Ed Easterling (Crestmont Research/AAII) showed the commonly cited 10% nominal figure is inflated by the low starting P/E of 10.2 in 1926 — had the sample started at a P/E of ~20, the average would be closer to 7%. A reasonable compromise: use 6–7% nominal, which accounts for forward-looking expectations, portfolio diversification, and investment costs/taxes.
+
+**Q20. What return should I assume if my renter portfolio isn't 100% stocks?**
+A balanced 60/40 portfolio has historically returned roughly 8–9% nominal (5–6% real), versus 10% for all-equity. Ben Felix (PWL Capital) uses 6.57% nominal based on a blend of historical and forward-looking P/E-based estimates. If investments are in taxable accounts, reduce by another 0.5–1% for annual tax drag on dividends and realized gains. The tool allows you to set this to whatever reflects your actual investment strategy.
+
+**Q21. Don't average investors earn much less than index returns?**
+Yes. DALBAR research consistently shows the average equity fund investor earns 2–4 percentage points less than the index due to poor timing (buying high, selling low). This behavioral shortfall is separate from the theoretical return debate and further weakens the "rent and invest" assumption. The tool's **[renter discipline slider]** (30–100%) directly addresses this by letting you model realistic investor behavior.
+
+**Q22. How does the 1926 start date bias historical return statistics?**
+The S&P 500's 1926 starting P/E of 10.2 was unusually low — essentially a near-bottom valuation. Over the subsequent 95+ years, P/E ratios expanded to 20–30+, contributing roughly 0.5–1% per year to returns from valuation expansion alone. This one-time tailwind won't repeat from today's elevated valuations. Ed Easterling (AAII) estimates the "true" long-run equity return is closer to 7% nominal absent this starting-point effect.
+
+---
+
+## 3. Tax treatment questions
+
+**Q23. How did the 2017 TCJA change the mortgage interest deduction?**
+The TCJA reduced the deductible mortgage cap from $1 million to $750,000, eliminated home equity interest deductions (unless used for home improvement), nearly doubled the standard deduction, and capped SALT deductions at $10,000. The share of returns claiming the mortgage interest deduction fell from 31% in 2017 to 11% in 2018 (Tax Policy Center). Pre-December 2017 mortgages were grandfathered at the old $1M limit.
+
+**Q24. How many taxpayers actually benefit from the mortgage interest deduction today?**
+Only about 9–11% of taxpayers now itemize, down from ~31% before TCJA (IRS data via Congressional Research Service). The remaining ~90% take the standard deduction and receive zero tax benefit from mortgage interest. Even among itemizers, higher-income households capture roughly 71% of the total deduction value (Joint Committee on Taxation).
+
+**Q25. What is the "excess itemization" concept, and why is it so important?**
+Only the portion of total itemized deductions that exceeds the standard deduction produces any tax savings. If a married couple has a $31,500 standard deduction (2025) and $28,000 in itemized deductions, their mortgage interest provides zero additional benefit. This tool uses the **[post-TCJA excess itemization method]** — the only correct approach — rather than the naive method of multiplying all mortgage interest by the marginal tax rate.
+
+**Q26. Can you give a concrete example of excess itemization?**
+A married couple with $20,000 mortgage interest, $10,000 SALT (at cap), and $5,000 charity has $35,000 total itemized deductions. Against a $31,500 standard deduction (2025), only the $3,500 excess generates savings — at a 24% marginal rate, that is $840/year in tax benefit. A naive calculation would show $20,000 × 24% = $4,800 — overstating the benefit by 5.7×. The tool computes this correctly.
+
+**Q27. What is the current standard deduction?**
+For 2025 (post-OBBBA): $15,750 single, $31,500 married filing jointly, $23,625 head of household. For 2026: $16,100 / $32,200 / $24,150 respectively. These thresholds are high enough that most homeowners — especially those with mortgages under ~$400K — cannot exceed them with itemized deductions alone.
+
+**Q28. What is the Section 121 capital gains exclusion?**
+When selling a primary residence, you can exclude up to $250,000 (single) or $500,000 (married filing jointly) of capital gains from taxation. You must have owned and lived in the home for at least 2 of the prior 5 years. There is no lifetime limit — it can be used once every 2 years. This is one of the largest tax advantages of homeownership and is modeled in the tool.
+
+**Q29. What is the SALT cap and how does it affect property tax deductions?**
+The SALT (State and Local Tax) deduction was capped at $10,000 from 2018–2024, raised to $40,000 for 2025–2029 (with income phase-down starting at $500K MAGI), and reverts to $10,000 in 2030. In high-tax states like New Jersey (median property tax ~$9,767), property taxes alone can approach the cap, limiting the federal deductibility of ownership costs. The tool accounts for this cap in its **[excess itemization calculation]**.
+
+**Q30. How do unrealized vs. realized capital gains affect the comparison?**
+Both homeowners and stock investors hold unrealized gains until they sell. Homeowners get the massive Section 121 exclusion ($250K/$500K tax-free), while renters pay 0–23.8% capital gains tax on stock profits. However, renters can time their sales and use tax-loss harvesting, while homeowners must sell the entire house to access equity. Both asset classes receive a stepped-up basis at death.
+
+**Q31. Does the mortgage interest deduction actually promote homeownership?**
+Research consistently says no. Studies by Glaeser and Shapiro, Sommer and Sullivan, and Gruber et al. (NBER) find the deduction does not increase homeownership rates — it primarily encourages purchase of larger, more expensive homes and increases household debt. OECD research concludes it becomes "partly capitalised in house prices" and is "largely ineffective in improving housing accessibility."
+
+**Q32. Are the TCJA tax provisions permanent?**
+The OBBBA (2025) made the $750K mortgage interest limit and the doubled standard deduction permanent. The SALT cap was raised to $40,000 through 2029 but reverts to $10,000 in 2030. These are the current law provisions modeled by the tool, but future legislation could change them. The **[fully editable custom panel]** lets users adjust tax assumptions for any scenario.
+
+**Q33. How should I handle taxes on the renter's investment portfolio in the model?**
+Stock investments in taxable accounts face annual tax drag on dividends (~1.5–2% yield × tax rate) and eventual capital gains taxes when sold. Tax-advantaged accounts (401k, IRA) defer or eliminate these taxes but have contribution limits and withdrawal restrictions. The tool's investment return input should reflect after-tax expected returns if the renter invests in taxable accounts, or pre-tax if using retirement accounts.
+
+---
+
+## 4. Behavioral finance and renter discipline
+
+**Q34. Do renters actually invest the savings difference between rent and a mortgage payment?**
+Almost never in practice. The Bernstein and Koudijs (2024, *Quarterly Journal of Economics*) study found that when Dutch households were forced to amortize mortgages, they accumulated wealth at nearly a 1:1 ratio — by cutting consumption, not by reducing other savings. This implies that without the forced mechanism, households consume rather than invest the surplus. Only about 50% of US households own any stocks at all (Federal Reserve SCF, 2019), with much lower participation among renters.
+
+**Q35. What is the "forced savings" effect of mortgage payments?**
+Mortgage amortization is one of the most powerful wealth-building mechanisms available because it is automatic and psychologically non-negotiable. Bernstein and Koudijs (2024) showed that mandatory amortization produces wealth accumulation close to $1 for every $1 of forced payment, even five years later. US households contribute $250–300 billion annually through mortgage amortization — comparable in magnitude to all 401(k) contributions combined (~$398 billion).
+
+**Q36. What is the renter discipline slider, and why does the tool include it?**
+The **[renter discipline slider]** (30–100%) lets you model what percentage of the savings difference the renter actually invests. At 100%, the renter invests every dollar of surplus — the theoretical ideal. At 30%, only 30% gets invested. The Bernstein-Koudijs finding that forced savings produces near-1:1 wealth accumulation, while voluntary savings does not, directly motivated this feature. Setting it below 100% reflects the behavioral reality for most renters.
+
+**Q37. What should I set the renter discipline slider to?**
+There is no universal answer, but evidence suggests 100% is unrealistic for most people. If you have automated investment systems (auto-transfers to index funds, employer retirement plans), 70–90% may be reasonable. If you would invest manually and sporadically, 30–50% is more realistic. The tool lets you see how sensitive the result is to this assumption — often, dropping from 100% to 70% flips the verdict from "rent" to "buy."
+
+**Q38. Is the 40:1 wealth gap between homeowners and renters really caused by homeownership?**
+The Federal Reserve's 2019 Survey of Consumer Finances shows median homeowner net worth of $255,000 vs. $6,300 for renters. However, this largely reflects selection effects — wealthier, older, more financially stable households are more likely to buy. The forced savings mechanism contributes, but income, education, financial literacy, and lifecycle stage differ significantly between the groups. Causation and correlation are difficult to disentangle.
+
+**Q39. How does loss aversion affect home-selling decisions?**
+Genesove and Mayer (2001, *Quarterly Journal of Economics*) showed that sellers facing nominal losses set asking prices 25–35% above expected selling prices and take significantly longer to sell. Kahneman and Tversky's prospect theory (1979) explains this: losses feel roughly twice as painful as equivalent gains. This makes homeowners reluctant to sell at fair market prices during downturns, reducing mobility and sometimes leading to worse financial outcomes.
+
+**Q40. Why do homeowners consistently overestimate their home's appreciation?**
+People cite nominal price gains without deducting property taxes (~1%), maintenance (1–2%), insurance, and transaction costs (5–6% on sale). Leverage creates an illusion: a 4% home appreciation on a 20% down payment looks like a 20% return on equity. Inflation masking is also powerful — a home bought for $200K and sold for $400K after 20 years looks like 100% gain, but at 3% inflation, the real gain is far smaller. US Census data shows homeowners report ~2% real appreciation when the Case-Shiller index shows only ~0.7%.
+
+**Q41. How does the endowment effect distort housing valuations?**
+Homeowners systematically overvalue their property simply because they own it (Kahneman, Knetsch, and Thaler, 1991, *Journal of Economic Perspectives*). Multiple reference points — purchase price, renovation costs, neighborhood perceptions — compound this effect. A 2024 study by Tomal in *Real Estate Management and Valuation* confirmed this bias persists in housing markets specifically. This leads to overpriced listings and longer time-on-market.
+
+**Q42. What are the most common emotional errors in the rent-vs-buy decision?**
+The biggest are: social pressure to own ("keeping up with the Joneses" — Fannie Mae found 67% cite lifestyle, not financial, reasons to buy); anchoring on mortgage-vs-rent payment instead of total costs; FOMO in hot markets leading to overbidding; overstating tax benefits; and ignoring the opportunity cost of a six-figure down payment. Ben Felix's core insight is that comparing mortgage payment to rent is "a mathematically flawed way to think about it."
+
+**Q43. Is rent really "throwing money away"?**
+This is widely considered a myth by financial planners. Homeowners also "throw away" money on mortgage interest (85% of early payments), property taxes, insurance, maintenance, HOA fees, and transaction costs — none of which build equity. As one Bogleheads commenter summarized: "Rent is the ceiling of what you'll pay for housing per month; with buying, the mortgage is just the floor." A 30-year study by the Financial Planning Association (1984–2013) found "the optimal decision was not always homeownership."
+
+---
+
+## 5. Housing market assumptions
+
+**Q44. What is the real (inflation-adjusted) return on housing historically?**
+Robert Shiller's data shows long-run real home price appreciation of approximately **0–1% per year** (~0.7% from 1940–present). His famous chart demonstrates a "remarkable tendency for real home prices to return to their 1890 level." Nominal returns of 3–4% per year largely reflect inflation, not real wealth creation. Individual markets deviate substantially from this average.
+
+**Q45. What does the Case-Shiller index show recently?**
+As of January 2026, the S&P Case-Shiller 20-City Index rose only 1.2% year-over-year — the weakest since July 2023. For 8 consecutive months, home price growth lagged consumer inflation, meaning real home values were declining. Regional divergence is stark: New York +4.9% versus Tampa −2.5%, illustrating why national averages can mislead. The tool's **[54 metro-specific defaults]** address this variation.
+
+**Q46. What depreciation rate should I assume for housing?**
+Poterba (1992) uses ~2% per year for owner-occupied housing physical depreciation. Combined with maintenance, total physical deterioration runs 2–3% of home value annually. Ben Felix and Statistics Canada use 2.1% of building value for depreciation plus maintenance combined. This hidden cost is often overlooked — it means a home must appreciate by 2–3% per year just to maintain its real value.
+
+**Q47. How much should I budget for home maintenance?**
+The 1% rule (1% of home value per year) is widely used but may be optimistic. Census Bureau data (2019) shows average actual spending of ~0.6%, but this likely reflects deferred maintenance. Financial advisors recommend budgeting 1–2% for newer homes and up to 4% for older homes (30+ years). Angi/HomeAdvisor data shows average annual upkeep at ~$3,192. The tool defaults to research-backed rates that users can adjust.
+
+**Q48. What are total transaction costs for buying and selling a home?**
+Round-trip costs total approximately **8–10% of home value**: real estate commissions (5–6% split between agents), plus closing costs on both ends (title insurance, escrow, transfer taxes, inspections, loan fees = another 2–5%). These are the largest single drag on housing returns for short holding periods. At a 7-year hold, 8% transaction costs eat 1.1% annually from returns.
+
+**Q49. How have real estate commissions changed after the 2024 NAR settlement?**
+Despite the $418 million NAR antitrust settlement (August 2024) that banned advertising buyer agent commissions on MLS, total commissions have not significantly declined. Redfin data shows buyer agent commissions at ~2.34% (Oct 2024), while total commissions average 5.5–5.7% nationally. The settlement primarily increased transparency through mandatory buyer representation agreements, but cost reduction has been modest so far.
+
+**Q50. How much has homeowner's insurance increased recently?**
+Dramatically. S&P Global reports national premiums rose 10.4% in 2024 following 12.7% in 2023. The Consumer Federation of America found a cumulative 24% increase from 2021–2024, with the typical annual premium reaching ~$3,303. Matic data shows a 2021 policyholder was paying 69% more by their 2024 renewal. Climate-affected states are far worse: Nebraska averages ~$6,400/year. These escalating costs increasingly favor renting.
+
+**Q51. How much do property taxes vary across the US?**
+Enormously. Effective rates range from **0.29% (Hawaii) to 2.47% (New Jersey)** — an 8.5× difference. Median annual bills range from $738 (Alabama) to $9,767 (New Jersey). The national average effective rate is ~0.89% with an average annual bill of ~$4,271 (NAHB, 2024). This tool includes **[metro-specific property tax defaults]** because using a national average in New Jersey or Hawaii would be misleading.
+
+**Q52. What is Poterba's "user cost" of housing, and why does it matter?**
+Poterba's formula (1984) captures the annual economic cost of ownership per dollar of house value: interest rate + property taxes + depreciation/maintenance − expected appreciation. For typical inputs (6% mortgage, 1.5% property tax, 2–3% depreciation, minus 3–4% appreciation), user cost runs 6–10% of home value annually. Tax deductions reduce this for itemizers, but with ~90% of filers taking the standard deduction, the subsidy is smaller than commonly assumed.
+
+**Q53. Does homeownership build more wealth than renting and investing?**
+It depends entirely on assumptions. Shiller's ~0.7% real appreciation versus the stock market's ~7% real return would seem to favor renting-and-investing. But housing has leverage (5:1 typical), imputed rent yield (3–5%), and forced savings. The total return including imputed rent makes housing more competitive (Jordà et al., 2019). The real question is behavioral: will you actually invest the difference? The **[renter discipline slider]** lets you model this honestly.
+
+---
+
+## 6. Methodology questions
+
+**Q54. What does "monthly-payment-first" framing mean, and why does this tool use it?**
+Most calculators are "home-price-first" — you enter a home price and the tool derives a monthly payment. This tool's **[monthly-payment-first architecture]** reverses the flow: you enter your actual monthly housing budget, and the tool derives the affordable home price from your payment, down payment percentage, and rate. This is more realistic because most people budget by monthly cash flow, not by total home price.
+
+**Q55. What is symmetric surplus investing, and why is it critical?**
+**[Symmetric surplus investing]** means that whoever has lower monthly costs — buyer or renter — invests the difference. Early on, the renter typically invests surplus (rent < total ownership cost). Later, the buyer may invest surplus (ownership cost < escalating rent, especially after mortgage payoff). Without this symmetry, the comparison is unfair — it either penalizes the renter by ignoring their savings or penalizes the buyer by ignoring post-payoff surpluses.
+
+**Q56. What is the difference between a "snapshot" model and a "transition" model?**
+A snapshot model compares costs at a single point in time — Ben Felix's 5% Rule is a pure snapshot. A transition model simulates the full timeline month by month, including amortization, rent escalation, portfolio growth, appreciation, tax effects, and transaction costs at exit. Transition models reveal that buying typically loses in early years (high interest + transaction costs) but wins over longer horizons. This tool is a full transition model with **[month-precise amortization]**.
+
+**Q57. How important is month-precise vs. annual amortization?**
+Monthly precision matters most in the first 5–10 years when the interest-to-principal ratio changes rapidly. The first payment on a $400K loan at 7% is ~$2,333 interest vs. ~$329 principal — a 7:1 ratio. Annual approximation can distort tax deduction calculations and equity-buildup timing. For analyses under 10 years, monthly precision can shift the breakeven by several months. This tool uses **[month-precise amortization]** throughout.
+
+**Q58. What is the "excess itemization" method versus the naive method for tax benefits?**
+The naive method multiplies total mortgage interest by the marginal tax rate. The excess itemization method (used by this tool) first computes total itemized deductions, subtracts the standard deduction, and only applies the tax rate to the excess. Post-TCJA, the naive method can overstate benefits by 3–6× for typical homebuyers. The NMHC found they "could not find even a single calculator that correctly estimates tax savings for homeowners" — this tool does.
+
+**Q59. Which variable matters most in a rent-vs-buy calculation?**
+Sensitivity analyses across multiple calculators consistently show the same ranking: (1) home appreciation rate — the single most sensitive variable; (2) investment return rate; (3) time horizon; (4) mortgage interest rate; (5) rent growth rate. Maintenance, insurance, and property taxes matter but have comparatively smaller effects. The **[sensitivity tornado]** in this tool quantifies exactly how much each variable moves the outcome in dollar terms.
+
+**Q60. What is a tornado diagram, and how should I interpret this tool's version?**
+A tornado diagram is a horizontal bar chart ranking variables by their impact on the outcome. Each variable is independently varied between pessimistic and optimistic values while others are held constant. The widest bar (at the top) represents the most impactful assumption. If the **[sensitivity tornado]** shows home appreciation creating a ±$150K range while maintenance creates only ±$15K, focus your research energy on getting the appreciation estimate right.
+
+**Q61. Can dimensional analysis identify what really drives the rent-vs-buy decision?**
+Conceptually, yes. The Buckingham Pi theorem from physics suggests that ~15 input variables can be collapsed into a few key dimensionless ratios: the price-to-annual-rent ratio, the appreciation-minus-investment-return spread, and the effective unrecoverable-cost rate (Felix's 5% rule is essentially this). Academic work by Ganchev (2023) and Jong (1967) has explored applying dimensional analysis to economics. Rather than tracking every variable, focus on these 3–4 ratios.
+
+**Q62. How does Ben Felix's 5% Rule work as a quick snapshot?**
+Multiply home value by 5%, divide by 12. If your rent is below that number, renting may be better. The 5% represents ~1% property tax + ~1% maintenance + ~3% opportunity cost of capital. For a $500K home: $500K × 5% ÷ 12 = $2,083/month breakeven rent. Felix notes that if your portfolio is not 100% equities, use 4% instead. This is a useful screening tool but lacks the precision of a full transition model like this one.
+
+**Q63. How does this tool's architecture differ from the NYT calculator?**
+The NYT calculator is home-price-first and uses annual approximation. It has been criticized for not properly implementing excess itemization (Bogleheads, multiple threads) and for not letting users input existing SALT deductions. This tool uses **[monthly-payment-first framing]**, **[month-precise amortization]**, the **[post-TCJA excess itemization method]**, **[symmetric surplus investing]**, and the **[renter discipline slider]** — addressing the five most common methodological criticisms of existing tools.
+
+---
+
+## 7. What rent-vs-buy models typically miss
+
+**Q64. What is the refinancing "call option" and why don't calculators include it?**
+A US fixed-rate mortgage gives homeowners a free option to prepay and refinance at lower rates when rates drop, while keeping the existing rate when rates rise. Yale economist John Geanakoplos describes this option value as "very large." Kalotay and Fu's option-pricing models show it can substantially alter the effective cost of a mortgage. Most calculators — including this one — assume a fixed rate for simplicity, meaning they understate the potential benefit of buying in volatile rate environments.
+
+**Q65. How does PMI affect the calculation, and how should I handle it?**
+Private mortgage insurance costs 0.2–2% of the loan annually (typically 0.5–1%) and is required on conventional loans with less than 20% down. Under the Homeowners Protection Act, it automatically cancels at 78% LTV. FHA mortgage insurance premiums (1.75% upfront + 0.85% annual) are harder to cancel. PMI adds $50–$500/month initially but phases out, meaning early-year ownership costs are temporarily higher than the long-run average.
+
+**Q66. Why is concentration risk a major concern with homeownership?**
+For most households, the home is the single largest asset — a single undiversified bet on one property, one neighborhood, one local economy. The St. Louis Fed's William Emmons found that individual home prices can be twice as volatile as broad house-price indexes, and that "leveraged homeownership is riskier than non-housing wealth and provides returns that are no higher." Stanford economists Piazzesi and Schneider note this leads to "low Sharpe ratios on housing."
+
+**Q67. How does real estate's illiquidity compare to stocks?**
+Real estate has 5–6% transaction costs (vs. near-zero for stocks), takes months to sell (vs. seconds), and timing is often dictated by life events rather than market conditions. FHFA research (2024) found the mortgage rate lock-in effect caused a 57% reduction in fixed-rate mortgage home sales — for every percentage point market rates exceed the origination rate, selling probability falls 18.1%. This illiquidity is a genuine risk that no calculator fully captures.
+
+**Q68. What is the economic value of a renter's geographic flexibility?**
+Ferreira, Gyourko, and Tracy (2010) found that homeowner mobility drops almost 50% with negative equity. SSA data shows workers under 40 who relocate earn more than those who stay. FHFA (2024) estimates rate lock-in prevented 1.33 million home sales between 2022Q2 and 2023Q4. Geographic mobility has halved since the 1950s (Third Way). For younger, career-building workers, the option value of being able to chase job opportunities is substantial and unquantifiable by any calculator.
+
+**Q69. What is "imputed rent" and why does it dramatically change housing return calculations?**
+Imputed rent is the rental income homeowners effectively "earn" by living in their home instead of paying rent. Jordà, Knoll, Kuvshinov, Schularick, and Taylor (2019, *Quarterly Journal of Economics*) found that adding imputed rent to price appreciation, housing had higher average returns than equities across 16 countries from 1870–2015, with lower volatility. This "total return" perspective makes housing much more competitive than price-only statistics suggest.
+
+**Q70. Does homeownership actually make people happier?**
+Research shows a real but fading effect. A Korean panel study (2025) found homeownership creates a happiness spike that gradually declines due to hedonic adaptation. A German study (2023) found the positive effect on life satisfaction reduces by more than half when accounting for mortgage financial burden — mortgage-holders were significantly less satisfied with their income than renters. Stability and community benefits are real, but they cannot be quantified in financial models.
+
+**Q71. How does rent control change the rent-vs-buy calculation?**
+Rent control dramatically favors renting by capping rent increases at 1–2% annually instead of market rates of 3–5%. This extends the breakeven period for buying significantly. However, rent-controlled tenants face their own lock-in — leaving means entering the open market at much higher rates. Research shows rent control reduces residential mobility, decreases housing quality, and can paradoxically reduce overall housing supply (D.C. Policy Center, 2025).
+
+**Q72. How does mortgage leverage amplify both gains and losses?**
+With 20% down (5:1 leverage), a 10% home price increase creates a 50% return on equity; a 10% decline wipes out 50%. During the 2008 crisis, the St. Louis Fed reported "the average loss of homeowners' equity was in the neighborhood of 70 percent" due to leverage amplification. With FHA's 3.5% down payment (28:1 leverage), a mere 3.5% price decline eliminates all equity. Leverage makes housing both the highest-upside and highest-downside option.
+
+**Q73. What about HELOCs and the ability to borrow against home equity?**
+Homeowners can access accumulated equity through HELOCs or cash-out refinancing at relatively low secured rates — a form of liquidity unavailable to renters. This borrowing capacity acts as a flexible financial tool for emergencies, education, or investment. However, it also creates risk: borrowing against a potentially declining asset during downturns can lead to negative equity, as many homeowners learned in 2008–2010.
+
+**Q74. Does the "mortgage lock-in effect" trap homeowners?**
+Yes. FHFA research (2024) found that rate lock-in led to a 57% reduction in home sales for fixed-rate mortgage holders. Quigley (1987) showed a 200 basis point rate increase was associated with roughly one-third lower moving probability over 8 years. When you have a 3% mortgage and market rates are 7%, selling means giving up $15K+/year in below-market financing — a powerful financial handcuff that no rent-vs-buy calculator models.
+
+**Q75. What about converting the home to a rental property instead of selling?**
+Most calculators assume you sell at the end of the analysis, but some owners convert to landlording. This eliminates the 5–6% selling commission and generates ongoing rental income, but changes the tax profile (depreciation, passive income rules) and introduces landlord responsibilities. The Section 121 capital gains exclusion requires you to have lived in the home 2 of the last 5 years, so renting it out for more than 3 years before selling forfeits the exclusion.
+
+---
+
+## 8. International considerations
+
+**Q76. Do all countries offer a mortgage interest tax deduction like the US?**
+No. Only a handful do: the US, Netherlands (being phased down), Denmark (~33.5% deductible), Switzerland, Belgium, and Ireland. Major economies without it include the UK (eliminated in 2000), Germany, Canada, Australia, France, and Japan. OECD research finds these deductions become "partly capitalised in house prices" and are "largely ineffective in improving housing accessibility." Canada's ~68.5% homeownership rate exceeds the US (~63%) despite having no deduction.
+
+**Q77. Which countries exempt primary residence capital gains from taxation?**
+Most developed countries offer some form of exemption: the US ($250K/$500K under Section 121), UK (Principal Private Residence Relief — full exemption), Canada (Principal Residence Exemption — full), Australia (Main Residence Exemption — full), Germany (exempt after 10 years ownership or 2+ years residence), and Japan (first ¥30M per owner). This near-universal exemption is one of the most powerful global subsidies for homeownership.
+
+**Q78. How does Japan's building depreciation system fundamentally change the rent-vs-buy equation?**
+Japan mandates that wooden buildings depreciate to zero book value over 22 years (47 years for reinforced concrete). Banks will not lend against buildings that have exceeded their statutory useful life. The average Japanese house is demolished after ~30 years versus 55 years in the US. This means housing is a depreciating consumer good, not an appreciating investment — only the land retains value. The rent-vs-buy calculus shifts entirely toward consumption utility rather than wealth building.
+
+**Q79. What is Singapore's HDB system?**
+Singapore's Housing and Development Board houses ~80% of residents in government-built apartments sold on 99-year leases at heavily subsidized prices. First-timer families receive grants up to $230,000, and ~80% pay their mortgage entirely through mandatory CPF savings with no cash outlay. This essentially eliminates the traditional rent-vs-buy decision — buying is the default and most affordable option. However, the 99-year leasehold means it is closer to "long-term renting" than freehold ownership.
+
+**Q80. How does South Korea's jeonse system work as a third option?**
+Under jeonse, tenants pay a lump-sum deposit of 50–80% of property value (averaging ~$520,000 in Seoul) instead of monthly rent. The deposit is returned in full after 2 years; the landlord invests the deposit and keeps returns. This was mutually beneficial when interest rates were high, but low rates since 2008 have made it less attractive. In April 2022, monthly rent contracts surpassed jeonse for the first time, and Korea's government has signaled the system's days may be numbered.
+
+**Q81. Why does Germany have such a low homeownership rate, and what does this tell us?**
+Germany's ~46–51% ownership rate — among the lowest in the developed world — results from no mortgage interest deduction, high transaction costs (8–12% total including 3.5–6.5% transfer tax), strong tenant protections (indefinite leases, rent caps of 10–15% over 3 years), quality rental housing stock, and cultural acceptance of lifelong renting. The Bundesbank found these policies collectively tilt incentives toward renting. This demonstrates that with proper regulation, renting can be a stable, viable long-term strategy.
+
+**Q82. What is Australia's negative gearing, and how does it affect housing?**
+Negative gearing allows Australian investors to deduct net rental property losses against all personal income. Combined with a 50% capital gains tax discount for assets held over 1 year, it costs $10.9 billion annually in foregone revenue (2023–24). The Grattan Institute estimates it raises house prices by 1–2%. No other major economy offers this combination at scale, making Australia's housing market structurally different from others. This tool's **[16-country support]** accounts for such structural differences.
+
+**Q83. How do property transfer taxes and stamp duties vary globally?**
+Enormously. Belgium charges the highest stamp duty (~11.3%), Germany 3.5–6.5% transfer tax, UK 0–12% (plus 5% surcharge for additional properties). The US has among the lowest transfer taxes (~0.6%). In Germany, 8–12% total closing costs mean you need much longer to break even versus a US purchase with 2–3% closing costs. These differences make international comparisons of rent-vs-buy outcomes meaningless without local context.
+
+**Q84. How do international differences affect this tool's metro-specific data?**
+The tool covers **[16 countries and 54 metros]** precisely because the rent-vs-buy calculation is fundamentally different in each. Mortgage structures (US 30-year fixed vs. UK variable/tracker), tax treatment (deductions, exemptions), transaction costs (0.6–12%), rental protections (Germany's indefinite leases vs. US annual renewals), and cultural norms all vary. A model built for one country cannot be applied to another without recalibrating essentially every input.
+
+---
+
+## 9. Analytical approaches and comparisons
+
+**Q85. How does a deterministic model differ from a Monte Carlo simulation?**
+A deterministic model (like this tool) uses fixed assumptions and produces a single outcome — transparent and easy to audit. Monte Carlo simulation runs thousands of scenarios with randomly varying inputs, producing a probability distribution. An MIT study found Monte Carlo models can produce expected values $500K+ different from deterministic models using the same average inputs, because compounding is nonlinear. Both approaches have merits; deterministic models are better for building intuition, while Monte Carlo better captures uncertainty.
+
+**Q86. Why doesn't this tool use Monte Carlo simulation?**
+Deterministic models with sensitivity analysis offer key advantages: every result is reproducible, every assumption is transparent, and the **[sensitivity tornado]** reveals which variables drive outcomes. Monte Carlo can give false precision — users see a "65% probability" and stop thinking critically. This tool's approach is to show the clear algebra, then let users stress-test assumptions through the tornado diagram and **[12 preset scenarios]**, which effectively achieves scenario-based analysis.
+
+**Q87. What does the sensitivity tornado actually tell me?**
+It shows the dollar impact of varying each assumption by a standardized amount (e.g., ±1 percentage point or ±10%) while holding all other inputs constant. The widest bar at the top is the most sensitive variable — the one where getting the assumption wrong costs you the most. If the verdict is 🟢 Robust (favorable across all reasonable variations), you can trust it. If 🔴 Highly assumption-dependent, the outcome hinges on forecasts you cannot verify.
+
+**Q88. What does the verdict confidence system (🟢🟡🔴) mean?**
+**[🟢 Robust]** means one option wins under nearly all reasonable assumption variations — you can act with confidence. **[🟡 Fragile]** means the verdict holds for the base case but flips under plausible alternative assumptions — proceed with caution. **[🔴 Highly assumption-dependent]** means the outcome is essentially a coin flip that depends on unknowable future rates of appreciation, returns, or rent growth — non-financial factors should probably decide.
+
+**Q89. What is the price-to-rent ratio, and is it a reliable shortcut?**
+The price-to-rent ratio (home price ÷ annual rent) is the most widely used single metric. When P/R exceeds ~20×, renting tends to be more favorable; below ~15×, buying typically wins. Current US national average is ~14.3×, but it ranges from ~11× (Cleveland) to ~37× (San Jose). It is useful for initial screening but cannot capture interest rates, tax benefits, time horizon, or expected appreciation — a full model is needed for actual decisions.
+
+**Q90. How do professional real estate analysts model rent-vs-buy differently?**
+Professionals use detailed DCF models with year-by-year projections, multiple scenarios (base/optimistic/pessimistic), sensitivity analysis with tornado diagrams, and sometimes Monte Carlo simulation. They model specific tax effects including AMT and depreciation recapture, account for transaction costs on both sides, consider portfolio-level diversification effects, and price optionality. Consumer tools typically produce a single breakeven point from fixed inputs.
+
+**Q91. Which combination of assumptions is most likely to flip the result?**
+The appreciation-minus-investment-return spread is the most decisive combined variable. If homes appreciate faster than stocks return (rare historically but common in some recent markets), buying wins almost regardless of other assumptions. If stocks outperform appreciation by 4+ percentage points and the renter actually invests the difference, renting wins almost regardless. The **[sensitivity tornado]** reveals whether your result depends on this spread or is robust to it.
+
+---
+
+## 10. Practical decision-making
+
+**Q92. What is the 5-year rule for buying a home?**
+Most financial advisors recommend staying at least 5 years to recoup transaction costs (8–10% round-trip) and build meaningful equity. Early mortgage payments are heavily interest-loaded — at 5% on a $200K mortgage, roughly $48K goes to interest in the first 5 years versus only ~$16K to principal. Fidelity states: "If you're planning to stay less than 3 years, it likely doesn't make financial sense to buy." NAR data shows the median owner actually stays 12 years, far exceeding the minimum.
+
+**Q93. What are current price-to-rent ratios in major US cities?**
+As of late 2024–early 2025 (Clever Real Estate, SoFi, Redfin): Cleveland ~11 (strong buy), Pittsburgh ~12, national average ~14.3, Boston ~25, Denver ~28, San Diego ~32, San Francisco ~36, San Jose ~37–45 (strong rent). Renters nationally save ~$289/month more than homeowners, and monthly rent is cheaper than the mortgage payment in 48 of the 50 most populous US cities.
+
+**Q94. What do financial advisors actually tell clients about rent vs. buy?**
+Most CFPs emphasize personal readiness over market timing: stable income, 3–6 months emergency fund remaining after closing, DTI under 36%, confidence of staying 5+ years, and no competing high-interest debt. They stress that the financial calculation is only one input — career trajectory, relationship stability, lifestyle preferences, and local market conditions should weigh equally. Tyler End (CFP, Retirable): "The biggest reason to work with an advisor is that it's usually an emotional-based decision."
+
+**Q95. When should I ignore the rent-vs-buy model entirely?**
+When non-financial factors dominate. Always buy (even if numbers favor renting) when you have deep stability needs, require specific home modifications, or genuinely lack investment discipline. Always rent (even if numbers favor buying) when you will likely move within 3–5 years, your relationship is unstable, you would deplete your emergency fund, or you are in career transition. As Sheryl Garrett (CFP) advises: "Think about whether you really want to be tied down when you have the opportunity to be flexible."
+
+**Q96. How should someone early in their career think about this decision?**
+Most advisors strongly recommend renting in early career. Job mobility is crucial — ATTOM Data's Daren Blomquist notes that if you might relocate within 5 years, you should probably keep renting. Early-career income is typically lowest, meaning you would lock into a property below your eventual means. The opportunity cost of tying up a large down payment during peak compound-growth years is significant. Focus first on emergency fund, high-interest debt, and retirement match contributions.
+
+**Q97. How do relationship and family timing affect the decision?**
+If buying with an unmarried partner, advisors strongly recommend a cohabitation agreement and careful title structure. Over 30% of Americans aged 18–29 want to buy before marriage (The Knot). If relationship stability is uncertain, renting preserves flexibility — divorce with a jointly-owned home is far more costly than ending a lease. NAR data shows only 24% of 2025 buyers had children under 18, a historic low from 58% in 1985, suggesting parenthood is less tightly coupled to homebuying than it once was.
+
+**Q98. Is "rent money throwing away" a valid reason to buy?**
+No. This framing is a well-documented cognitive bias. Ramit Sethi demonstrated the double standard: 95% of people agree restaurant meals aren't "throwing money away," but 19% say rent is — despite both being exchanges of money for value received. Homeownership's "unrecoverable costs" (interest, taxes, insurance, maintenance) often exceed total rent. The behavioral forced-savings advantage of a mortgage is real, but it is a separate argument from the "throwing money away" framing.
+
+**Q99. What percentage of first-time buyers get family help with the down payment?**
+NAR's 2025 Profile shows 22% of first-time buyers received gifts or loans from family/friends. Among Younger Millennials (25–33), this rises to 33%. HousingWire (2023) reports ~38% of first-time buyers under 30 relied on a gift or inheritance. The median first-time buyer down payment reached 10% in 2025 — the highest since 1989 — and the typical first-time buyer age hit a record 40 years old.
+
+**Q100. What do advisors say about timing the housing market?**
+The consensus is: don't try. Focus on personal and financial readiness, not market timing. Home prices are cyclical but trend upward long-term, and waiting for a "dip" means paying rising rents and potentially missing appreciation. ATTOM's Blomquist warns: "The longer you remain a renter during a boom, the harder it will be to afford a home." Buy when you are personally ready — stable job, adequate savings, 5+ year horizon — not when you think the market has bottomed.
+
+**Q101. How long does the median homeowner actually stay in their home?**
+Redfin (March 2026) reports the typical US homeowner stays 12 years, up from 6.5 years in 2005. NAR's 2025 data shows the median seller owned for 11 years before selling — an all-time high. Tenure varies dramatically by metro: Louisville (8.3 years) to Los Angeles (18–20 years, influenced by Prop 13 tax incentives). The renter median is just 2–3 years. Most owners far exceed the 5-year minimum breakeven threshold.
+
+**Q102. What is the 28/36 rule for mortgage affordability?**
+The 28/36 rule is a lending guideline (not law): spend no more than 28% of gross monthly income on total housing costs (PITI + HOA + PMI) and no more than 36% on all debt payments combined. Laurie Goodman (Urban Institute) notes it is "not a hard and fast rule" — lenders may approve higher DTIs for strong credit profiles. Being approved for more does not mean you should spend more; advisors recommend leaving room for savings, emergencies, and lifestyle.
+
+**Q103. What is house hacking, and how does it change the math?**
+House hacking means buying a multi-unit property (or home with rentable rooms), living in one unit, and renting the rest. It can reduce effective housing costs to near zero — a fourplex purchased with 3.5% FHA down payment where three units rent for $1,200/month each generates $3,600 against a ~$2,000 mortgage. Owner-occupied financing offers lower rates and down payments than investment loans. This strategy breaks the standard rent-vs-buy framework because you are both owner and landlord.
+
+**Q104. What practical checklist should I complete before buying?**
+Financial readiness requires: 3–6 months emergency fund remaining after down payment and closing costs, total DTI under 36%, credit score 700+ for best rates, stable income/career, plan to stay 5+ years, and ongoing retirement contributions. Red flags to stop: you would deplete your emergency fund, are buying primarily due to social pressure, expect career changes within 3 years, or haven't run the numbers at all.
+
+**Q105. How do current (2025–2026) market conditions specifically affect the decision?**
+Mortgage rates of 6–6.5% are elevated versus the 2020–2021 lows of 2.5–3%. The median home price is ~$416,900 (NAR), housing costs ~5× median income (vs. 3.5× in the mid-1980s), and homeownership costs are 21% higher than typical rent nationally. First-time buyers are only 21% of purchasers — the lowest since NAR began tracking. The salary needed to buy has roughly doubled since 2017. In most metros, current conditions favor renting; the "sweet spots" for buying are affordable Midwest and Southern cities.
+
+---
+
+## 11. How to interpret this tool's specific features
+
+**Q106. Why does this tool start with monthly payment rather than home price?**
+Because people budget by cash flow. The **[monthly-payment-first architecture]** ensures you are comparing realistic scenarios — what you would actually spend monthly. If you enter a $3,000/month budget, the tool derives the affordable home price given your down payment and rate. This avoids the common error of comparing a rental you can afford with a home you technically qualify for but that stretches your budget.
+
+**Q107. How should I use the 12 preset scenarios?**
+The **[12 preset scenarios]** represent research-grounded combinations of assumptions for common situations (e.g., "High-cost coastal city," "Affordable Midwest," "Post-pandemic Sun Belt"). Start with the preset closest to your situation to get baseline results, then use the **[fully editable custom panel]** to fine-tune inputs to your specific circumstances. Compare across 2–3 presets to build intuition for how assumptions drive results.
+
+**Q108. What does the verdict confidence indicator mean for my decision?**
+**[🟢 Robust]**: The same option wins even when assumptions are varied — act with high confidence. **[🟡 Fragile]**: The verdict holds narrowly but flips under plausible alternatives — consider non-financial factors as tiebreakers. **[🔴 Highly assumption-dependent]**: The outcome depends on unknowable futures — the model cannot tell you what to do, and your decision should be driven by personal circumstances, not financial projections.
+
+**Q109. Why does the tool have metro-specific data for 54 cities across 16 countries?**
+Because rent-vs-buy outcomes are fundamentally local. The price-to-rent ratio ranges from ~11× (Cleveland) to ~37× (San Jose). Property taxes range from 0.29% (Hawaii) to 2.47% (New Jersey). Mortgage structures, tax rules, and cultural norms differ across the **[16 supported countries]**. Using national averages in a local decision is a common source of error in simpler calculators. Each metro's defaults are sourced and cited.
+
+**Q110. How should I interpret the sensitivity tornado?**
+Read top to bottom: the widest bar represents the assumption that moves your outcome the most. If home appreciation is at the top with a ±$120K range, and property tax is at the bottom with ±$8K, you should spend your research time validating appreciation assumptions, not property tax rates. If the tornado shows all bars pointing the same direction (e.g., renting wins across all variations), the **[verdict confidence]** will be 🟢 Robust.
+
+**Q111. What is the renter discipline slider really measuring?**
+It measures behavioral follow-through: what fraction of the monthly savings difference the renter actually invests in their portfolio. At 100%, every dollar of surplus goes to investments — theoretically optimal but behaviorally rare. At 50%, half is spent on lifestyle inflation, dining, travel, or forgotten. Bernstein and Koudijs (2024) showed forced mortgage payments produce near-1:1 wealth accumulation, while voluntary savings do not. Honest self-assessment here can change the entire verdict.
+
+**Q112. How does this tool handle the tax calculation differently from other calculators?**
+This tool uses the **[post-TCJA excess itemization method]**: it computes total itemized deductions (mortgage interest + capped SALT + other deductions), subtracts the standard deduction, and only applies the tax rate to the excess. This is the only mathematically correct approach post-2017, but the NMHC found no consumer calculator implemented it correctly at the time of their review. The difference can be worth thousands of dollars per year in accuracy.
+
+**Q113. Can I model PMI in this tool?**
+The tool includes PMI as an input that can be specified based on your down payment percentage. PMI is modeled as a temporary cost that phases out when equity reaches 20% of home value (through appreciation and principal payments), consistent with the Homeowners Protection Act requirement for automatic cancellation at 78% LTV. This temporary-but-significant cost is often either ignored or treated as permanent by other calculators.
+
+**Q114. How does this tool handle the buyer investing surplus in later years?**
+Through **[symmetric surplus investing]**. When rental costs exceed total ownership costs — which commonly occurs as rents escalate while the fixed mortgage payment stays constant, and especially after the mortgage is paid off — the buyer invests the surplus. This prevents the unfair scenario where only the renter gets credit for investing savings, which would systematically bias results against buying.
+
+**Q115. What should I do if the verdict shows 🔴 Highly assumption-dependent?**
+A 🔴 result means the financial models genuinely cannot determine which option is better — the outcome depends on future home appreciation, stock market returns, and rent growth that nobody can predict. This is not a tool failure; it is an honest assessment. In this case, base your decision on non-financial factors: career flexibility needs, family stability, maintenance willingness, emotional preference, and personal risk tolerance. The financial analysis has reached its useful limit.

@@ -619,6 +619,9 @@ const THEMES = {
   slate:{ name:"Slate", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#F0F1F3", card:"#FFFFFF", muted:"#E8EAED", text1:"#202124", text2:"#5F6368", text3:"#9AA0A6", border:"#DADCE0", accent:"#1A73E8", green:"#188038", purple:"#7B1FA2", shadow:"0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.08)", slider:"#DADCE0", sliderThumb:"#1A73E8", tutBg:"#E8F0FE", tutBorder:"#AECBFA", tutText:"#174EA6" },
   ocean:{ name:"Ocean", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#0F1B2D", card:"#162032", muted:"#1C2940", text1:"#D0E4F7", text2:"#7FA3C4", text3:"#506880", border:"#2A3F5A", accent:"#4DA6FF", green:"#34D399", purple:"#A78BFA", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#2A3F5A", sliderThumb:"#4DA6FF", tutBg:"#162032", tutBorder:"#2A3F5A", tutText:"#4DA6FF" },
   ember:{ name:"Ember", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#1A1410", card:"#231D17", muted:"#2C241E", text1:"#E8DDD0", text2:"#A89580", text3:"#7A6B5A", border:"#3D3229", accent:"#E8854A", green:"#6DAA5C", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)", slider:"#3D3229", sliderThumb:"#E8854A", tutBg:"#231D17", tutBorder:"#3D3229", tutText:"#E8854A" },
+  nord:{ name:"Nord", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#2E3440", card:"#3B4252", muted:"#434C5E", text1:"#ECEFF4", text2:"#D8DEE9", text3:"#7B88A1", border:"#4C566A", accent:"#88C0D0", green:"#A3BE8C", purple:"#B48EAD", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#4C566A", sliderThumb:"#88C0D0", tutBg:"#3B4252", tutBorder:"#4C566A", tutText:"#88C0D0" },
+  sand:{ name:"Sand", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#F5F0E8", card:"#FEFCF8", muted:"#EDE6DA", text1:"#3A3228", text2:"#7A6E5E", text3:"#A89B8A", border:"#DDD4C4", accent:"#B5834A", green:"#5E8B4C", purple:"#8B6E96", shadow:"0 1px 2px rgba(58,50,40,0.06), 0 1px 3px rgba(58,50,40,0.08)", slider:"#DDD4C4", sliderThumb:"#B5834A", tutBg:"#FAF6EE", tutBorder:"#DDD4C4", tutText:"#B5834A" },
+  moss:{ name:"Moss", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#1A2118", card:"#222D1F", muted:"#2A3626", text1:"#D4E0CC", text2:"#8FA880", text3:"#5E7352", border:"#3A4A34", accent:"#7CB868", green:"#7CB868", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#3A4A34", sliderThumb:"#7CB868", tutBg:"#222D1F", tutBorder:"#3A4A34", tutText:"#7CB868" },
 };
 let T = THEMES.light;
 const buildS = (t) => ({
@@ -743,7 +746,7 @@ function RentVsBuyV3() {
   const [presetId,setPresetId]=useState("ref");
   const [scenOvr,setScenOvr]=useState(saved?.so||{});
   const [cusOvr,setCusOvr]=useState(saved?.co||{});
-  const [chartType,setChartType]=useState("advantage");
+  const [chartType,setChartType]=useState("wealth");
   const [showData,setShowData]=useState(false);
   const [chartDescOpen,setChartDescOpen]=useState(true);
   const [bannerOpen,setBannerOpen]=useState(true);
@@ -876,8 +879,8 @@ function RentVsBuyV3() {
           <div style={{display:"flex",gap:4,alignItems:"center",background:T.muted,borderRadius:8,padding:"4px 6px",border:`1px solid ${T.border}`}} title="Color theme">
             {Object.entries(THEMES).map(([k,v])=>{
               const active=k===theme;
-              const dots={light:"#F4F6F9",dark:"#161B22",midnight:"#FFA028",warm:"#F5EDE3",slate:"#DADCE0",ocean:"#1C2940",ember:"#3D2219"};
-              return <button key={k} onClick={()=>setTheme(k)} style={{width:active?"auto":22,height:22,borderRadius:11,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:dots[k]||T.muted,cursor:"pointer",fontSize:10,fontWeight:600,color:active?T.text1:"transparent",padding:active?"0 8px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>;
+              const dots={light:"#F4F6F9",dark:"#161B22",midnight:"#FFA028",warm:"#F5EDE3",slate:"#DADCE0",ocean:"#1C2940",ember:"#3D2219",nord:"#5E81AC",sand:"#C2B280",moss:"#4A6741"};
+              return <button key={k} onClick={()=>setTheme(k)} style={{width:active?"auto":22,height:22,borderRadius:11,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:dots[k]||T.muted,cursor:"pointer",fontSize:10,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 8px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>;
             })}
           </div>
           {/* Share link */}

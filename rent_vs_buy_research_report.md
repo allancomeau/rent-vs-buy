@@ -1,44 +1,38 @@
-# The definitive financial models for rent vs. buy decisions
+# The 2% you lose to volatility drag — and why it changes everything
 
-**The rent-vs-buy question is ultimately a comparison of two parallel wealth-accumulation paths**, and the best models in academia and industry converge on a consistent framework: compute the buyer's net equity at sale versus the renter's investment portfolio (seeded with the down payment and grown by monthly savings). The most important variables, ranked by sensitivity, are **home appreciation rate, time horizon, and mortgage rate** — together these three dominate the outcome. Research consistently finds breakeven timeframes of **5–7 years at moderate rates**, stretching to **7–11 years in the current 6.5%+ rate environment**, with real long-run home appreciation of only **~0–1% annually** (Shiller) making the investment case for homeownership rest primarily on leverage, imputed rent, tax benefits, and forced savings — not capital gains.
+**The "10% stock market return" everyone cites is the geometric mean (CAGR), not the arithmetic mean — and using the wrong one in a deterministic financial model overstates terminal wealth by roughly 50% over 30 years.** The S&P 500's long-run arithmetic average annual return is approximately **12%**, while its compound annual growth rate (geometric mean) is approximately **10%**. The ~2 percentage point gap is not a rounding error or a data discrepancy. It is a precise mathematical consequence of volatility: with an annual standard deviation of ~20%, the formula g ≈ a − σ²/2 predicts exactly the observed gap. This distinction matters enormously for anyone building a financial projection, running a rent-vs-buy calculation, or planning for retirement.
 
----
+## S&P 500: the 12% you earn vs. the 10% you keep
 
-## The academic foundations: Shiller, Jordà, and Poterba
+Four authoritative datasets converge on remarkably consistent numbers for U.S. large-cap equity returns. Damodaran's NYU Stern database (1928–2024, 97 years) shows an arithmetic mean total return of **11.79%** and a geometric mean of approximately **9.8%**, with a standard deviation of **~19.5%**. The Ibbotson/Morningstar SBBI dataset (1926–present), long considered the gold standard, reports an arithmetic mean of **~12.0%**, a geometric mean of **~10.3%**, and a standard deviation of **~19.8%**. The Dimson-Marsh-Staunton database published in the UBS Global Investment Returns Yearbook (1900–2024, 125 years) shows a nominal geometric return of **9.7%** with real returns of **6.6%**. Shiller's dataset, extending back to 1871, yields a CAGR of roughly **10.4%** for the 1926–2026 period. All figures are nominal total returns including reinvested dividends.
 
-Three bodies of academic work form the intellectual bedrock for any serious rent-vs-buy model.
+The gap between arithmetic and geometric means across all these sources falls in a tight **1.8–2.1%** band. This is not coincidence. Given σ ≈ 20%, the half-variance formula predicts a gap of ½ × (0.20)² = **2.0%** — matching observed data almost exactly. Jacquier, Kane, and Marcus verified this in their 2003 *Financial Analysts Journal* paper using SBBI data: arithmetic mean of 12.49%, geometric mean of 10.51%, gap of 1.98%, predicted gap of 2.06%. The approximation works to within a few basis points.
 
-**Robert Shiller's long-run housing data** is the starting point. Using his repeat-sales Case-Shiller Index (1890–present), Shiller found that real U.S. home price appreciation was approximately **zero from 1890 to 1990** and roughly **0.4% per year** from 1890 to 2004. Even the more generous post-1940 measurement shows only **~0.7% real annual appreciation** — while homeowners systematically estimated 2%. Shiller's explanation: housing depreciates physically, goes out of style, and faces competition from new construction. The popular belief in ever-rising home values conflates nominal gains (driven by inflation) with real wealth creation.
+| Source | Period | Arithmetic mean | Geometric mean (CAGR) | Std. deviation | Gap | ½σ² |
+|---|---|---|---|---|---|---|
+| **Ibbotson/SBBI** | 1926–present | ~12.0% | ~10.3% | ~19.8% | ~1.7% | ~2.0% |
+| **Damodaran (NYU)** | 1928–2024 | ~11.8% | ~9.8% | ~19.5% | ~2.0% | ~1.9% |
+| **DMS/UBS Yearbook** | 1900–2024 | ~11.7% (est.) | 9.7% | ~20% | ~2.0% | ~2.0% |
+| **Shiller** | 1871–2026 | — | ~10.4% | ~20% | — | — |
 
-**Jordà, Schularick, and Taylor's "The Rate of Return on Everything, 1870–2015"** (QJE 2019) offered a surprising counterpoint. Across 16 advanced economies, they found housing total returns averaged **~7% real per year** — on par with equities but with significantly lower volatility. The resolution of this apparent contradiction with Shiller is crucial: **~3.5–5% of that return is imputed rental yield** (the shelter value consumed by the owner-occupier), not liquid cash returns. For a rent-vs-buy model, the relevant decomposition is: capital gains (~1% real) plus the rent you don't pay, minus all ownership costs. Dimson, Marsh, and Staunton's Global Investment Returns Yearbook broadly confirms this: quality-adjusted real capital gains on housing have been approximately **−2% to +1%** since 1900, while global equities returned **~5.1% real**.
+All figures are nominal total returns including dividends.
 
-**James Poterba's user cost of housing model** (QJE 1984) provides the theoretical framework used by most academic analyses. The annual cost of owning $1 of housing is:
+## The volatility drag formula is exact under lognormality
 
-> **User Cost = P × [(1−τ)(i + τ_p) + m + δ − π_e]**
+The relationship g ≈ a − σ²/2 is not merely an approximation — it is exact when returns follow geometric Brownian motion (the standard assumption underlying Black-Scholes and most of quantitative finance). In continuous-time notation, if the arithmetic drift is μ and volatility is σ, the continuously compounded growth rate is μ − σ²/2. Tom Messmore formalized this as "variance drain" in a 1995 *Journal of Portfolio Management* paper. The intuition is pure Jensen's inequality: because the logarithm is concave, the expected log of a random variable is less than the log of its expectation. Variable returns always compound to less than the average return compounded — unless volatility is zero.
 
-Where P = home price, τ = marginal tax rate, i = interest rate, τ_p = property tax rate, m = maintenance rate, δ = risk premium/depreciation, and π_e = expected appreciation. In equilibrium, this user cost should equal market rent. Himmelberg, Mayer, and Sinai (JEP 2005) extended this with an explicit loan-to-value decomposition:
+The practical impact scales quadratically with volatility. For bonds (σ ≈ 3%), the drag is negligible at **0.05%**. For the S&P 500 (σ ≈ 20%), it is a material **2.0%**. For small-cap stocks (σ ≈ 32%), it balloons to roughly **5.1%** — explaining why small caps' arithmetic premium over large caps substantially shrinks on a CAGR basis. Kitces demonstrated empirically that for a 2007–2016 S&P 500 sample (arithmetic mean 8.75%, σ = 18.86%), the formula predicted a geometric mean of 6.97% versus the actual 6.94%, an error of just 3 basis points.
 
-> **Annual Cost = P × [r_f(1−τ)(1−LTV) + r_m(1−τ)(LTV) + τ_p(1−τ) + δ + m − g]**
+A concrete example crystallizes the stakes. Compounding $100,000 at 12% (arithmetic mean) for 30 years yields **$2,996,000**. Compounding at 10% (geometric mean) yields **$1,745,000**. That is a **72% overstatement** from using the wrong mean — not a theoretical quibble, but the difference between a comfortable and a catastrophic retirement plan.
 
-This separates the opportunity cost of equity (r_f) from the cost of mortgage debt (r_m), accounts for tax deductibility, and subtracts expected capital gains (g). Their key finding: **real long-term interest rates are the single most important determinant** of whether buying makes sense, and house prices are more sensitive to rate changes when rates are already low — a crucial nonlinearity.
+## U.S. housing: low returns, but even lower volatility changes the math
 
----
+Housing data requires careful disaggregation of price appreciation from total returns (including imputed rent). The landmark Jordà-Schularick-Taylor dataset ("The Rate of Return on Everything," *QJE* 2019), covering 1891–2015 across 16 countries, provides the most comprehensive picture. For the United States, nominal price-only appreciation averaged **3.54%** arithmetically with a standard deviation of just **8.24%**. Adding imputed rental income of ~5.3%, total nominal housing returns averaged **8.87%** arithmetically with σ of **8.40%**. Shiller's famous finding — that real (inflation-adjusted) housing appreciation is roughly **0.5–1.0%** annually from 1890 to present — remains intact, though a 2024 Philadelphia Fed working paper suggests his pre-1975 data may modestly understate true appreciation.
 
-## The complete variable set and how models handle them
-
-Every major model — the NYT calculator, Zillow's breakeven horizon, Fidelity, and academic user-cost frameworks — includes essentially the same variable set, though they differ in defaults and sophistication. The table below synthesizes the standard parameters with typical values:
-
-| Category | Variable | Typical range | Notes |
-|----------|----------|---------------|-------|
-| Mortgage | Interest rate | 6.5–7.0% (2024–25) | Most impactful cost lever |
-| Mortgage | Term | 30 years fixed | 15-year shifts amortization dramatically |
-| Mortgage | Down payment | 9–20% | Below 20% triggers PMI |
-| Mortgage | PMI rate | 0.3–1.5%/yr of loan | Removed at 80% LTV |
-| Property | Property tax | 0.3–2.2% of value | Hawaii 0.31%, NJ 2.23% |
-| Property | Maintenance | 1–2% of value/yr | Industry standard: 1% |
-| Property | Insurance | 0.35–1.0% of value | Up 40% since 2019 |
-| Property | HOA fees | $0–$500+/mo | Condo-specific |
-| Transaction | Buy-side closing | 2–5% of price | Origination, title, appraisal |
+| Metric | U.S. Housing (Jordà) | U.S. Equities (Jordà) |
+|---|---|---|
+| Nominal arithmetic total return | **8.87%** | **11.08%** |
+| Nominal total return σ | **8.40%** | **18.45%** |
 | Transaction | Sell-side closing | 6–8% of sale price | Agent commissions + fees |
 | Tax | Marginal rate | 22–37% | Determines deduction value |
 | Tax | SALT cap | $10,000 | Post-TCJA; may change 2026 |

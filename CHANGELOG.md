@@ -7,13 +7,14 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 ## v3.5 — April 2026
 
 ### UI/UX Overhaul
-- **Theme system:** 4 color themes — Light (default), Dark, Midnight (terminal-style), Warm (reduced eye strain). Theme selector rendered as colored pill buttons in the header. Theme persists via shareable URLs.
+- **Theme system:** 7 color themes — Light (default), Dark, Midnight (terminal-style), Warm (reduced eye strain), Slate (neutral professional), Ocean (dark blue marine), Ember (dark warm). Theme selector rendered as colored pill buttons in the header. Theme persists via shareable URLs.
 - **Chart-table merge:** Data table is now an expandable section ("▸ View Year-by-Year Data") inside the chart card, replacing the separate bottom card. Cleaner layout, one less scroll target.
 - **Chart clarity:** Chart dropdown labels rewritten for non-technical users ("Who wins & by how much", "What You Pay Each Year", "What matters most"). Subtitles explain each view in plain English.
-- **Micro-interactions:** Slider thumb glow on hover, input border highlight on hover, smooth button transitions, card shadow transitions. All backed by UI/UX research (Stripe, Vercel, Bloomberg patterns).
+- **Micro-interactions:** Slider filled-track gradient shows position, input border highlight on hover, smooth button transitions, slider thumb glow on hover. All backed by UI/UX research (Stripe, Vercel, Bloomberg patterns).
 - **Mobile responsive:** Panels auto-stack below 320px via CSS auto-fit grid. Input font bumped to 16px to prevent iOS Safari zoom. Touch targets minimum 44px.
 - **Disclaimers:** "Educational only — not financial advice" placed in 4 locations (header, guide, bottom line callout, footer) without being overbearing.
 - **Footer:** Links to Allan Comeau's LinkedIn and GitHub source repository.
+- **Page title:** Updated for LinkedIn link previews ("Should I Rent or Buy? | Interactive Financial Simulation").
 
 ### Research & Documentation
 - Added 6th research file: UI/UX Design Research (design tokens, typography, layout patterns).

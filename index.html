@@ -18,16 +18,20 @@
     #loading { display:flex;align-items:center;justify-content:center;height:100vh;font-family:'Inter',system-ui;color:#6C757D;font-size:15px;font-weight:500; }
     ::selection { background: rgba(37,99,235,0.15); }
     input[type=number]:focus, select:focus { outline: none; border-color: #3B82F6 !important; box-shadow: 0 0 0 3px rgba(59,130,246,0.12) !important; }
-    input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: #E2E8F0; border-radius: 2px; outline: none; margin: 4px 0 6px; cursor: pointer; }
-    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #2563eb; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
-    input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: #2563eb; cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+    input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; background: var(--slider-bg, #E2E8F0); border-radius: 2px; outline: none; margin: 4px 0 6px; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: var(--slider-thumb, #2563eb); cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
+    input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--slider-thumb, #2563eb); cursor: pointer; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.25); }
     details summary { list-style: none; }
     details summary::-webkit-details-marker { display: none; }
-    .tut { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: #EFF6FF; border: 1.5px solid #BFDBFE; border-radius: 10px; font-size: 13px; color: #1e40af; margin-bottom: 10px; line-height: 1.4; font-weight: 500; animation: tutFade 0.4s ease-out; }
-    .tut b { background: #2563eb; color: #fff; min-width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+    .tut { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--tut-bg, #EFF6FF); border: 1.5px solid var(--tut-border, #BFDBFE); border-radius: 10px; font-size: 13px; color: var(--tut-text, #1e40af); margin-bottom: 10px; line-height: 1.4; font-weight: 500; animation: tutFade 0.4s ease-out; }
+    .tut b { background: var(--slider-thumb, #2563eb); color: #fff; min-width: 24px; height: 24px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
     @keyframes tutFade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     button:hover { filter: brightness(0.97); }
     button:active { transform: scale(0.98); }
+    @media(max-width:768px){
+      .tut { font-size:12px; }
+      input[type=number],select { font-size:16px !important; min-height:44px; }
+    }
   </style>
 </head>
 <body>
@@ -567,6 +571,7 @@ const RESEARCH_FILES = [
   { name: "Defaults Rationale: Every Number Sourced", file: "defaults_rationale.md" },
   { name: "What the Model Doesn't Capture", file: "what_model_doesnt_capture.md" },
   { name: "Math Verification & Bug Audit", file: "rent-vs-buy-sim-audit.md" },
+  { name: "UI/UX Design Research", file: "UI_and_UX_Research_Report.md" },
 ];
 
 function runSensitivity(params, hp) {
@@ -596,31 +601,38 @@ function verdictLabel(adv, hp) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// DESIGN TOKENS
+// DESIGN TOKENS — THEME SYSTEM
 // ═══════════════════════════════════════════════════════════════
-const T = { font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#F4F6F9", card:"#FFFFFF", muted:"#F1F5F9", text1:"#212529", text2:"#6C757D", text3:"#9CA3AF", border:"#E2E8F0", accent:"#2563eb", green:"#16a34a", purple:"#7c3aed", shadow:"0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1)" };
-const S = {
-  page:{fontFamily:T.font,maxWidth:1400,margin:"0 auto",padding:"24px 32px",color:T.text1,background:T.bg,fontVariantNumeric:"tabular-nums"},
-  card:{background:T.card,border:`1px solid ${T.border}`,borderRadius:12,padding:16,boxShadow:T.shadow,marginBottom:16},
-  sTitle:{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:T.text2,marginBottom:10,paddingBottom:6,borderBottom:`2px solid ${T.border}`},
+const THEMES = {
+  light:{ name:"Light", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#F4F6F9", card:"#FFFFFF", muted:"#F1F5F9", text1:"#212529", text2:"#6C757D", text3:"#9CA3AF", border:"#E2E8F0", accent:"#2563eb", green:"#16a34a", purple:"#7c3aed", shadow:"0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1)", slider:"#E2E8F0", sliderThumb:"#2563eb", tutBg:"#EFF6FF", tutBorder:"#BFDBFE", tutText:"#1e40af" },
+  dark:{ name:"Dark", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#0D1117", card:"#161B22", muted:"#21262D", text1:"#E6EDF3", text2:"#8B949E", text3:"#6E7681", border:"#30363D", accent:"#58A6FF", green:"#3FB950", purple:"#BC8CFF", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#30363D", sliderThumb:"#58A6FF", tutBg:"#161B22", tutBorder:"#30363D", tutText:"#58A6FF" },
+  midnight:{ name:"Midnight", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#000000", card:"#0A0E14", muted:"#131820", text1:"#FFA028", text2:"#C0C0C0", text3:"#707070", border:"#2A2A2A", accent:"#4AF6C3", green:"#4AF6C3", purple:"#A78BFA", shadow:"0 1px 4px rgba(0,0,0,0.5)", slider:"#2A2A2A", sliderThumb:"#FFA028", tutBg:"#0A0E14", tutBorder:"#2A2A2A", tutText:"#FFA028" },
+  warm:{ name:"Warm", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#FBF7F2", card:"#FFFFFF", muted:"#F5EDE3", text1:"#3D2C1A", text2:"#8B7355", text3:"#B8A089", border:"#E8D5C0", accent:"#C45D2C", green:"#3A7D44", purple:"#7C5295", shadow:"0 1px 3px rgba(61,44,26,0.08), 0 2px 6px rgba(61,44,26,0.06)", slider:"#E8D5C0", sliderThumb:"#C45D2C", tutBg:"#FFF8F0", tutBorder:"#E8D5C0", tutText:"#C45D2C" },
+};
+let T = THEMES.light;
+const buildS = (t) => ({
+  page:{fontFamily:t.font,maxWidth:1400,margin:"0 auto",padding:"24px 32px",color:t.text1,background:t.bg,fontVariantNumeric:"tabular-nums",minHeight:"100vh"},
+  card:{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,padding:16,boxShadow:t.shadow,marginBottom:16},
+  sTitle:{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:t.text2,marginBottom:10,paddingBottom:6,borderBottom:`2px solid ${t.border}`},
   inputRow:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,gap:6},
-  label:{fontSize:12,fontWeight:500,color:T.text1,flex:1},
-  input:{width:84,padding:"5px 8px",border:`1px solid ${T.border}`,borderRadius:6,fontSize:13,fontWeight:500,textAlign:"right",fontFamily:T.mono,color:T.text1,background:T.card},
-  inputLock:{width:84,padding:"5px 8px",border:`1px solid ${T.border}`,borderRadius:6,fontSize:13,fontWeight:500,textAlign:"right",fontFamily:T.mono,color:T.text3,background:T.muted},
-  hint:{fontSize:10,color:T.text3,marginTop:-2,marginBottom:4},
-  select:{padding:"5px 10px",border:`1px solid ${T.border}`,borderRadius:6,fontSize:12,fontWeight:500,fontFamily:T.font,background:T.card,color:T.text1,cursor:"pointer"},
-  panels:{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:16,marginBottom:16},
-  panel:{border:`1px solid ${T.border}`,borderRadius:12,overflow:"hidden",background:T.card,boxShadow:T.shadow},
+  label:{fontSize:12,fontWeight:500,color:t.text1,flex:1},
+  input:{width:84,padding:"5px 8px",border:`1px solid ${t.border}`,borderRadius:6,fontSize:13,fontWeight:500,textAlign:"right",fontFamily:t.mono,color:t.text1,background:t.card},
+  inputLock:{width:84,padding:"5px 8px",border:`1px solid ${t.border}`,borderRadius:6,fontSize:13,fontWeight:500,textAlign:"right",fontFamily:t.mono,color:t.text3,background:t.muted},
+  hint:{fontSize:10,color:t.text3,marginTop:-2,marginBottom:4},
+  select:{padding:"5px 10px",border:`1px solid ${t.border}`,borderRadius:6,fontSize:12,fontWeight:500,fontFamily:t.font,background:t.card,color:t.text1,cursor:"pointer"},
+  panels:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))",gap:16,marginBottom:16},
+  panel:{border:`1px solid ${t.border}`,borderRadius:12,overflow:"hidden",background:t.card,boxShadow:t.shadow},
   pH:{padding:"10px 14px",fontWeight:700,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em"},
   pB:{padding:"12px 14px",fontSize:12},
-  derived:{fontSize:11,padding:"8px 10px",background:T.muted,borderRadius:6,marginBottom:10,fontFamily:T.mono,lineHeight:1.5,fontWeight:500},
-  tab:{cursor:"pointer",padding:"8px 16px",fontSize:12,fontWeight:600,border:"none",background:"transparent",color:T.text3,borderBottom:"2px solid transparent"},
-  tabA:{color:T.accent,borderBottom:`2px solid ${T.accent}`},
-  table:{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:T.mono,fontWeight:500},
-  th:{padding:"8px",textAlign:"right",borderBottom:`2px solid ${T.text1}`,fontSize:10,fontWeight:700,color:T.text2,position:"sticky",top:0,background:T.card},
-  td:{padding:"5px 8px",textAlign:"right",borderBottom:`1px solid ${T.border}`},
-  tipBox:{position:"absolute",bottom:"calc(100% + 8px)",left:0,minWidth:240,maxWidth:320,padding:"12px 14px",background:T.text1,color:"#fff",fontSize:12,lineHeight:1.6,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",zIndex:100,fontWeight:400},
-};
+  derived:{fontSize:11,padding:"8px 10px",background:t.muted,borderRadius:6,marginBottom:10,fontFamily:t.mono,lineHeight:1.5,fontWeight:500},
+  tab:{cursor:"pointer",padding:"8px 16px",fontSize:12,fontWeight:600,border:"none",background:"transparent",color:t.text3,borderBottom:"2px solid transparent"},
+  tabA:{color:t.accent,borderBottom:`2px solid ${t.accent}`},
+  table:{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:t.mono,fontWeight:500},
+  th:{padding:"8px",textAlign:"right",borderBottom:`2px solid ${t.text1}`,fontSize:10,fontWeight:700,color:t.text2,position:"sticky",top:0,background:t.card},
+  td:{padding:"5px 8px",textAlign:"right",borderBottom:`1px solid ${t.border}`},
+  tipBox:{position:"absolute",bottom:"calc(100% + 8px)",left:0,minWidth:240,maxWidth:320,padding:"12px 14px",background:t.text1,color:t.bg,fontSize:12,lineHeight:1.6,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",zIndex:100,fontWeight:400},
+});
+let S = buildS(T);
 
 // ═══════════════════════════════════════════════════════════════
 // SHARED COMPONENTS
@@ -721,11 +733,23 @@ function RentVsBuyV3() {
   const [scenOvr,setScenOvr]=useState(saved?.so||{});
   const [cusOvr,setCusOvr]=useState(saved?.co||{});
   const [chartType,setChartType]=useState("advantage");
-  const [tableSync,setTableSync]=useState(true);
+  const [showData,setShowData]=useState(false);
   const [guideTab,setGuideTab]=useState("overview");
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
   const [tutorial,setTutorial]=useState(false);
+  const [theme,setTheme]=useState(saved?.th||"light");
+
+  // Dynamic theme — update module-level T and S on each render
+  T = THEMES[theme]||THEMES.light;
+  S = buildS(T);
+  // Update body background and CSS custom props for slider theming
+  document.body.style.background = T.bg;
+  document.documentElement.style.setProperty("--slider-bg",T.slider);
+  document.documentElement.style.setProperty("--slider-thumb",T.sliderThumb);
+  document.documentElement.style.setProperty("--tut-bg",T.tutBg);
+  document.documentElement.style.setProperty("--tut-border",T.tutBorder);
+  document.documentElement.style.setProperty("--tut-text",T.tutText);
 
   const c=COUNTRIES[country],sym=c.sym,cur=c.currency;
   const f=v=>fmtC(v,sym), ff=v=>fmtFullC(v,sym);
@@ -798,7 +822,7 @@ function RentVsBuyV3() {
   const locBLabel=eLocB?eLocB.name:`${c.name} National`;
 
   const share=useCallback(()=>{
-    history.replaceState(null,"",encodeURL({c:country,la:locAMetro,lb:locBMetro,lk:linked,so:scenOvr,co:cusOvr,p:personal}));
+    history.replaceState(null,"",encodeURL({c:country,la:locAMetro,lb:locBMetro,lk:linked,so:scenOvr,co:cusOvr,p:personal,th:theme}));
     navigator.clipboard?.writeText(window.location.href).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);});
   },[country,locAMetro,locBMetro,linked,scenOvr,cusOvr,personal]);
 
@@ -811,12 +835,12 @@ function RentVsBuyV3() {
 
   // Chart type configs
   const CHARTS = {
-    advantage:{label:"Advantage (all scenarios)",title:"Buy vs. Rent Advantage",sub:"All 4 scenarios · positive = buying wins"},
-    wealth:{label:"Wealth paths (custom)",title:"Buyer vs. Renter Wealth",sub:"Custom scenario · equity + portfolio vs portfolio"},
-    cost:{label:"Annual cost (custom)",title:"Annual Housing Cost",sub:"Custom · sell year marked · lines cross = flips"},
-    equity:{label:"Equity buildup (custom)",title:"Home Equity Over Time",sub:"Custom · home value minus mortgage balance"},
-    portfolio:{label:"Portfolios (custom)",title:"Investment Portfolio Comparison",sub:"Custom · renter's portfolio seeded with down payment + closing costs"},
-    tornado:{label:"Sensitivity tornado",title:"Sensitivity Tornado",sub:"Custom · which single assumption drives the outcome"},
+    advantage:{label:"Who wins & by how much",title:"Buy vs. Rent: Who Wins Over Time?",sub:"Buyer's total wealth minus renter's total wealth, each year · above zero = buying wins · below = renting wins · all 4 scenarios overlaid"},
+    wealth:{label:"Total wealth (custom)",title:"Total Net Wealth: Buyer vs. Renter",sub:"What each side is worth if they cash out that year · buyer = home equity + investments − costs · renter = investment portfolio − taxes"},
+    cost:{label:"Annual cost (custom)",title:"What You Pay Each Year",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
+    equity:{label:"Home equity (custom)",title:"Home Equity Over Time",sub:"How much of the home you actually own · home value minus remaining mortgage balance"},
+    portfolio:{label:"Invested savings (custom)",title:"Investment Portfolios",sub:"Renter's portfolio starts with the down payment + closing costs the buyer spent · buyer's portfolio grows after mortgage payoff frees up cash"},
+    tornado:{label:"What matters most",title:"Sensitivity: Which Assumptions Matter?",sub:"Each bar shows how much the outcome swings when one variable changes · longest bar = most influential assumption"},
   };
 
   // Synced table columns per chart type
@@ -831,9 +855,12 @@ function RentVsBuyV3() {
   return (
     <div style={S.page}>
       {/* HEADER */}
-      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20}}>
-        <div><h1 style={{fontSize:28,fontWeight:700,letterSpacing:"-0.03em"}}>Rent vs. Buy</h1><div style={{fontSize:13,color:T.text2,marginTop:4}}>Research-backed financial simulation · {METROS.length} metros · 16 countries</div></div>
-        <div style={{display:"flex",gap:8,alignItems:"flex-start"}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:20,flexWrap:"wrap",gap:12}}>
+        <div><h1 style={{fontSize:28,fontWeight:700,letterSpacing:"-0.03em"}}>Rent vs. Buy</h1><div style={{fontSize:13,color:T.text2,marginTop:4}}>Research-backed financial simulation · {METROS.length} metros · 16 countries · <span style={{fontSize:11,fontStyle:"italic"}}>Educational only — not financial advice</span></div></div>
+        <div style={{display:"flex",gap:8,alignItems:"flex-start",flexWrap:"wrap"}}>
+          <select style={{...S.select,fontSize:11}} value={theme} onChange={e=>setTheme(e.target.value)} title="Color theme">
+            {Object.entries(THEMES).map(([k,v])=><option key={k} value={k}>{v.name}</option>)}
+          </select>
           <div style={{textAlign:"center"}}><button onClick={()=>setTutorial(!tutorial)} style={{cursor:"pointer",background:tutorial?"#1e40af":T.card,color:tutorial?"#fff":T.text2,border:`1px solid ${tutorial?"#1e40af":T.border}`,borderRadius:8,padding:"10px 16px",fontSize:13,fontWeight:600,transition:"all 200ms"}}>{tutorial?"✕ Exit Tutorial":"🎓 Tutorial"}</button></div>
           <div style={{textAlign:"center"}}><button onClick={share} style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:8,padding:"10px 16px",fontSize:13,fontWeight:600,boxShadow:T.shadow}}>{copied?"✓ Copied!":"📋 Share Link"}</button><div style={{fontSize:9,color:T.text3,marginTop:3}}>Saves your inputs as a URL</div></div>
         </div>
@@ -914,6 +941,7 @@ function RentVsBuyV3() {
           {fxOverride!=null&&<button style={{fontSize:10,color:T.accent,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}} onClick={()=>setFxOverride(null)}>Reset to default</button>}
           <span style={{fontSize:9,color:T.text3}}>Default: {FX[cur]} (Apr 2026 est.)</span>
         </div>}
+        <div style={{marginTop:8,fontSize:10,color:T.text3,fontStyle:"italic"}}>For educational purposes only. Not financial, tax, or investment advice.</div>
       </div>
 
       {/* THREE PANELS */}
@@ -950,7 +978,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* CHART */}
-      {tutorial&&<div className="tut"><b>5</b>Visualize the math — use the dropdown to switch between 6 chart views. "Advantage" shows all scenarios. "Wealth paths" shows buyer vs renter total wealth. "Sensitivity tornado" shows which single assumption matters most.</div>}
+      {tutorial&&<div className="tut"><b>5</b>Visualize the math — the dropdown switches between 6 views. <strong>"Advantage"</strong> = buyer wealth minus renter wealth (positive means buying wins). "Wealth paths" shows each side's total net worth. "Tornado" reveals which single assumption drives your result most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</div>}
       <div style={S.card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
           <div><div style={{fontSize:15,fontWeight:700}}>{CHARTS[chartType]?.title}</div><div style={{fontSize:11,color:T.text3,marginTop:2}}>{CHARTS[chartType]?.sub}</div></div>
@@ -1020,51 +1048,32 @@ function RentVsBuyV3() {
             <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:12,fontSize:11,color:T.text2}}>◀ Favors renting | Favors buying ▶</div>
           </div>;
         })()}
+
+        {/* EXPANDABLE DATA TABLE — merged into chart */}
+        <div style={{borderTop:`1px solid ${T.border}`,marginTop:16,paddingTop:12}}>
+          <button onClick={()=>setShowData(!showData)} style={{cursor:"pointer",background:"none",border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,color:T.text2,width:"100%",textAlign:"left"}}>
+            {showData?"▼ Hide":"▸ View"} Year-by-Year Data ({cusR.data.length} rows · all columns)
+          </button>
+          {showData && <div style={{maxHeight:400,overflowY:"auto",marginTop:10}}>
+            <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><Tip text={TABLE_TIPS[h]}>{h}</Tip></th>)}</tr></thead>
+            <tbody>{cusR.data.map(d=>{const isH=d.year===hp,isBE=d.year===cusR.breakeven;return<tr key={d.year} style={{background:isH?"rgba(245,158,11,0.08)":isBE?"rgba(220,38,38,0.05)":d.year%2===0?T.muted:T.card}}>
+              <td style={{...S.td,textAlign:"center",fontWeight:isH||isBE?700:500}}>{d.year}</td>
+              <td style={S.td}>{f(d.homeVal)}</td><td style={S.td}>{f(d.equity)}</td><td style={S.td}>{f(d.yrInterest)}</td><td style={S.td}>{f(d.yrPrincipal)}</td>
+              <td style={S.td}>{f(d.totalBuyerCost)}</td><td style={S.td}>{f(d.taxBenefit)}</td><td style={{...S.td,fontWeight:700}}>{f(d.netBuyerCost)}</td>
+              <td style={S.td}>{f(d.annualRent)}</td><td style={{...S.td,fontWeight:700}}>{f(d.totalRenterCost)}</td>
+              <td style={S.td}>{f(d.buyerPortfolio)}</td><td style={S.td}>{f(d.renterPortfolio)}</td>
+              <td style={{...S.td,fontWeight:700,color:T.accent}}>{f(d.buyerWealth)}</td><td style={{...S.td,fontWeight:700,color:T.green}}>{f(d.renterWealth)}</td>
+              <td style={{...S.td,fontWeight:700,color:d.advantage>=0?T.accent:T.green}}>{f(d.advantage)}</td>
+            </tr>;})}</tbody></table>
+          </div>}
+        </div>
       </div>
 
-      {/* BOTTOM: SYNCED TABLE */}
-      {tutorial&&<div className="tut"><b>6</b>Verify every number — "Synced to chart" shows the data behind the current chart. "Full data" shows the complete year-by-year audit with all 15 columns. Click any column header's <strong style={{color:"#2563eb"}}>?</strong> for an explanation.</div>}
-      <div style={S.card}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12}}>
-          <div style={{display:"flex",gap:0}}>
-            <button style={{...S.tab,...(tableSync?S.tabA:{})}} onClick={()=>setTableSync(true)}>Synced to chart</button>
-            <button style={{...S.tab,...(!tableSync?S.tabA:{})}} onClick={()=>setTableSync(false)}>Full data</button>
-          </div>
-          {tableSync&&<span style={{fontSize:11,color:T.text3}}>Showing: {CHARTS[chartType]?.title||"Sensitivity"}</span>}
-        </div>
-
-        {/* Synced table */}
-        {tableSync && chartType!=="tornado" && TABLE_COLS[chartType] && (
-          <div style={{maxHeight:400,overflowY:"auto"}}>
-            <table style={S.table}><thead><tr>{TABLE_COLS[chartType].h.map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><Tip text={TABLE_TIPS[h]}>{h}</Tip></th>)}</tr></thead>
-            <tbody>{chartData.map(d=><tr key={d.year} style={{background:d.year===hp?"rgba(245,158,11,0.08)":d.year%2===0?T.muted:T.card}}>
-              {TABLE_COLS[chartType].k.map((k,i)=><td key={k} style={{...S.td,...(i===0?{textAlign:"center",fontWeight:d.year===hp?700:500}:{})}}>{i===0?d[k]:f(d[k])}</td>)}
-            </tr>)}</tbody></table>
-          </div>
-        )}
-
-        {/* Synced: tornado → sensitivity table */}
-        {tableSync && chartType==="tornado" && sensitivity.length>0 && (
-          <table style={S.table}><thead><tr><th style={{...S.th,textAlign:"left"}}>Variable</th><th style={S.th}>Δ</th><th style={S.th}>Higher</th><th style={S.th}>Lower</th><th style={S.th}>Swing</th></tr></thead>
-          <tbody>{sensitivity.map((s,i)=><tr key={s.key} style={{background:i===0?"rgba(245,158,11,0.08)":i%2===0?T.muted:T.card}}>
-            <td style={{...S.td,textAlign:"left",fontWeight:i<2?700:500}}>{s.name}{i===0&&" ★"}</td><td style={S.td}>{s.fmt}</td>
-            <td style={{...S.td,color:s.upA>=0?T.accent:T.green}}>{f(s.upA)}</td><td style={{...S.td,color:s.dnA>=0?T.accent:T.green}}>{f(s.dnA)}</td><td style={{...S.td,fontWeight:700}}>{f(s.swing)}</td>
-          </tr>)}</tbody></table>
-        )}
-
-        {/* Full data table */}
-        {!tableSync && <div style={{maxHeight:400,overflowY:"auto"}}>
-          <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><Tip text={TABLE_TIPS[h]}>{h}</Tip></th>)}</tr></thead>
-          <tbody>{cusR.data.map(d=>{const isH=d.year===hp,isBE=d.year===cusR.breakeven;return<tr key={d.year} style={{background:isH?"rgba(245,158,11,0.08)":isBE?"rgba(220,38,38,0.05)":d.year%2===0?T.muted:T.card}}>
-            <td style={{...S.td,textAlign:"center",fontWeight:isH||isBE?700:500}}>{d.year}</td>
-            <td style={S.td}>{f(d.homeVal)}</td><td style={S.td}>{f(d.equity)}</td><td style={S.td}>{f(d.yrInterest)}</td><td style={S.td}>{f(d.yrPrincipal)}</td>
-            <td style={S.td}>{f(d.totalBuyerCost)}</td><td style={S.td}>{f(d.taxBenefit)}</td><td style={{...S.td,fontWeight:700}}>{f(d.netBuyerCost)}</td>
-            <td style={S.td}>{f(d.annualRent)}</td><td style={{...S.td,fontWeight:700}}>{f(d.totalRenterCost)}</td>
-            <td style={S.td}>{f(d.buyerPortfolio)}</td><td style={S.td}>{f(d.renterPortfolio)}</td>
-            <td style={{...S.td,fontWeight:700,color:T.accent}}>{f(d.buyerWealth)}</td><td style={{...S.td,fontWeight:700,color:T.green}}>{f(d.renterWealth)}</td>
-            <td style={{...S.td,fontWeight:700,color:d.advantage>=0?T.accent:T.green}}>{f(d.advantage)}</td>
-          </tr>;})}</tbody></table>
-        </div>}
+      {/* FOOTER */}
+      <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3 · Built by <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a></div>
+        <div>This tool is for educational and discussion purposes only and does not constitute financial, tax, or investment advice.</div>
+        <div style={{marginTop:2}}>Consult a qualified financial advisor before making real estate or investment decisions.</div>
       </div>
     </div>
   );

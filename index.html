@@ -651,7 +651,7 @@ const buildS = (t) => ({
   table:{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:t.mono,fontWeight:500},
   th:{padding:"8px",textAlign:"right",borderBottom:`2px solid ${t.text1}`,fontSize:10,fontWeight:700,color:t.text2,position:"sticky",top:0,background:t.card},
   td:{padding:"5px 8px",textAlign:"right",borderBottom:`1px solid ${t.border}`},
-  tipBox:{position:"absolute",bottom:"calc(100% + 8px)",left:0,minWidth:240,maxWidth:320,padding:"12px 14px",background:t.text1,color:t.bg,fontSize:12,lineHeight:1.6,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",zIndex:100,fontWeight:400},
+  tipBox:{position:"absolute",bottom:"calc(100% + 8px)",right:0,minWidth:200,maxWidth:"min(320px, 90vw)",padding:"12px 14px",background:t.text1,color:t.bg,fontSize:12,lineHeight:1.6,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",zIndex:100,fontWeight:400},
 });
 let S = buildS(T);
 
@@ -874,7 +874,7 @@ function RentVsBuyV3() {
         <h1 style={{fontSize:32,fontWeight:700,letterSpacing:"-0.03em",marginBottom:6}}>Should I Rent or Buy?</h1>
         <div style={{fontSize:13,color:T.text2,marginBottom:4}}>Research-backed financial simulation · {METROS.length} metros · 16 countries</div>
         <div style={{fontSize:12,color:T.text3,marginBottom:12}}>Try the <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>setTutorial(true)}>Tutorial</strong> or <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>{setGuideTab("faq");const g=document.getElementById("guide-section");if(g){g.setAttribute("open","");g.scrollIntoView({behavior:"smooth",block:"start"});}}}>FAQ</strong> before diving in · <span style={{fontStyle:"italic"}}>Educational only — not financial advice</span></div>
-        <div style={{display:"flex",justifyContent:"center",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:8}}>
+        <div style={{display:"flex",justifyContent:"center",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
           {/* Tutorial toggle — prominent */}
           <div style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",background:`${T.accent}0F`,border:`1px solid ${T.accent}44`,borderRadius:8,padding:"6px 12px"}} onClick={()=>setTutorial(!tutorial)} title="Step-by-step guide through each section">
             <span style={{fontSize:12,fontWeight:700,color:tutorial?T.accent:T.text2}}>Tutorial</span>
@@ -882,7 +882,11 @@ function RentVsBuyV3() {
               <div style={{width:16,height:16,borderRadius:8,background:T.card,boxShadow:"0 1px 3px rgba(0,0,0,0.2)",transition:"all 200ms"}}/>
             </div>
           </div>
-          {/* Theme selector — grouped with subtle separators */}
+          {/* Share link — prominent */}
+          <button onClick={share} title="Saves all your inputs as a shareable URL" style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:700,boxShadow:T.shadow,transition:"all 200ms"}}>{copied?"Copied!":"Share Link"}</button>
+        </div>
+        {/* Theme selector — own row */}
+        <div style={{display:"flex",justifyContent:"center",marginBottom:8}}>
           <div style={{display:"flex",gap:3,alignItems:"center",background:T.muted,borderRadius:8,padding:"4px 6px",border:`1px solid ${T.border}`}} title="Color theme">
             {Object.entries(THEMES).map(([k,v],idx)=>{
               const active=k===theme;
@@ -894,7 +898,6 @@ function RentVsBuyV3() {
               </React.Fragment>;
             })}
           </div>
-        <button onClick={share} title="Saves all your inputs as a shareable URL" style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:12,fontWeight:700,boxShadow:T.shadow,transition:"all 200ms"}}>{copied?"Copied!":"Share Link"}</button>
         </div>
       </div>
 

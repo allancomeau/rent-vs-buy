@@ -651,7 +651,7 @@ const buildS = (t) => ({
   table:{width:"100%",borderCollapse:"collapse",fontSize:11,fontFamily:t.mono,fontWeight:500},
   th:{padding:"8px",textAlign:"right",borderBottom:`2px solid ${t.text1}`,fontSize:10,fontWeight:700,color:t.text2,position:"sticky",top:0,background:t.card},
   td:{padding:"5px 8px",textAlign:"right",borderBottom:`1px solid ${t.border}`},
-  tipBox:{position:"absolute",bottom:"calc(100% + 8px)",right:0,minWidth:200,maxWidth:"min(320px, 90vw)",padding:"12px 14px",background:t.text1,color:t.bg,fontSize:12,lineHeight:1.6,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",zIndex:100,fontWeight:400},
+  tipBox:{position:"absolute",bottom:"calc(100% + 8px)",left:"50%",transform:"translateX(-50%)",minWidth:200,maxWidth:"min(300px, calc(100vw - 32px))",padding:"12px 14px",background:t.text1,color:t.bg,fontSize:12,lineHeight:1.6,borderRadius:10,boxShadow:"0 4px 20px rgba(0,0,0,0.25)",zIndex:100,fontWeight:400},
 });
 let S = buildS(T);
 
@@ -667,11 +667,12 @@ const Tip = ({text, children}) => {
   </span>;
 };
 
-const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,tip,sliderMin,sliderMax}) => {
+const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,tip,sliderMin,sliderMax,noSlider}) => {
   const r=RANGES[rangeKey], tipText=tip||TIPS[rangeKey]||"";
   const sMin=sliderMin!=null?sliderMin:(r?r.lo*100:null), sMax=sliderMax!=null?sliderMax:(r?r.hi*100:null);
-  const hasSlider=sMin!=null&&sMax!=null&&!locked;
-  const v=parseFloat(value), oob=hasSlider&&!isNaN(v)&&(v<sMin||v>sMax);
+  const hasBounds=sMin!=null&&sMax!=null&&!locked;
+  const hasSlider=hasBounds&&!noSlider;
+  const v=parseFloat(value), oob=hasBounds&&!isNaN(v)&&(v<sMin||v>sMax);
   const iStyle=locked?S.inputLock:oob?{...S.input,borderColor:"#f59e0b",boxShadow:"0 0 0 2px rgba(245,158,11,0.15)"}:S.input;
   return <div>
     <div style={S.inputRow}>
@@ -705,14 +706,14 @@ const ChartTip = ({active,payload,sym}) => {
   </div>;
 };
 
-const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))",gap:"0 12px"}}>
-  <NumInput label="Mtg Rate" value={(params.mortgageRate*100).toFixed(1)} onChange={v=>onChange("mortgageRate",v/100)} step={0.1} suffix="%" rangeKey="mortgageRate"/>
-  <NumInput label="Invest Return" value={(params.investReturn*100).toFixed(1)} onChange={v=>onChange("investReturn",v/100)} step={0.1} suffix="%" rangeKey="investReturn" hint="10% S&P CAGR, 7% conservative"/>
-  <NumInput label="Appreciation" value={(params.appreciation*100).toFixed(1)} onChange={v=>onChange("appreciation",v/100)} step={0.1} suffix="%" rangeKey="appreciation" hint="3-4% long-term US avg"/>
-  <NumInput label="Rent Growth" value={(params.rentGrowth*100).toFixed(1)} onChange={v=>onChange("rentGrowth",v/100)} step={0.1} suffix="%" rangeKey="rentGrowth" hint="3-4% typical US"/>
-  <NumInput label="Prop Tax" value={(params.propTaxRate*100).toFixed(2)} onChange={v=>onChange("propTaxRate",v/100)} step={0.01} suffix="%" rangeKey="propTaxRate"/>
-  <NumInput label="Insurance" value={(params.insRate*100).toFixed(2)} onChange={v=>onChange("insRate",v/100)} step={0.01} suffix="%" rangeKey="insRate"/>
-  <NumInput label="Maintenance" value={(params.maintRate*100).toFixed(1)} onChange={v=>onChange("maintRate",v/100)} step={0.1} suffix="%" rangeKey="maintRate"/>
+const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}}>
+  <NumInput label="Mtg Rate" value={(params.mortgageRate*100).toFixed(1)} onChange={v=>onChange("mortgageRate",v/100)} step={0.1} suffix="%" rangeKey="mortgageRate" noSlider/>
+  <NumInput label="Invest Return" value={(params.investReturn*100).toFixed(1)} onChange={v=>onChange("investReturn",v/100)} step={0.1} suffix="%" rangeKey="investReturn" hint="10% S&P CAGR, 7% conservative" noSlider/>
+  <NumInput label="Appreciation" value={(params.appreciation*100).toFixed(1)} onChange={v=>onChange("appreciation",v/100)} step={0.1} suffix="%" rangeKey="appreciation" hint="3-4% long-term US avg" noSlider/>
+  <NumInput label="Rent Growth" value={(params.rentGrowth*100).toFixed(1)} onChange={v=>onChange("rentGrowth",v/100)} step={0.1} suffix="%" rangeKey="rentGrowth" hint="3-4% typical US" noSlider/>
+  <NumInput label="Prop Tax" value={(params.propTaxRate*100).toFixed(2)} onChange={v=>onChange("propTaxRate",v/100)} step={0.01} suffix="%" rangeKey="propTaxRate" noSlider/>
+  <NumInput label="Insurance" value={(params.insRate*100).toFixed(2)} onChange={v=>onChange("insRate",v/100)} step={0.01} suffix="%" rangeKey="insRate" noSlider/>
+  <NumInput label="Maintenance" value={(params.maintRate*100).toFixed(1)} onChange={v=>onChange("maintRate",v/100)} step={0.1} suffix="%" rangeKey="maintRate" noSlider/>
 </div>;
 
 // Shared panel for Scenario and Custom — one component, two instances

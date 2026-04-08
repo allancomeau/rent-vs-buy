@@ -41,10 +41,12 @@
       button { min-height:44px; }
     }
     @media(max-width:480px){
-      body { font-size:14px; }
+      body { font-size:14px; overflow-x:hidden; }
       h1 { font-size:24px !important; }
       .recharts-wrapper { font-size:10px; }
       .recharts-legend-wrapper { font-size:9px !important; }
+      .recharts-yAxis .recharts-text { font-size:9px !important; }
+      .recharts-xAxis .recharts-text { font-size:9px !important; }
     }
   </style>
 </head>
@@ -630,7 +632,7 @@ const THEMES = {
 };
 let T = THEMES.light;
 const buildS = (t) => ({
-  page:{fontFamily:t.font,maxWidth:1400,margin:"0 auto",padding:"16px",color:t.text1,background:t.bg,fontVariantNumeric:"tabular-nums",minHeight:"100vh"},
+  page:{fontFamily:t.font,maxWidth:1400,margin:"0 auto",padding:"16px",color:t.text1,background:t.bg,fontVariantNumeric:"tabular-nums",minHeight:"100vh",boxSizing:"border-box",overflowX:"hidden"},
   card:{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,padding:16,boxShadow:t.shadow,marginBottom:16},
   sTitle:{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:t.text2,marginBottom:10,paddingBottom:6,borderBottom:`2px solid ${t.border}`},
   inputRow:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,gap:6},
@@ -703,7 +705,7 @@ const ChartTip = ({active,payload,sym}) => {
   </div>;
 };
 
-const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}}>
+const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(130px, 1fr))",gap:"0 12px"}}>
   <NumInput label="Mtg Rate" value={(params.mortgageRate*100).toFixed(1)} onChange={v=>onChange("mortgageRate",v/100)} step={0.1} suffix="%" rangeKey="mortgageRate"/>
   <NumInput label="Invest Return" value={(params.investReturn*100).toFixed(1)} onChange={v=>onChange("investReturn",v/100)} step={0.1} suffix="%" rangeKey="investReturn" hint="10% S&P CAGR, 7% conservative"/>
   <NumInput label="Appreciation" value={(params.appreciation*100).toFixed(1)} onChange={v=>onChange("appreciation",v/100)} step={0.1} suffix="%" rangeKey="appreciation" hint="3-4% long-term US avg"/>
@@ -1054,8 +1056,8 @@ function RentVsBuyV3() {
       {/* CHART */}
       {tutorial&&<div className="tut"><b>5</b>Visualize the math — the dropdown switches between 6 views. <strong>"Advantage"</strong> = buyer wealth minus renter wealth (positive means buying wins). "Wealth paths" shows each side's total net worth. "Tornado" reveals which single assumption drives your result most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</div>}
       <div style={S.card}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:12}}>
-          <div style={{flex:1}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:12,flexWrap:"wrap"}}>
+          <div style={{flex:"1 1 200px",minWidth:0}}>
             <div style={{fontSize:15,fontWeight:700}}>{CHARTS[chartType]?.title}</div>
             {chartDescOpen&&<div style={{fontSize:11,color:T.text3,marginTop:4,lineHeight:1.6,background:T.muted,padding:"8px 10px",borderRadius:6,cursor:"pointer"}} onClick={()=>setChartDescOpen(false)}>{CHARTS[chartType]?.sub} <span style={{color:T.text3,fontSize:10}}>(click to collapse)</span></div>}
             {!chartDescOpen&&<div style={{fontSize:10,color:T.accent,marginTop:2,cursor:"pointer"}} onClick={()=>setChartDescOpen(true)}>What does this chart show?</div>}
@@ -1065,8 +1067,8 @@ function RentVsBuyV3() {
           </select>
         </div>
 
-        {chartType==="advantage"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:30,left:20,bottom:5}}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={70}/>
+        {chartType==="advantage"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:10,left:5,bottom:5}}>
+          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={55}/>
           <Tooltip content={<ChartTip sym={sym}/>}/><Legend wrapperStyle={{fontSize:11}}/>
           <ReferenceLine y={0} stroke={T.text1}/><ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Yr ${hp}`,position:"top",fontSize:11,fill:"#f59e0b"}}/>
           <Line type="monotone" dataKey="locA" name={locALabel} stroke={T.accent} strokeWidth={1.5} dot={false} strokeDasharray="6 3"/>
@@ -1075,8 +1077,8 @@ function RentVsBuyV3() {
           <Line type="monotone" dataKey="cus" name="Custom" stroke={T.text1} strokeWidth={2.5} dot={false}/>
         </LineChart></ResponsiveContainer>}
 
-        {chartType==="wealth"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:30,left:20,bottom:5}}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={70}/>
+        {chartType==="wealth"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:10,left:5,bottom:5}}>
+          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={55}/>
           <Tooltip content={<ChartTip sym={sym}/>}/><Legend wrapperStyle={{fontSize:11}}/>
           <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
           {cusR.breakeven&&<ReferenceLine x={cusR.breakeven} stroke="#dc2626" strokeDasharray="4 4" label={{value:"BE",position:"top",fontSize:10,fill:"#dc2626"}}/>}
@@ -1084,8 +1086,8 @@ function RentVsBuyV3() {
           <Line type="monotone" dataKey="cusRenter" name="Renter" stroke={T.green} strokeWidth={2.5} dot={false}/>
         </LineChart></ResponsiveContainer>}
 
-        {chartType==="cost"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:30,left:20,bottom:5}}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={70}/>
+        {chartType==="cost"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:10,left:5,bottom:5}}>
+          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={55}/>
           <Tooltip content={<ChartTip sym={sym}/>}/><Legend wrapperStyle={{fontSize:11}}/>
           <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Sell yr ${hp}`,position:"top",fontSize:10,fill:"#f59e0b"}}/>
           {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={{value:"Paid off",position:"top",fontSize:10,fill:T.text3}}/>}
@@ -1093,8 +1095,8 @@ function RentVsBuyV3() {
           <Line type="monotone" dataKey="cusRenterCost" name="Renter Cost" stroke={T.green} strokeWidth={2} dot={false}/>
         </LineChart></ResponsiveContainer>}
 
-        {chartType==="equity"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:30,left:20,bottom:5}}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={70}/>
+        {chartType==="equity"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:10,left:5,bottom:5}}>
+          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={55}/>
           <Tooltip content={<ChartTip sym={sym}/>}/><Legend wrapperStyle={{fontSize:11}}/>
           <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
           <Line type="monotone" dataKey="cusHomeVal" name="Home Value" stroke={T.text3} strokeWidth={1.5} dot={false} strokeDasharray="4 2"/>
@@ -1102,8 +1104,8 @@ function RentVsBuyV3() {
           <Line type="monotone" dataKey="cusEquity" name="Equity" stroke={T.accent} strokeWidth={2.5} dot={false}/>
         </LineChart></ResponsiveContainer>}
 
-        {chartType==="portfolio"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:30,left:20,bottom:5}}>
-          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={70}/>
+        {chartType==="portfolio"&&<ResponsiveContainer width="100%" height={360}><LineChart data={chartData} margin={{top:5,right:10,left:5,bottom:5}}>
+          <CartesianGrid strokeDasharray="3 3" stroke={T.border}/><XAxis dataKey="year" tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>v%5===0?v:""}/><YAxis tick={{fontSize:11,fill:T.text2}} tickFormatter={v=>fmtC(v,sym)} width={55}/>
           <Tooltip content={<ChartTip sym={sym}/>}/><Legend wrapperStyle={{fontSize:11}}/>
           <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
           {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={{value:"Mtg paid",position:"top",fontSize:10,fill:T.text3}}/>}
@@ -1149,7 +1151,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.6 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.7 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div>This tool is for educational and discussion purposes only and does not constitute financial, tax, or investment advice.</div>
         <div style={{marginTop:2}}>Consult a qualified financial advisor before making real estate or investment decisions.</div>
       </div>

@@ -4,6 +4,16 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v3.9 — April 2026
+
+### Panel Polish & Discoverability
+- **Guide closed by default:** Removed `open` attribute from guide section. Tutorial nudge and toggle handle discovery. Addresses #1 feedback item across all testers — wall of text before inputs killed engagement.
+- **Home price derivation callout:** Prominent centered line between "Your Situation" and panels: "At 6.0% rate, $2,000/mo + $80,000 down = $413,583 home." Makes payment-first architecture immediately visible.
+- **Break-even clarity:** "BE Never" replaced with "Break-even: Never" across all 3 panel locations. Hover tooltip explains "First year where buying catches up to renting in total wealth."
+- **Full theme CSS audit:** Eliminated all remaining hardcoded rgba colors from UI components. VerdictBox, Location panel header, Scenario panel, Link toggle, tornado chart bars, and overrides display all now use `T.*` theme tokens with hex alpha. Every element adapts to every theme.
+
+---
+
 ## v3.8 — April 2026
 
 ### Layout & Communication
@@ -32,6 +42,28 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ### Documentation
 - 7th research file: FAQ.md — 115 research-backed questions across 11 sections (common criticisms, investment returns, tax treatment, behavioral finance, housing market, renting variables, transaction costs, what models miss, international, analytical approaches, practical decision-making).
+
+---
+
+## v3.7.5 — April 2026
+
+### Theme Bug Fixes
+- **Midnight pill fix:** Active pill now uses `v.card` background + `v.text1` text — guaranteed contrast for every theme.
+- **3 new themes:** Nord (Scandinavian blue-gray), Sand (warm paper/desert), Moss (forest green dark). 10 themes total.
+- **Default chart:** Changed from Advantage to Total Wealth — non-alarming first impression.
+
+---
+
+## v3.7 — April 2026
+
+### UX & Communication
+- **Open source banner:** Dismissible banner emphasizing open source + Git links. Theme-aware colors. Closes for session, reappears on refresh.
+- **Tutorial toggle switch:** Replaced button with iOS-style toggle. Hover tooltip explains function.
+- **Chart auto-description:** Collapsible explanation panel that auto-opens when switching chart types.
+- **Large-advantage explainer:** When advantage exceeds $200K at 100% discipline, inline explanation with compound math and 70% discipline suggestion.
+- **FAQ tab expanded:** Link to full 115-question FAQ on GitHub with Ctrl+F hint. FAQ.md added as 7th research file.
+- **Emoji cleanup:** Removed decorative emojis (🎓📋📖📄). Kept functional (🟢🟡🔴💡📌⚠️⏱🔗🔒).
+- **Share link tooltip:** Hover text explains "Saves all your inputs as a shareable URL."
 
 ---
 

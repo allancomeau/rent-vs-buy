@@ -13,7 +13,7 @@
   <script src="https://unpkg.com/@babel/standalone@7.26.10/babel.min.js"></script>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: #F4F6F9; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    body { background: #F4F6F9; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow-x: hidden; }
     #root { min-height: 100vh; }
     #loading { display:flex;align-items:center;justify-content:center;height:100vh;font-family:'Inter',system-ui;color:#6C757D;font-size:15px;font-weight:500; }
     ::selection { background: var(--accent-15, rgba(37,99,235,0.15)); }
@@ -38,6 +38,13 @@
     @media(max-width:768px){
       .tut { font-size:12px; }
       input[type=number],select { font-size:16px !important; min-height:44px; }
+      button { min-height:44px; }
+    }
+    @media(max-width:480px){
+      body { font-size:14px; }
+      h1 { font-size:24px !important; }
+      .recharts-wrapper { font-size:10px; }
+      .recharts-legend-wrapper { font-size:9px !important; }
     }
   </style>
 </head>
@@ -614,18 +621,16 @@ function verdictLabel(adv, hp) {
 const THEMES = {
   light:{ name:"Light", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#F4F6F9", card:"#FFFFFF", muted:"#F1F5F9", text1:"#212529", text2:"#6C757D", text3:"#9CA3AF", border:"#E2E8F0", accent:"#2563eb", green:"#16a34a", purple:"#7c3aed", shadow:"0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1)", slider:"#E2E8F0", sliderThumb:"#2563eb", tutBg:"#EFF6FF", tutBorder:"#BFDBFE", tutText:"#1e40af" },
   dark:{ name:"Dark", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#0D1117", card:"#161B22", muted:"#21262D", text1:"#E6EDF3", text2:"#8B949E", text3:"#6E7681", border:"#30363D", accent:"#58A6FF", green:"#3FB950", purple:"#BC8CFF", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#30363D", sliderThumb:"#58A6FF", tutBg:"#161B22", tutBorder:"#30363D", tutText:"#58A6FF" },
-  midnight:{ name:"Midnight", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#000000", card:"#0A0E14", muted:"#131820", text1:"#FFA028", text2:"#C0C0C0", text3:"#707070", border:"#2A2A2A", accent:"#4AF6C3", green:"#4AF6C3", purple:"#A78BFA", shadow:"0 1px 4px rgba(0,0,0,0.5)", slider:"#2A2A2A", sliderThumb:"#FFA028", tutBg:"#0A0E14", tutBorder:"#2A2A2A", tutText:"#FFA028" },
   warm:{ name:"Warm", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#FBF7F2", card:"#FFFFFF", muted:"#F5EDE3", text1:"#3D2C1A", text2:"#8B7355", text3:"#B8A089", border:"#E8D5C0", accent:"#C45D2C", green:"#3A7D44", purple:"#7C5295", shadow:"0 1px 3px rgba(61,44,26,0.08), 0 2px 6px rgba(61,44,26,0.06)", slider:"#E8D5C0", sliderThumb:"#C45D2C", tutBg:"#FFF8F0", tutBorder:"#E8D5C0", tutText:"#C45D2C" },
   ocean:{ name:"Ocean", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#0F1B2D", card:"#162032", muted:"#1C2940", text1:"#D0E4F7", text2:"#7FA3C4", text3:"#506880", border:"#2A3F5A", accent:"#4DA6FF", green:"#34D399", purple:"#A78BFA", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#2A3F5A", sliderThumb:"#4DA6FF", tutBg:"#162032", tutBorder:"#2A3F5A", tutText:"#4DA6FF" },
   ember:{ name:"Ember", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#1A1410", card:"#231D17", muted:"#2C241E", text1:"#E8DDD0", text2:"#A89580", text3:"#7A6B5A", border:"#3D3229", accent:"#E8854A", green:"#6DAA5C", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)", slider:"#3D3229", sliderThumb:"#E8854A", tutBg:"#231D17", tutBorder:"#3D3229", tutText:"#E8854A" },
   nord:{ name:"Nord", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#2E3440", card:"#3B4252", muted:"#434C5E", text1:"#ECEFF4", text2:"#D8DEE9", text3:"#7B88A1", border:"#4C566A", accent:"#88C0D0", green:"#A3BE8C", purple:"#B48EAD", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#4C566A", sliderThumb:"#88C0D0", tutBg:"#3B4252", tutBorder:"#4C566A", tutText:"#88C0D0" },
   aqua:{ name:"Aqua", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#F0FAFA", card:"#FFFFFF", muted:"#E0F5F5", text1:"#1A3636", text2:"#4A7878", text3:"#7AADAD", border:"#B0D8D8", accent:"#0D9494", green:"#2E8B57", purple:"#7C6AAE", shadow:"0 1px 2px rgba(13,148,148,0.06), 0 1px 3px rgba(13,148,148,0.08)", slider:"#B0D8D8", sliderThumb:"#0D9494", tutBg:"#E6F7F7", tutBorder:"#A0D0D0", tutText:"#0A7070" },
-  gold:{ name:"Gold", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#FBF8F0", card:"#FFFFF8", muted:"#F3ECD8", text1:"#3A3420", text2:"#887A58", text3:"#B0A480", border:"#E0D4B0", accent:"#B8860B", green:"#5A8A40", purple:"#8B70A0", shadow:"0 1px 2px rgba(58,52,32,0.06), 0 1px 3px rgba(58,52,32,0.08)", slider:"#E0D4B0", sliderThumb:"#B8860B", tutBg:"#F8F2E0", tutBorder:"#E0D4B0", tutText:"#8B6914" },
   moss:{ name:"Moss", font:"'Inter',-apple-system,BlinkMacSystemFont,sans-serif", mono:"'SF Mono',ui-monospace,Menlo,monospace", bg:"#1A2118", card:"#222D1F", muted:"#2A3626", text1:"#D4E0CC", text2:"#8FA880", text3:"#5E7352", border:"#3A4A34", accent:"#7CB868", green:"#7CB868", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#3A4A34", sliderThumb:"#7CB868", tutBg:"#222D1F", tutBorder:"#3A4A34", tutText:"#7CB868" },
 };
 let T = THEMES.light;
 const buildS = (t) => ({
-  page:{fontFamily:t.font,maxWidth:1400,margin:"0 auto",padding:"24px 32px",color:t.text1,background:t.bg,fontVariantNumeric:"tabular-nums",minHeight:"100vh"},
+  page:{fontFamily:t.font,maxWidth:1400,margin:"0 auto",padding:"16px",color:t.text1,background:t.bg,fontVariantNumeric:"tabular-nums",minHeight:"100vh"},
   card:{background:t.card,border:`1px solid ${t.border}`,borderRadius:12,padding:16,boxShadow:t.shadow,marginBottom:16},
   sTitle:{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:t.text2,marginBottom:10,paddingBottom:6,borderBottom:`2px solid ${t.border}`},
   inputRow:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,gap:6},
@@ -634,7 +639,7 @@ const buildS = (t) => ({
   inputLock:{width:84,padding:"5px 8px",border:`1px solid ${t.border}`,borderRadius:6,fontSize:13,fontWeight:500,textAlign:"right",fontFamily:t.mono,color:t.text3,background:t.muted},
   hint:{fontSize:10,color:t.text3,marginTop:-2,marginBottom:4},
   select:{padding:"5px 10px",border:`1px solid ${t.border}`,borderRadius:6,fontSize:12,fontWeight:500,fontFamily:t.font,background:t.card,color:t.text1,cursor:"pointer"},
-  panels:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(320px, 1fr))",gap:16,marginBottom:16},
+  panels:{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(280px, 1fr))",gap:16,marginBottom:16},
   panel:{border:`1px solid ${t.border}`,borderRadius:12,background:t.card,boxShadow:t.shadow},
   pH:{padding:"10px 14px",fontWeight:700,fontSize:11,textTransform:"uppercase",letterSpacing:"0.06em",borderRadius:"12px 12px 0 0"},
   pB:{padding:"12px 14px",fontSize:12},
@@ -700,9 +705,9 @@ const ChartTip = ({active,payload,sym}) => {
 
 const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}}>
   <NumInput label="Mtg Rate" value={(params.mortgageRate*100).toFixed(1)} onChange={v=>onChange("mortgageRate",v/100)} step={0.1} suffix="%" rangeKey="mortgageRate"/>
-  <NumInput label="Invest Return" value={(params.investReturn*100).toFixed(1)} onChange={v=>onChange("investReturn",v/100)} step={0.1} suffix="%" rangeKey="investReturn"/>
-  <NumInput label="Appreciation" value={(params.appreciation*100).toFixed(1)} onChange={v=>onChange("appreciation",v/100)} step={0.1} suffix="%" rangeKey="appreciation"/>
-  <NumInput label="Rent Growth" value={(params.rentGrowth*100).toFixed(1)} onChange={v=>onChange("rentGrowth",v/100)} step={0.1} suffix="%" rangeKey="rentGrowth"/>
+  <NumInput label="Invest Return" value={(params.investReturn*100).toFixed(1)} onChange={v=>onChange("investReturn",v/100)} step={0.1} suffix="%" rangeKey="investReturn" hint="10% S&P CAGR, 7% conservative"/>
+  <NumInput label="Appreciation" value={(params.appreciation*100).toFixed(1)} onChange={v=>onChange("appreciation",v/100)} step={0.1} suffix="%" rangeKey="appreciation" hint="3-4% long-term US avg"/>
+  <NumInput label="Rent Growth" value={(params.rentGrowth*100).toFixed(1)} onChange={v=>onChange("rentGrowth",v/100)} step={0.1} suffix="%" rangeKey="rentGrowth" hint="3-4% typical US"/>
   <NumInput label="Prop Tax" value={(params.propTaxRate*100).toFixed(2)} onChange={v=>onChange("propTaxRate",v/100)} step={0.01} suffix="%" rangeKey="propTaxRate"/>
   <NumInput label="Insurance" value={(params.insRate*100).toFixed(2)} onChange={v=>onChange("insRate",v/100)} step={0.01} suffix="%" rangeKey="insRate"/>
   <NumInput label="Maintenance" value={(params.maintRate*100).toFixed(1)} onChange={v=>onChange("maintRate",v/100)} step={0.1} suffix="%" rangeKey="maintRate"/>
@@ -879,8 +884,8 @@ function RentVsBuyV3() {
           <div style={{display:"flex",gap:3,alignItems:"center",background:T.muted,borderRadius:8,padding:"4px 6px",border:`1px solid ${T.border}`}} title="Color theme">
             {Object.entries(THEMES).map(([k,v],idx)=>{
               const active=k===theme;
-              const dots={light:"#F4F6F9",dark:"#161B22",warm:"#F5EDE3",midnight:"#FFA028",ocean:"#1C2940",ember:"#3D2219",nord:"#5E81AC",aqua:"#0D9494",gold:"#B8860B",moss:"#4A6741"};
-              const sep = (k==="midnight"||k==="nord");
+              const dots={light:"#F4F6F9",dark:"#161B22",warm:"#F5EDE3",ocean:"#1C2940",ember:"#3D2219",nord:"#5E81AC",aqua:"#0D9494",moss:"#4A6741"};
+              const sep = (k==="ocean"||k==="nord");
               return <React.Fragment key={k}>
                 {sep&&<div style={{width:1,height:14,background:T.border,margin:"0 2px"}}/>}
                 <button onClick={()=>setTheme(k)} style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:dots[k]||T.muted,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
@@ -972,14 +977,14 @@ function RentVsBuyV3() {
         <div style={S.sTitle}>Your Situation</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(200px, 1fr))",gap:20}}>
           <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment}/></div>
-          <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears}/></div>
+          <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="5+ yr to recoup costs"/></div>
           <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Renter Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={100} hint="60-75% realistic"/></div>
           <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
         <div style={{textAlign:"center",padding:"8px 12px",marginTop:12,background:T.muted,borderRadius:6,border:`1px solid ${T.border}`}}>
           <span style={{fontSize:13,fontWeight:700,color:T.text1}}>{ff(cusR.homePrice)} home</span>
-          <span style={{fontSize:11,color:T.text2}}> — {ff(personal.monthlyPayment)}/mo at {fmtPct(cusP.mortgageRate)} + {ff(personal.downPayment)} down ({(personal.downPayment/cusR.homePrice*100).toFixed(0)}%) = {ff(cusR.loan)} loan</span>
-          {toUSD(cusR.homePrice)&&<span style={{fontSize:11,color:T.text3}}>{toUSD(cusR.homePrice)}</span>}
+          <span style={{fontSize:11,color:T.text2}}> — {ff(cusR.loan)} loan ({(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down) · {ff(Math.round(cusR.monthlyPmt))}/mo P&I</span>
+          {toUSD(cusR.homePrice)&&<span style={{fontSize:11,color:T.text3}}> {toUSD(cusR.homePrice)}</span>}
         </div>
       </div>
 
@@ -1127,7 +1132,7 @@ function RentVsBuyV3() {
           <button onClick={()=>setShowData(!showData)} style={{cursor:"pointer",background:"none",border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 14px",fontSize:12,fontWeight:600,color:T.text2,width:"100%",textAlign:"left"}}>
             {showData?"▼ Hide":"▸ View"} Year-by-Year Data ({cusR.data.length} rows · all columns)
           </button>
-          {showData && <div style={{maxHeight:400,overflowY:"auto",marginTop:10}}>
+          {showData && <div style={{maxHeight:400,overflowY:"auto",overflowX:"auto",marginTop:10,WebkitOverflowScrolling:"touch"}}>
             <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><Tip text={TABLE_TIPS[h]}>{h}</Tip></th>)}</tr></thead>
             <tbody>{cusR.data.map(d=>{const isH=d.year===hp,isBE=d.year===cusR.breakeven;return<tr key={d.year} style={{background:isH?"rgba(245,158,11,0.08)":isBE?"rgba(220,38,38,0.05)":d.year%2===0?T.muted:T.card}}>
               <td style={{...S.td,textAlign:"center",fontWeight:isH||isBE?700:500}}>{d.year}</td>
@@ -1144,7 +1149,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.6 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div>This tool is for educational and discussion purposes only and does not constitute financial, tax, or investment advice.</div>
         <div style={{marginTop:2}}>Consult a qualified financial advisor before making real estate or investment decisions.</div>
       </div>

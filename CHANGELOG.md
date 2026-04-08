@@ -4,7 +4,21 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
-## v3.7 — April 2026
+## v3.8 — April 2026
+
+### Layout & Communication
+- **Layout reorder:** "Your Situation" inputs and three panels (Location, Scenario, Custom) now grouped together as inputs. Verdict callout moved between panels and chart — flows as: configure → see result → visualize.
+- **Verdict explanations:** Each confidence indicator (🟢🟡🔴) now includes a plain-English follow-up explaining what it means for the sensitivity chart and the user's decision.
+- **FAQ scroll-to:** Clicking the FAQ link in the tutorial nudge now scrolls the page to the guide section instead of just expanding it silently.
+- **Custom panel dynamic labeling:** Custom panel title shows "Custom (edited)" when overrides don't match any preset, helping users distinguish between preset-loaded and manually-adjusted scenarios.
+- **Disclaimer high-contrast:** "Educational only — not financial advice" rendered in red (#dc2626) wherever it appears for emphasis.
+- **Banner update:** Open source banner now mentions "Built with Claude Opus 4.6."
+- **Theme CSS audit:** Focus/hover states, input borders, slider thumb glow, and text selection now all use CSS custom properties that update with each theme. Eliminated 8 hardcoded color values from the CSS `<style>` block.
+- **Tornado chart:** Moved to 2nd position in chart dropdown (after Total Wealth). Star (★) now has hover tooltip explaining "Most impactful variable."
+- **Verdict colors:** verdictLabel function already theme-aware via T parameter — verified and confirmed working across all 10 themes.
+
+---
+
 
 ### UX & Communication
 - **Open source banner:** Dismissible banner at top emphasizing open source, open research, and GitHub access. Theme-aware colors. Closes for session, reappears on refresh.

@@ -631,12 +631,13 @@ const THEME_FONT = "'Inter',-apple-system,BlinkMacSystemFont,sans-serif";
 const THEME_MONO = "'SF Mono',ui-monospace,Menlo,monospace";
 const THEMES = {
   light:{ name:"Light", bg:"#F4F6F9", card:"#FFFFFF", muted:"#F1F5F9", text1:"#212529", text2:"#6C757D", text3:"#9CA3AF", border:"#E2E8F0", accent:"#2563eb", green:"#16a34a", purple:"#7c3aed", shadow:"0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1)", slider:"#E2E8F0", sliderThumb:"#2563eb", tutBg:"#EFF6FF", tutBorder:"#BFDBFE", tutText:"#1e40af" },
-  dark:{ name:"Dark", bg:"#0D1117", card:"#161B22", muted:"#21262D", text1:"#E6EDF3", text2:"#8B949E", text3:"#6E7681", border:"#30363D", accent:"#58A6FF", green:"#3FB950", purple:"#BC8CFF", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#30363D", sliderThumb:"#58A6FF", tutBg:"#161B22", tutBorder:"#30363D", tutText:"#58A6FF" },
   warm:{ name:"Warm", bg:"#FBF7F2", card:"#FFFFFF", muted:"#F5EDE3", text1:"#3D2C1A", text2:"#8B7355", text3:"#B8A089", border:"#E8D5C0", accent:"#C45D2C", green:"#3A7D44", purple:"#7C5295", shadow:"0 1px 3px rgba(61,44,26,0.08), 0 2px 6px rgba(61,44,26,0.06)", slider:"#E8D5C0", sliderThumb:"#C45D2C", tutBg:"#FFF8F0", tutBorder:"#E8D5C0", tutText:"#C45D2C" },
+  aqua:{ name:"Aqua", bg:"#F0FAFA", card:"#FFFFFF", muted:"#E0F5F5", text1:"#1A3636", text2:"#4A7878", text3:"#7AADAD", border:"#B0D8D8", accent:"#0D9494", green:"#2E8B57", purple:"#7C6AAE", shadow:"0 1px 2px rgba(13,148,148,0.06), 0 1px 3px rgba(13,148,148,0.08)", slider:"#B0D8D8", sliderThumb:"#0D9494", tutBg:"#E6F7F7", tutBorder:"#A0D0D0", tutText:"#0A7070" },
+  citrus:{ name:"Citrus", bg:"#FFFDF0", card:"#FFFFFF", muted:"#FFF8DC", text1:"#3D3518", text2:"#8A7A40", text3:"#B8A860", border:"#E8D88A", accent:"#D08010", green:"#5A8C20", purple:"#9060A0", shadow:"0 1px 2px rgba(61,53,24,0.06), 0 1px 3px rgba(61,53,24,0.08)", slider:"#E8D88A", sliderThumb:"#D08010", tutBg:"#FFF8E0", tutBorder:"#E8D88A", tutText:"#8A6010" },
+  dark:{ name:"Dark", bg:"#0D1117", card:"#161B22", muted:"#21262D", text1:"#E6EDF3", text2:"#8B949E", text3:"#6E7681", border:"#30363D", accent:"#58A6FF", green:"#3FB950", purple:"#BC8CFF", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#30363D", sliderThumb:"#58A6FF", tutBg:"#161B22", tutBorder:"#30363D", tutText:"#58A6FF" },
   ocean:{ name:"Ocean", bg:"#0F1B2D", card:"#162032", muted:"#1C2940", text1:"#D0E4F7", text2:"#7FA3C4", text3:"#506880", border:"#2A3F5A", accent:"#4DA6FF", green:"#34D399", purple:"#A78BFA", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#2A3F5A", sliderThumb:"#4DA6FF", tutBg:"#162032", tutBorder:"#2A3F5A", tutText:"#4DA6FF" },
   ember:{ name:"Ember", bg:"#1A1410", card:"#231D17", muted:"#2C241E", text1:"#E8DDD0", text2:"#A89580", text3:"#7A6B5A", border:"#3D3229", accent:"#E8854A", green:"#6DAA5C", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)", slider:"#3D3229", sliderThumb:"#E8854A", tutBg:"#231D17", tutBorder:"#3D3229", tutText:"#E8854A" },
   nord:{ name:"Nord", bg:"#2E3440", card:"#3B4252", muted:"#434C5E", text1:"#ECEFF4", text2:"#D8DEE9", text3:"#7B88A1", border:"#4C566A", accent:"#88C0D0", green:"#A3BE8C", purple:"#B48EAD", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#4C566A", sliderThumb:"#88C0D0", tutBg:"#3B4252", tutBorder:"#4C566A", tutText:"#88C0D0" },
-  aqua:{ name:"Aqua", bg:"#F0FAFA", card:"#FFFFFF", muted:"#E0F5F5", text1:"#1A3636", text2:"#4A7878", text3:"#7AADAD", border:"#B0D8D8", accent:"#0D9494", green:"#2E8B57", purple:"#7C6AAE", shadow:"0 1px 2px rgba(13,148,148,0.06), 0 1px 3px rgba(13,148,148,0.08)", slider:"#B0D8D8", sliderThumb:"#0D9494", tutBg:"#E6F7F7", tutBorder:"#A0D0D0", tutText:"#0A7070" },
   moss:{ name:"Moss", bg:"#1A2118", card:"#222D1F", muted:"#2A3626", text1:"#D4E0CC", text2:"#8FA880", text3:"#5E7352", border:"#3A4A34", accent:"#7CB868", green:"#7CB868", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#3A4A34", sliderThumb:"#7CB868", tutBg:"#222D1F", tutBorder:"#3A4A34", tutText:"#7CB868" },
 };
 const buildS = (t) => ({
@@ -782,6 +783,7 @@ function RentVsBuyV3() {
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
   const [tutorial,setTutorial]=useState(false);
+  const [downPctInput,setDownPctInput]=useState("");
   const guideRef=React.useRef(null);
   const [theme,setTheme]=useState(saved?.th||"light");
 
@@ -812,7 +814,7 @@ function RentVsBuyV3() {
 
   const [personal,setPersonal]=useState(saved?.p||{
     monthlyPayment:c.personalDefaults.monthlyPayment, downPayment:c.personalDefaults.downPayment,
-    mortgageTerm:c.defaults.mortgageTerm, holdingPeriod:15, simYears:30, discipline:1.0, otherItemized:0,
+    mortgageTerm:c.defaults.mortgageTerm, holdingPeriod:15, simYears:30, discipline:0.85, otherItemized:0,
   });
   const up=key=>val=>setPersonal(prev=>({...prev,[key]:val}));
   const hp=personal.holdingPeriod;
@@ -901,7 +903,7 @@ function RentVsBuyV3() {
       <div style={{textAlign:"center",marginBottom:20,paddingTop:8}}>
         <h1 style={{fontSize:"clamp(24px, 5vw, 32px)",fontWeight:700,letterSpacing:"-0.03em",marginBottom:6}}>Should I Rent or Buy?</h1>
         <div style={{fontSize:13,color:T.text2,marginBottom:4}}>Research-backed financial simulation · {METROS.length} metros · 16 countries</div>
-        <div style={{fontSize:12,color:T.text3,marginBottom:12}}>Try the <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>setTutorial(true)}>Tutorial</strong> or <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>{setGuideTab("faq");if(guideRef.current)guideRef.current.open=true;setTimeout(()=>{if(guideRef.current)guideRef.current.scrollIntoView({behavior:"smooth",block:"start"});},0);}}>FAQ</strong> before diving in · <span style={{fontStyle:"italic"}}>Educational only — not financial advice</span></div>
+        <div style={{fontSize:12,color:T.text2,marginBottom:12}}>Try the <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>setTutorial(true)}>Tutorial</strong> or <strong style={{color:T.accent,cursor:"pointer"}} onClick={()=>{setGuideTab("faq");if(guideRef.current)guideRef.current.open=true;setTimeout(()=>{if(guideRef.current)guideRef.current.scrollIntoView({behavior:"smooth",block:"start"});},0);}}>FAQ</strong> before diving in · <span style={{fontWeight:600,background:`${T.accent}12`,padding:"2px 8px",borderRadius:3}}>Educational only — not financial advice</span></div>
         <div style={{display:"flex",justifyContent:"center",gap:10,alignItems:"center",flexWrap:"wrap",marginBottom:6}}>
           {/* Tutorial toggle — prominent */}
           <div role="switch" aria-checked={tutorial} aria-label="Toggle tutorial" tabIndex={0} style={{display:"flex",alignItems:"center",gap:6,cursor:"pointer",background:`${T.accent}0F`,border:`1px solid ${T.accent}44`,borderRadius:8,padding:"6px 12px"}} onClick={()=>setTutorial(!tutorial)} onKeyDown={e=>{if(e.key==="Enter"||e.key===" "){e.preventDefault();setTutorial(!tutorial);}}} title="Step-by-step guide through each section">
@@ -918,7 +920,7 @@ function RentVsBuyV3() {
           <div style={{display:"flex",gap:3,alignItems:"center",background:T.muted,borderRadius:8,padding:"4px 6px",border:`1px solid ${T.border}`}} title="Color theme">
             {Object.entries(THEMES).map(([k,v])=>{
               const active=k===theme;
-              const sep = (k==="ocean"||k==="nord");
+              const sep = (k==="dark");
               return <React.Fragment key={k}>
                 {sep&&<div style={{width:1,height:14,background:T.border,margin:"0 2px"}}/>}
                 <button onClick={()=>setTheme(k)} aria-label={`${v.name} theme`} aria-pressed={active} style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:v.bg,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
@@ -1010,42 +1012,54 @@ function RentVsBuyV3() {
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
           <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment} hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down`}/></div>
           <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="5+ yr to recoup costs"/></div>
-          <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Renter Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={100} hint="60-75% realistic"/></div>
+          <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Renter Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={75} hint="60-75% realistic"/></div>
           <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
         <div style={{padding:"10px 14px",marginTop:12,background:T.muted,borderRadius:8,border:`1px solid ${T.border}`,fontSize:12}}>
-          <div style={{textAlign:"center",marginBottom:8}}>
-            <span style={{fontSize:14,fontWeight:700,color:T.text1}}>{ff(cusR.homePrice)} home</span>
-            <span style={{color:T.text2}}> — {ff(cusR.loan)} loan · {ff(Math.round(cusR.monthlyPmt))}/mo P&I</span>
-            {toUSD(cusR.homePrice)&&<span style={{fontSize:11,color:T.text3}}> {toUSD(cusR.homePrice)}</span>}
-            <div style={{fontSize:11,marginTop:4,color:T.text3}}>
-              {c.name} median: {ff(c.national.medianPrice)}
-              {(()=>{const r=cusR.homePrice/c.national.medianPrice;return r<0.85?" — well below median":r<1.15?" — near median":" — above median";})()}
-            </div>
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"6px 16px",fontSize:11,color:T.text2}}>
-            {(()=>{
-              const dp=personal.downPayment, hp=cusR.homePrice, pct=dp/hp*100;
-              const pmiRate=pct>=20?0:pct>=15?0.002:pct>=10?0.003:0.005;
-              const pmiMo=pmiRate>0?Math.round(cusR.loan*pmiRate/12):0;
-              const recIncome=Math.round(personal.monthlyPayment*12/0.28);
-              const buyCost=Math.round(hp*cusP.closingPct), sellCost=Math.round(hp*cusP.sellingPct);
-              return <>
-                <div style={{padding:"4px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Down: </span>{pct.toFixed(1)}% ({ff(dp)}){pct<20&&<span style={{color:"#f59e0b"}}> — {ff(Math.round(hp*0.2-dp))} more for 20%</span>}
+          {(()=>{
+            const enginePct=personal.downPayment/cusR.homePrice*100;
+            const userPct=downPctInput!==""?parseFloat(downPctInput):null;
+            const activePct=(userPct!=null&&userPct>0)?userPct:enginePct;
+            const supportedHome=personal.downPayment/(activePct/100);
+            const supportedLoan=supportedHome-personal.downPayment;
+            const mr=cusP.mortgageRate/12, nP=cusP.mortgageTerm*12;
+            const supportedPmt=supportedLoan>0&&mr>0?supportedLoan*(mr*Math.pow(1+mr,nP))/(Math.pow(1+mr,nP)-1):supportedLoan>0?supportedLoan/nP:0;
+            const pmiRate=activePct>=20?0:activePct>=15?0.002:activePct>=10?0.003:0.005;
+            const pmiMo=pmiRate>0?Math.round(supportedLoan*pmiRate/12):0;
+            const recIncome=Math.round(supportedPmt*12/0.28);
+            const buyCost=Math.round(supportedHome*cusP.closingPct), sellCost=Math.round(supportedHome*cusP.sellingPct);
+            const medRatio=supportedHome/c.national.medianPrice;
+            return <>
+              <div style={{textAlign:"center",marginBottom:8}}>
+                <div style={{marginBottom:4}}>
+                  <span style={{fontSize:11,color:T.text2}}>{ff(personal.downPayment)} down at </span>
+                  <input inputMode="numeric" value={downPctInput!==""?downPctInput:enginePct.toFixed(1)} style={{width:48,padding:"2px 4px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:13,fontWeight:700,fontFamily:THEME_MONO,textAlign:"right",background:T.card,color:T.text1}} onChange={e=>{const raw=e.target.value;setDownPctInput(raw);}} onBlur={()=>{if(downPctInput==="")return;const v=parseFloat(downPctInput);if(isNaN(v)||v<=0||v>80)setDownPctInput("");}}/>
+                  <span style={{fontSize:11,color:T.text2}}>% → </span>
+                  <span style={{fontSize:15,fontWeight:700,color:T.text1}}>{ff(Math.round(supportedHome))} home</span>
                 </div>
-                {pmiMo>0&&<div style={{padding:"4px 0"}}>
+                <div style={{fontSize:11,color:T.text2}}>{ff(Math.round(supportedLoan))} loan · {ff(Math.round(supportedPmt))}/mo P&I at {fmtPct(cusP.mortgageRate)}</div>
+                <div style={{fontSize:11,marginTop:3,color:T.text3}}>
+                  {c.name} median: {ff(c.national.medianPrice)}
+                  {medRatio<0.85?" — well below median":medRatio<1.15?" — near median":" — above median"}
+                </div>
+                {userPct!=null&&Math.abs(supportedHome-cusR.homePrice)>1000&&<div style={{fontSize:10,marginTop:3,color:T.accent}}>Payment-first model uses {ff(cusR.homePrice)} (from {ff(personal.monthlyPayment)}/mo)</div>}
+              </div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"4px 16px",fontSize:11,color:T.text2}}>
+                {activePct<20&&<div style={{padding:"3px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>20% threshold: </span>{ff(Math.round(supportedHome*0.2-personal.downPayment))} more to avoid PMI
+                </div>}
+                {pmiMo>0&&<div style={{padding:"3px 0"}}>
                   <span style={{fontWeight:600,color:T.text1}}>PMI est: </span>~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity
                 </div>}
-                <div style={{padding:"4px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Income check: </span>{ff(personal.monthlyPayment)}/mo → ~{ff(recIncome)}/yr recommended (28% ratio)
+                <div style={{padding:"3px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>Income check: </span>{ff(Math.round(supportedPmt))}/mo → ~{ff(recIncome)}/yr recommended (28%)
                 </div>
-                <div style={{padding:"4px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Transaction costs: </span>Buy {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip
+                <div style={{padding:"3px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>Costs: </span>Buy {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip
                 </div>
-              </>;
-            })()}
-          </div>
+              </div>
+            </>;
+          })()}
         </div>
       </div>
 
@@ -1201,8 +1215,8 @@ function RentVsBuyV3() {
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
         <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.9 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
-        <div>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
-        <div style={{marginTop:2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
+        <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
+        <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>
       </div>
     </div>

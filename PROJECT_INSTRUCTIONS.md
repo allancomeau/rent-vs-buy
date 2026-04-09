@@ -20,11 +20,11 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9 — Panel Polish
+## Current State: v3.9.9 — Financial Snapshot & Polish
 
 ### Architecture
 
-**Single HTML file** (`index.html`, ~107KB, ~1155 lines) containing:
+**Single HTML file** (`index.html`, ~108KB, ~1230 lines) containing:
 - CDN script tags (React 18, ReactDOM, react-is, prop-types, Recharts, Babel Standalone)
 - One `<script type="text/babel">` block with all application code
 - Inter font from Google Fonts
@@ -53,6 +53,7 @@ Any new hook must be added here or Babel will white-screen.
 - No `import {` or `export default` statements
 - No `</script>` inside the Babel script block
 - COUNTRIES defined exactly once (no duplication)
+- `let T = THEMES.light` and `let S = buildS(T)` present between theme definitions and shared components
 - All key functions present: backsolveLoan, simulate, buildParams, RentVsBuyV3, runSensitivity
 
 ### Monthly-Payment-First Architecture
@@ -66,9 +67,202 @@ Same payment at different mortgage rates → different derived home prices.
 
 ### Page Layout (top to bottom)
 
-1. **Header** — Centered. "Should I Rent or Buy?" as h1. Tutorial toggle (iOS switch), theme selector (colored pill dots), Share Link button.
+1. **Header** — Centered. Fluid h1 (`clamp(24px, 5vw, 32px)`). Tutorial/FAQ links + high-contrast disclaimer in subtitle. Tutorial toggle + Share Link on one row, theme pills on separate row below.
 2. **Open Source Banner** — Dismissible per session. Mentions Claude Opus 4.6, links to GitHub.
-3. **Tutorial Nudge** — One-line hint (visible when tutorial is off). FAQ link scrolls to guide via scrollIntoView.
+3. **Guide** — 4 tabs: How It Works, Methodology, Sources & Limitations, FAQ. Closed by default. `ref={guideRef}` for scroll targeting.
+4. **Your Situation** — Personal inputs shared across all panels. Financial snapshot callout at bottom: derived home price, editable down %, supported home value, PMI estimate, income check (28% ratio), round-trip transaction costs, national median comparison.
+5. **Three Panels** — Location (locked, blue), Scenario (preset-driven, purple when active), Custom (shows "edited" when changed from preset). Market inputs are number-only (no sliders) to prevent panel overflow.
+6. **Verdict Callout** — Between panels and chart. Verdict sentence, home price derivation, 🟢🟡🔴 confidence with inline explanations, conditional insights, large-advantage explainer.
+7. **Chart** — 6 types in dropdown (wealth default, tornado 2nd). Collapsible auto-description. Expandable year-by-year data table.
+8. **Footer** — Version, LinkedIn, GitHub. Three-line legal disclaimer (independent project, employer separation, professional referral). Link to full legal disclaimers on GitHub.
+
+### Theme System (8 themes)
+
+Module-level `let T` updated on each render. `S = useMemo(()=>buildS(T),[theme])`. CSS custom properties for pseudo-element styling. `THEME_FONT` and `THEME_MONO` constants deduplicate font stacks across all themes.
+
+**Light:** Light (default), Warm, Aqua, Citrus.
+**Dark:** Dark, Ocean, Ember, Moss.
+
+Theme selector shows single separator between light and dark groups. Active pill uses `v.card` background + `v.text1` text. Theme persists via URL sharing.
+
+### Three-Panel Layout
+
+| Panel | Purpose | Visual State |
+|-------|---------|--------------|
+| **Location** | Real sourced data, locked | Always blue accent |
+| **Scenario** | Preset market conditions (12 options) | Gray default, purple active |
+| **Custom** | Fully editable sandbox | Shows "Custom (edited)" when overrides don't match any preset |
+
+Custom panel uses key-by-key preset comparison via `isEdited` — cleaner than `JSON.stringify`, same result.
+
+### 6 Chart Types (reordered for user flow)
+
+1. **Total Wealth** (default) — Buyer vs renter total wealth
+2. **Sensitivity Tornado** — Bars sorted by impact, star marks top variable
+3. **Advantage** — All 4 scenario lines overlaid
+4. **Annual Cost** — Buyer vs renter with payoff marker
+5. **Home Equity** — Value, balance, equity
+6. **Invested Savings** — Portfolio comparison
+
+### Verdict Callout
+
+Positioned between panels and chart. Includes:
+- Verdict sentence with theme-aware background
+- Home price derivation with FX conversion
+- Confidence indicators with inline explanations (🟢🟡🔴)
+- Conditional insights (⏱💡📌⚠)
+- Large-advantage explainer (>$200K at high discipline)
+- Disclaimers in high-contrast theme-aware styling
+
+---
+
+## Data Coverage
+
+### 16 Countries
+US, Canada, UK, Australia, Germany, Ireland, New Zealand, France, Spain, Netherlands, Italy, Sweden, Switzerland, Japan, Singapore, South Korea.
+
+### Tax Treatment Buckets
+- **Bucket A (marginalTax = 0):** CA, UK, AU, DE, IE, NZ, FR, ES, IT, JP, SG, KR
+- **Bucket B (marginalTax > 0):** NL (37%), SE (30%), CH (complex, set to 0)
+- **US:** Full deduction with excess itemization method
+- **Structural disclaimers:** JP (building depreciation), SG (HDB), KR (jeonse)
+
+### 54 Metros
+24 US, 5 CA, 3 UK, 4 AU, 2 DE, 1 IE, 2 NZ, 2 FR, 2 ES, 1 NL, 2 IT, 1 SE, 1 CH, 2 JP, 1 SG, 1 KR.
+
+---
+
+## Simulation Engine (Pure Function)
+
+### `simulate(params)` — deterministic, no side effects
+Month-precise amortization, excess itemization tax benefit (post-TCJA), symmetric surplus investing, investment discipline toggle (applies to both buyer and renter surplus).
+
+### `backsolveLoan(monthlyPayment, annualRate, termYears)` — loan amount
+Standard amortization inversion.
+
+### `buildParams(country, metro, personal, rateOverride)` — full parameter set
+Merges country defaults, metro overrides, personal inputs into flat parameter object.
+
+### Engine Bug Fixes (v3.0, from math audit)
+- Bug 1: Final mortgage payment uses `mi + mp` not full `monthlyPmt`
+- Bug 2: Selling costs reduce capital gain per IRS Pub 523
+
+### Performance
+780 iterations/sim × 4 scenarios + 12 sensitivity = ~12,000 iterations. Microseconds.
+
+---
+
+## Research Files (10 documents)
+
+| File | Purpose |
+|------|---------|
+| `rent_vs_buy_research_report.md` | Academic foundations (Poterba, Shiller, Jordà, Himmelberg, Ben Felix) |
+| `rent_vs_buy_research_report_v2.md` | Volatility drag, arithmetic vs geometric means |
+| `defaults_rationale.md` | Every default value sourced (16 countries, 475 lines) |
+| `what_model_doesnt_capture.md` | Known limitations with directional bias analysis |
+| `rent-vs-buy-sim-audit.md` | Formula-by-formula math verification, 23 items |
+| `UI_and_UX_Research_Report.md` | Design tokens, typography, layout patterns |
+| `FAQ.md` | 115 research-backed questions across 11 sections |
+| `legal_disclaimers.md` | Six-component legal disclaimer + privacy + warranty |
+| `target_audience_research.md` | First-time buyer demographics, PMI, down payment data |
+| `Modern_CSS_25-26_Research.md` | CSS architecture, fluid design, container queries |
+
+---
+
+## Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| Investment return = 10% (geometric/CAGR) | 12% arithmetic overstates by 50-70%. g ≈ a − σ²/2. |
+| International tax via parameter values | Engine unchanged. Country differences = parameter values. |
+| Single HTML file deployment | No build tools, no backend, works anywhere. |
+| Engine NEVER modified | All features call simulate() with different inputs. |
+| No cross-country comparison | Currency/tax incompatibility. Within-country dual-metro only. |
+| Snapshot model, not transition | Each year = independent "if I liquidated now." |
+| Wealth chart as default | Non-alarming first impression vs -$2M advantage chart. |
+| Tornado chart 2nd | Most important analytical tool — promoted for discoverability. |
+| 8 curated themes, no raw pickers | Protects readability. 4 light + 4 dark. |
+| Verdict between panels and chart | Configure → result → visualize flow. |
+| Inline tooltips, not popups | Absolute-positioned tooltips bleed on mobile. Inline = zero overflow. |
+| Market inputs: no sliders | Prevents panel overflow on mobile and desktop side-by-side. OOB warnings preserved. |
+| Investment Discipline default 75% | Top of research-backed realistic range. Avoids amber on load. |
+| Financial snapshot display-only | PMI, income check, transaction costs — all derived, never fed back to engine. |
+
+---
+
+## Build Workflow
+
+### Development (in Claude)
+1. Start from Allan's most recent uploaded `index.html` (single source of truth)
+2. Apply edits via `str_replace` tool
+3. Run verification script (balanced syntax, no duplicates, all functions present)
+4. Copy to outputs, present file for download
+
+### Deployment (Allan)
+1. Download from Claude outputs
+2. Test locally in browser (no white screen, features work)
+3. Upload to GitHub repo as `index.html`
+4. GitHub Pages auto-deploys
+
+### Critical Build Rules
+- Always start from Allan's latest upload — never from diverged local copy
+- Never serve without verification script
+- New React hooks must be added to destructuring on line ~54
+- The assembled `index.html` is the single source of truth
+
+---
+
+## Versioning
+
+Format: `vX.Y` or `vX.Y.Z`. Version in footer.
+
+| Version | Title | Key Changes |
+|---------|-------|-------------|
+| v3.0 | Engine & Architecture | Payment-first, 16 countries, 54 metros, 3 panels, 6 charts, sensitivity |
+| v3.5 | UX Polish | 7 themes, table merge, chart labels, slider gradient, mobile CSS |
+| v3.6 | Header & FAQ | Centered header, FAQ tab, tutorial nudge |
+| v3.7 | UX & Communication | iOS toggle, banner, chart auto-description, emoji cleanup, FAQ.md |
+| v3.7.5 | Theme Bug Fixes | Midnight pill fix, 10 themes, wealth chart default |
+| v3.8 | Layout & Theme Integrity | Layout reorder, verdict explanations, Custom label, CSS audit, tornado 2nd |
+| v3.9 | Panel Polish | Guide closed default, home price callout, break-even clarity, theme CSS audit |
+| v3.9.1 | Visual Polish | Sand removed, home price in card, theme groups, disclaimers themed |
+| v3.9.2 | Theme Cleanup | Slate removed, Aqua/Gold added, override chips removed, header consolidated |
+| v3.9.5 | Mobile CSS | Overflow fixes, touch targets, panel stacking, Gold/Midnight removed |
+| v3.9.7 | CSS Overhaul | Inline tooltips, market sliders removed, clamp()/min() fluid CSS, chart fixes |
+| v3.9.8 | Legal | Legal disclaimers doc, MIT LICENSE, tutorial fix, footer legal upgrade |
+| v3.9.9 | Financial Snapshot | Down% callout, PMI/income/costs display, discipline→75%, Citrus, Ocean+Nord merge |
+
+---
+
+## Pending Items
+
+### v4.0 — Family Feedback
+- [ ] Price-first input mode toggle (Mode B: enter home price → derive payment)
+- [ ] Full PMI engine integration (not just display estimate)
+- [ ] ROI display alongside absolute dollar advantages
+- [ ] Family feedback integration
+
+### v4.1+ — Enhanced Interactivity
+- [ ] FAQ accordion
+- [ ] Tutorial glow/highlighting
+- [ ] Cross-link to brother's HPC tool
+
+### Future (v5+)
+- [ ] Refinance toggle
+- [ ] HELOC toggle
+- [ ] RNG / Monte Carlo simulation
+- [ ] Full PMI with credit score tiers
+
+---
+
+## Design Philosophy
+
+1. **Quality over features.** A correct model with 10 inputs beats a buggy model with 30.
+2. **Accuracy over advocacy.** The model reveals which path wins under which assumptions. It does not lean.
+3. **Explainability over aesthetics.** Every result traces to inputs.
+4. **Simplicity over completeness.** If a feature can't be implemented correctly, document it as a text note.
+5. **Customizability as credibility.** Users control all assumptions and see how results change.
+6. **Open source as trust.** Every formula, default, and data source is documented and accessible.3. **Tutorial Nudge** — One-line hint (visible when tutorial is off). FAQ link scrolls to guide via scrollIntoView.
 4. **Guide** — 4 tabs: How It Works, Methodology, Sources & Limitations, FAQ. Open by default.
 5. **Your Situation** — Personal inputs shared across all panels.
 6. **Three Panels** — Location (locked, blue), Scenario (preset-driven, purple when active), Custom (shows "edited" when changed from preset).

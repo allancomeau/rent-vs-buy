@@ -570,7 +570,7 @@ const TIPS = {
   mortgageTerm:"Length of the mortgage. 30yr US, 25yr CA/UK, 20yr DE.",
   holdingPeriod:"When you'd sell. Each year is a 'if I liquidated now' snapshot — NOT a sell-then-rent transition.",
   simYears:"How many years to simulate. Doesn't affect verdict — that uses your sell year.",
-  discipline:"% of savings the renter actually invests. 100% theoretical, 60-75% realistic. Bernstein & Koudijs (QJE 2024).",
+  discipline:"% of surplus cash actually invested — applies to both renter AND buyer. 100% theoretical, 60-75% realistic. Bernstein & Koudijs (QJE 2024).",
   mortgageRate:"Mortgage interest rate. Most impactful cost variable. 1% = ~$70K in total interest on $320K loan.",
   investReturn:"Annual portfolio return. 10% = S&P 500 CAGR (geometric). Using 12% overstates by ~50%.",
   appreciation:"Annual home value increase. 4% on 20% down ≈ 20% return on equity (leverage).",
@@ -607,7 +607,7 @@ function runSensitivity(params, hp) {
     { name:"Mortgage Rate", key:"mortgageRate", delta:0.01, fmt:"±1%" },
     { name:"Rent Growth", key:"rentGrowth", delta:0.01, fmt:"±1%" },
     { name:"Property Tax", key:"propTaxRate", delta:0.005, fmt:"±0.5%" },
-    { name:"Renter Discipline", key:"discipline", delta:0.10, fmt:"±10%" },
+    { name:"Investment Discipline", key:"discipline", delta:0.10, fmt:"±10%" },
   ].map(t => {
     const upA = simulate({...params,[t.key]:params[t.key]+t.delta}).data[idx]?.advantage ?? 0;
     const dnA = simulate({...params,[t.key]:params[t.key]-t.delta}).data[idx]?.advantage ?? 0;
@@ -856,7 +856,7 @@ function RentVsBuyV3() {
       ins.push({icon:"🟢",text:`Robust — no single variable swing exceeds your ${ff(abs)} advantage.`});
     }
     if (cusR.breakeven && Math.abs(cusR.breakeven-hp)<=2) ins.push({icon:"⏱",text:`Break-even (yr ${cusR.breakeven}) is close to your sell year (${hp}). ±1 year materially changes the outcome.`});
-    if (personal.discipline>=0.99) ins.push({icon:"💡",text:`Assuming 100% renter discipline — every dollar saved is invested. Try 70% for a reality check.`});
+    if (personal.discipline>=0.99) ins.push({icon:"💡",text:`Assuming 100% investment discipline — every dollar of surplus is invested. Try 70% for a reality check.`});
     if (cusP.investReturn < cusP.mortgageRate) ins.push({icon:"📌",text:`Portfolio return (${fmtPct(cusP.investReturn)}) is below mortgage rate (${fmtPct(cusP.mortgageRate)}). This fundamentally favors buying.`});
     if (cusP.appreciation > 0.06) ins.push({icon:"⚠",text:`Assuming ${fmtPct(cusP.appreciation)} appreciation — above long-term norms. Even 1% less shifts the math significantly.`});
     return ins;
@@ -953,7 +953,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>The core premise:</strong> Starting monthly rent equals the monthly mortgage payment. Both paths begin from the same dollar outflow. Rent grows; mortgage stays fixed. This isolates the financial question from the lifestyle question.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Three panels:</strong> <em>Location</em> = real locked market data for two locations. <em>Scenario</em> = preset market conditions (12 options). <em>Custom</em> = fully editable sandbox. All three use the same simulation engine.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Snapshots, not transitions:</strong> Each year is an independent "if I sold now" evaluation. Year 15 does NOT model selling then renting — it shows total wealth if you liquidated at that point.</p>
-              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Quick start:</strong> Set your actual rent as "Monthly Payment," savings as "Down Payment," and how long you'd stay. Then try Renter Discipline at 70%. Click any <span style={{color:T.accent,fontWeight:700}}>?</span> for details.</p>
+              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Quick start:</strong> Set your actual rent as "Monthly Payment," savings as "Down Payment," and how long you'd stay. Then try Investment Discipline at 70%. Click any <span style={{color:T.accent,fontWeight:700}}>?</span> for details.</p>
             </>}
             {guideTab==="method"&&<>
               <p><strong style={{color:T.text1}}>Monthly-Payment-First:</strong> Input payment + down. Engine backsolves: L = M × [(1+r)^n − 1] / [r × (1+r)^n]. Home price = L + down. Same payment at different rates = different home prices.</p>
@@ -986,7 +986,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:4}}>Taxes don't change the direction as much as people expect — but the $500K primary residence exclusion is massive and stable (enacted 1997, unchanged since). The real issue is the mortgage interest deduction: post-TCJA, the $30K standard deduction means most homeowners get $0 incremental tax benefit. This model captures that correctly. Most online calculators don't.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"Why does renting win so often at default settings?"</strong></p>
-              <p style={{marginTop:4}}>Two reasons. First, the default assumes 100% renter discipline — every dollar the renter saves gets invested. Try 70% (the "Renter Discipline" slider) for a reality check. Second, at current mortgage rates (~6%), there's a 4% spread between what stocks return (10% CAGR) and what the mortgage costs. That gap compounds. Change either rate and watch the verdict flip.</p>
+              <p style={{marginTop:4}}>Two reasons. First, the default assumes 75% investment discipline — most of the surplus gets invested. Try 50% (the "Investment Discipline" slider) for a reality check. Second, at current mortgage rates (~6%), there's a 4% spread between what stocks return (10% CAGR) and what the mortgage costs. That gap compounds. Change either rate and watch the verdict flip.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"I did my own math and got different numbers."</strong></p>
               <p style={{marginTop:4}}>Great — check which variables differ. The sensitivity tornado (chart dropdown → "What matters most") shows which single assumption drives your result. Usually it's investment return, appreciation, or discipline. If your algebra gives the same core equation (down payment compounded vs. home appreciation + monthly surplus compounded), you've independently validated the model. The simulation adds month-precise amortization, tax treatment, and transaction costs on top of that foundation.</p>
@@ -1011,7 +1011,7 @@ function RentVsBuyV3() {
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
           <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment} hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down`}/></div>
           <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="5+ yr to recoup costs"/></div>
-          <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Renter Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={75} hint="60-75% realistic"/></div>
+          <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Investment Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={75} hint="60-75% realistic"/></div>
           <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
         <div style={{padding:"10px 14px",marginTop:12,background:T.muted,borderRadius:8,border:`1px solid ${T.border}`,fontSize:12}}>
@@ -1213,7 +1213,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.93 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.9 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

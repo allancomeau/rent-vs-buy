@@ -73,7 +73,7 @@ Forward-looking returns are more defensible but harder to pin down. Ed Easterlin
 A balanced 60/40 portfolio has historically returned roughly 8–9% nominal (5–6% real), versus 10% for all-equity. Ben Felix (PWL Capital) uses 6.57% nominal based on a blend of historical and forward-looking P/E-based estimates. If investments are in taxable accounts, reduce by another 0.5–1% for annual tax drag on dividends and realized gains. The tool allows you to set this to whatever reflects your actual investment strategy.
 
 **Q21. Don't average investors earn much less than index returns?**
-Yes. DALBAR research consistently shows the average equity fund investor earns 2–4 percentage points less than the index due to poor timing (buying high, selling low). This behavioral shortfall is separate from the theoretical return debate and further weakens the "rent and invest" assumption. The tool's **[renter discipline slider]** (30–100%) directly addresses this by letting you model realistic investor behavior.
+Yes. DALBAR research consistently shows the average equity fund investor earns 2–4 percentage points less than the index due to poor timing (buying high, selling low). This behavioral shortfall is separate from the theoretical return debate and further weakens the "rent and invest" assumption. The tool's **[investment discipline slider]** (30–100%) directly addresses this by letting you model realistic investor behavior.
 
 **Q22. How does the 1926 start date bias historical return statistics?**
 The S&P 500's 1926 starting P/E of 10.2 was unusually low — essentially a near-bottom valuation. Over the subsequent 95+ years, P/E ratios expanded to 20–30+, contributing roughly 0.5–1% per year to returns from valuation expansion alone. This one-time tailwind won't repeat from today's elevated valuations. Ed Easterling (AAII) estimates the "true" long-run equity return is closer to 7% nominal absent this starting-point effect.
@@ -117,7 +117,7 @@ Stock investments in taxable accounts face annual tax drag on dividends (~1.5–
 
 ---
 
-## 4. Behavioral finance and renter discipline
+## 4. Behavioral finance and investment discipline
 
 **Q34. Do renters actually invest the savings difference between rent and a mortgage payment?**
 Almost never in practice. The Bernstein and Koudijs (2024, *Quarterly Journal of Economics*) study found that when Dutch households were forced to amortize mortgages, they accumulated wealth at nearly a 1:1 ratio — by cutting consumption, not by reducing other savings. This implies that without the forced mechanism, households consume rather than invest the surplus. Only about 50% of US households own any stocks at all (Federal Reserve SCF, 2019), with much lower participation among renters.
@@ -125,10 +125,10 @@ Almost never in practice. The Bernstein and Koudijs (2024, *Quarterly Journal of
 **Q35. What is the "forced savings" effect of mortgage payments?**
 Mortgage amortization is one of the most powerful wealth-building mechanisms available because it is automatic and psychologically non-negotiable. Bernstein and Koudijs (2024) showed that mandatory amortization produces wealth accumulation close to $1 for every $1 of forced payment, even five years later. US households contribute $250–300 billion annually through mortgage amortization — comparable in magnitude to all 401(k) contributions combined (~$398 billion).
 
-**Q36. What is the renter discipline slider, and why does the tool include it?**
-The **[renter discipline slider]** (30–100%) lets you model what percentage of the savings difference the renter actually invests. At 100%, the renter invests every dollar of surplus — the theoretical ideal. At 30%, only 30% gets invested. The Bernstein-Koudijs finding that forced savings produces near-1:1 wealth accumulation, while voluntary savings does not, directly motivated this feature. Setting it below 100% reflects the behavioral reality for most renters.
+**Q36. What is the investment discipline slider, and why does the tool include it?**
+The **[investment discipline slider]** (30–100%) lets you model what percentage of the savings difference the renter actually invests. At 100%, the renter invests every dollar of surplus — the theoretical ideal. At 30%, only 30% gets invested. The Bernstein-Koudijs finding that forced savings produces near-1:1 wealth accumulation, while voluntary savings does not, directly motivated this feature. Setting it below 100% reflects the behavioral reality for most renters.
 
-**Q37. What should I set the renter discipline slider to?**
+**Q37. What should I set the investment discipline slider to?**
 There is no universal answer, but evidence suggests 100% is unrealistic for most people. If you have automated investment systems (auto-transfers to index funds, employer retirement plans), 70–90% may be reasonable. If you would invest manually and sporadically, 30–50% is more realistic. The tool lets you see how sensitive the result is to this assumption — often, dropping from 100% to 70% flips the verdict from "rent" to "buy."
 
 **Q38. Is the 40:1 wealth gap between homeowners and renters really caused by homeownership?**
@@ -181,7 +181,7 @@ Enormously. Effective rates range from **0.29% (Hawaii) to 2.47% (New Jersey)** 
 Poterba's formula (1984) captures the annual economic cost of ownership per dollar of house value: interest rate + property taxes + depreciation/maintenance − expected appreciation. For typical inputs (6% mortgage, 1.5% property tax, 2–3% depreciation, minus 3–4% appreciation), user cost runs 6–10% of home value annually. Tax deductions reduce this for itemizers, but with ~90% of filers taking the standard deduction, the subsidy is smaller than commonly assumed.
 
 **Q53. Does homeownership build more wealth than renting and investing?**
-It depends entirely on assumptions. Shiller's ~0.7% real appreciation versus the stock market's ~7% real return would seem to favor renting-and-investing. But housing has leverage (5:1 typical), imputed rent yield (3–5%), and forced savings. The total return including imputed rent makes housing more competitive (Jordà et al., 2019). The real question is behavioral: will you actually invest the difference? The **[renter discipline slider]** lets you model this honestly.
+It depends entirely on assumptions. Shiller's ~0.7% real appreciation versus the stock market's ~7% real return would seem to favor renting-and-investing. But housing has leverage (5:1 typical), imputed rent yield (3–5%), and forced savings. The total return including imputed rent makes housing more competitive (Jordà et al., 2019). The real question is behavioral: will you actually invest the difference? The **[investment discipline slider]** lets you model this honestly.
 
 ---
 
@@ -215,7 +215,7 @@ Conceptually, yes. The Buckingham Pi theorem from physics suggests that ~15 inpu
 Multiply home value by 5%, divide by 12. If your rent is below that number, renting may be better. The 5% represents ~1% property tax + ~1% maintenance + ~3% opportunity cost of capital. For a $500K home: $500K × 5% ÷ 12 = $2,083/month breakeven rent. Felix notes that if your portfolio is not 100% equities, use 4% instead. This is a useful screening tool but lacks the precision of a full transition model like this one.
 
 **Q63. How does this tool's architecture differ from the NYT calculator?**
-The NYT calculator is home-price-first and uses annual approximation. It has been criticized for not properly implementing excess itemization (Bogleheads, multiple threads) and for not letting users input existing SALT deductions. This tool uses **[monthly-payment-first framing]**, **[month-precise amortization]**, the **[post-TCJA excess itemization method]**, **[symmetric surplus investing]**, and the **[renter discipline slider]** — addressing the five most common methodological criticisms of existing tools.
+The NYT calculator is home-price-first and uses annual approximation. It has been criticized for not properly implementing excess itemization (Bogleheads, multiple threads) and for not letting users input existing SALT deductions. This tool uses **[monthly-payment-first framing]**, **[month-precise amortization]**, the **[post-TCJA excess itemization method]**, **[symmetric surplus investing]**, and the **[investment discipline slider]** — addressing the five most common methodological criticisms of existing tools.
 
 ---
 
@@ -378,7 +378,7 @@ Because rent-vs-buy outcomes are fundamentally local. The price-to-rent ratio ra
 **Q110. How should I interpret the sensitivity tornado?**
 Read top to bottom: the widest bar represents the assumption that moves your outcome the most. If home appreciation is at the top with a ±$120K range, and property tax is at the bottom with ±$8K, you should spend your research time validating appreciation assumptions, not property tax rates. If the tornado shows all bars pointing the same direction (e.g., renting wins across all variations), the **[verdict confidence]** will be 🟢 Robust.
 
-**Q111. What is the renter discipline slider really measuring?**
+**Q111. What is the investment discipline slider really measuring?**
 It measures behavioral follow-through: what fraction of the monthly savings difference the renter actually invests in their portfolio. At 100%, every dollar of surplus goes to investments — theoretically optimal but behaviorally rare. At 50%, half is spent on lifestyle inflation, dining, travel, or forgotten. Bernstein and Koudijs (2024) showed forced mortgage payments produce near-1:1 wealth accumulation, while voluntary savings do not. Honest self-assessment here can change the entire verdict.
 
 **Q112. How does this tool handle the tax calculation differently from other calculators?**

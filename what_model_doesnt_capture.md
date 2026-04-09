@@ -20,7 +20,7 @@ These items were limitations in earlier versions but are now handled by v3:
 - **Previously:** The model assumed US tax rules for all users, overstating the mortgage interest deduction benefit in countries where it doesn't exist.
 - **v3:** 16 countries with correct tax treatment. Bucket A countries (CA, UK, AU, DE, IE, NZ, FR, ES, IT, JP, SG, KR) correctly produce $0 tax benefit. Bucket B countries (NL, SE) apply their partial deductions. Structural disclaimers flag Japan (building depreciation), Singapore (HDB), and South Korea (jeonse).
 
-### Renter Discipline ✅ Now Modeled
+### Investment Discipline ✅ Now Modeled
 - **Previously:** The model assumed the renter invested 100% of surplus — a theoretical ideal contradicted by behavioral research.
 - **v3:** Adjustable discipline slider (30–100%) with clear guidance that 60–75% is realistic. Bernstein & Koudijs (QJE 2024) showed mortgage payments function as forced savings at ~100% efficiency; renters rarely match this. This single variable often flips the verdict.
 
@@ -149,7 +149,7 @@ Tallying the remaining omissions (after v3 improvements):
 | Favors renting (model understates renter advantage) | 6 | PMI below 20%, liquidity risk, concentration risk, career flexibility, maintenance variance, rent control |
 | Neutral / context-dependent | 6 | SALT interaction, HOA, moving costs, future tax law changes, inflation on debt (captured implicitly), portfolio composition |
 
-**v3 improvements that narrowed the gap:** Symmetric surplus investing (now correctly captures buyer's post-payoff investment growth), renter discipline toggle (removes the unrealistic "perfect renter" assumption), international tax handling (no longer overstates deduction in 13 countries), and sensitivity analysis (quantifies verdict confidence).
+**v3 improvements that narrowed the gap:** Symmetric surplus investing (now correctly captures buyer's post-payoff investment growth), investment discipline toggle (removes the unrealistic "perfect renter" assumption), international tax handling (no longer overstates deduction in 13 countries), and sensitivity analysis (quantifies verdict confidence).
 
 **Net assessment:** The remaining omissions roughly balance out for the "typical" case. However, for specific situations:
 - **Young, mobile, career-building renters** benefit from flexibility and liquidity the model can't capture → model slightly overstates buying's appeal for this demographic.

@@ -754,7 +754,7 @@ const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params
     <div style={S.pB}>
       <VerdictBox advantage={hd?.advantage} homePrice={result.homePrice} holdYr={holdYr} sym={sym}/>
       <div style={S.derived}>
-        Home {fmtFullC(result.homePrice,sym)} · <span title="First year where buying catches up to renting in total wealth">Break-even: {result.breakeven?`Yr ${result.breakeven}`:"Never"}</span>
+        Home {fmtFullC(result.homePrice,sym)} · <span title="First year where buying catches up to renting in total wealth">First break-even: {result.breakeven?`Yr ${result.breakeven}`:"Never"}</span>
         {beSens&&beSens.lo!==result.breakeven&&<span style={{color:T.text3}}> (if appr. {fmtPct(params.appreciation-0.01)}: yr {beSens.lo||"never"} · {fmtPct(params.appreciation+0.01)}: yr {beSens.hi||"never"})</span>}
       </div>
       <MarketInputs params={params} onChange={(k,v)=>setOverrides(prev=>({...prev,[k]:v}))}/>
@@ -813,7 +813,7 @@ function RentVsBuyV3() {
 
   const [personal,setPersonal]=useState(saved?.p||{
     monthlyPayment:c.personalDefaults.monthlyPayment, downPayment:c.personalDefaults.downPayment,
-    mortgageTerm:c.defaults.mortgageTerm, holdingPeriod:15, simYears:30, discipline:0.75, otherItemized:0,
+    mortgageTerm:c.defaults.mortgageTerm, holdingPeriod:15, simYears:c.defaults.mortgageTerm+5, discipline:0.75, otherItemized:0,
   });
   const up=key=>val=>setPersonal(prev=>({...prev,[key]:val}));
   const hp=personal.holdingPeriod;
@@ -857,7 +857,7 @@ function RentVsBuyV3() {
     } else {
       ins.push({icon:"🟢",text:`Robust — no single variable swing exceeds your ${roiPct}% ROI advantage.`});
     }
-    if (cusR.breakeven && Math.abs(cusR.breakeven-hp)<=2) ins.push({icon:"⏱",text:`Break-even (yr ${cusR.breakeven}) is close to your sell year (${hp}). ±1 year materially changes the outcome.`});
+    if (cusR.breakeven && Math.abs(cusR.breakeven-hp)<=2) ins.push({icon:"⏱",text:`First break-even (yr ${cusR.breakeven}) is close to your sell year (${hp}). ±1 year materially changes the outcome.`});
     if (personal.discipline>=0.99) ins.push({icon:"💡",text:`Assuming 100% investment discipline — every dollar of surplus is invested. Try 70% for a reality check.`});
     if (cusP.investReturn < cusP.mortgageRate) ins.push({icon:"📌",text:`Portfolio return (${fmtPct(cusP.investReturn)}) is below mortgage rate (${fmtPct(cusP.mortgageRate)}). This fundamentally favors buying.`});
     if (cusP.appreciation > 0.06) ins.push({icon:"⚠",text:`Assuming ${fmtPct(cusP.appreciation)} appreciation — above long-term norms. Even 1% less shifts the math significantly.`});
@@ -890,8 +890,8 @@ function RentVsBuyV3() {
 
   // Chart type configs
   const CHARTS = {
-    wealth:{label:"Net worth by strategy (custom)",title:"Net Worth: Buyer vs. Renter (Custom)",sub:"What each side is worth if they cash out that year · buyer = home equity + investments − costs · renter = investment portfolio − taxes · includes location reference lines"},
-    scenWealth:{label:"Net worth by strategy (scenario)",title:"Net Worth: Buyer vs. Renter (Scenario)",sub:"Same comparison using the selected scenario preset · location reference lines included for comparison"},
+    buyer:{label:"Buyer net worth",title:"Buyer Net Worth Across Scenarios",sub:"How the buyer's total wealth (home equity + investments − costs) compares across location, scenario, and custom assumptions"},
+    renter:{label:"Renter net worth",title:"Renter Net Worth Across Scenarios",sub:"How the renter's total wealth (investment portfolio − taxes) compares across location, scenario, and custom assumptions"},
     tornado:{label:"Sensitivity chart",title:"Sensitivity: Which Assumptions Matter?",sub:"Each bar shows how much the outcome swings when one variable changes · sorted by impact · ★ marks the single most impactful variable"},
     cost:{label:"Annual cost (custom)",title:"What You Pay Each Year",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
     equity:{label:"Home equity (custom)",title:"Home Equity Over Time",sub:"How much of the home you actually own · home value minus remaining mortgage balance"},
@@ -1016,6 +1016,15 @@ function RentVsBuyV3() {
           <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Investment Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={75} hint="60-75% realistic"/></div>
           <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
+        {(()=>{
+          const ptm=Math.round(cusR.homePrice*cusP.propTaxRate/12), im=Math.round(cusR.homePrice*cusP.insRate/12), mm=Math.round(cusR.homePrice*cusP.maintRate/12);
+          const tot=Math.round(cusR.monthlyPmt)+ptm+im+mm, surplus=tot-Math.round(cusR.monthlyPmt);
+          return <div style={{fontSize:11,color:T.text2,marginTop:8,padding:"6px 12px",background:`${T.accent}08`,borderRadius:6,lineHeight:1.6}}>
+            <span style={{fontWeight:600}}>Rent = {ff(Math.round(cusR.monthlyPmt))}/mo</span> (set by your Monthly Payment).
+            <span style={{fontWeight:600}}> Buyer's true cost = ~{ff(tot)}/mo</span> (P&I + {ff(ptm)} tax + {ff(im)} ins + {ff(mm)} maint).
+            The renter keeps the <span style={{fontWeight:600}}>{ff(surplus)}/mo surplus + {ff(Math.round(cusR.upfront))} upfront</span> (down + closing) invested.
+          </div>;
+        })()}
         <div style={{padding:"10px 14px",marginTop:12,background:T.muted,borderRadius:8,border:`1px solid ${T.border}`,fontSize:12}}>
           {(()=>{
             const enginePct=personal.downPayment/cusR.homePrice*100;
@@ -1047,9 +1056,9 @@ function RentVsBuyV3() {
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"4px 16px",fontSize:11,color:T.text2}}>
                 {(()=>{
-                  const propTaxMo=Math.round(supportedHome*cusP.propTax/12);
-                  const insMo=Math.round(supportedHome*cusP.insurance/12);
-                  const maintMo=Math.round(supportedHome*cusP.maintenance/12);
+                  const propTaxMo=Math.round(supportedHome*cusP.propTaxRate/12);
+                  const insMo=Math.round(supportedHome*cusP.insRate/12);
+                  const maintMo=Math.round(supportedHome*cusP.maintRate/12);
                   const totalBuyerMo=Math.round(supportedPmt)+propTaxMo+insMo+maintMo+pmiMo;
                   const renterMo=Math.round(supportedPmt); // rent = mortgage payment in this model
                   const surplus=totalBuyerMo-renterMo;
@@ -1100,13 +1109,13 @@ function RentVsBuyV3() {
               {!linked&&<select style={{...S.select,width:"100%",marginBottom:8}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select>}
               {linked&&<div style={{fontSize:10,color:T.text3,marginBottom:6,fontStyle:"italic"}}>🔗 National avg. Click 🔗 for two metros.</div>}
               <VerdictBox advantage={locAH?.advantage} homePrice={locAR.homePrice} holdYr={hp} sym={sym}/>
-              <div style={{fontSize:10,color:T.text3,fontFamily:THEME_MONO}}>Home {ff(locAR.homePrice)} · <span title="First year where buying catches up to renting in total wealth">Break-even: {locAR.breakeven?`Yr ${locAR.breakeven}`:"Never"}</span></div>
+              <div style={{fontSize:10,color:T.text3,fontFamily:THEME_MONO}}>Home {ff(locAR.homePrice)} · <span title="First year where buying catches up to renting in total wealth">First break-even: {locAR.breakeven?`Yr ${locAR.breakeven}`:"Never"}</span></div>
             </div>
             <div>
               <div style={{fontSize:11,fontWeight:700,color:T.text2,marginBottom:6}}>B: {locBLabel}</div>
               <select style={{...S.select,width:"100%",marginBottom:8}} value={locBMetro||""} onChange={e=>setLocBMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select>
               <VerdictBox advantage={locBH?.advantage} homePrice={locBR.homePrice} holdYr={hp} sym={sym}/>
-              <div style={{fontSize:10,color:T.text3,fontFamily:THEME_MONO}}>Home {ff(locBR.homePrice)} · <span title="First year where buying catches up to renting in total wealth">Break-even: {locBR.breakeven?`Yr ${locBR.breakeven}`:"Never"}</span></div>
+              <div style={{fontSize:10,color:T.text3,fontFamily:THEME_MONO}}>Home {ff(locBR.homePrice)} · <span title="First year where buying catches up to renting in total wealth">First break-even: {locBR.breakeven?`Yr ${locBR.breakeven}`:"Never"}</span></div>
             </div>
           </div>
         </div>
@@ -1121,28 +1130,26 @@ function RentVsBuyV3() {
         {(()=>{
           const adv=cusH?.advantage||0, abs=Math.abs(adv), up=cusR.upfront||1;
           const bw=cusH?.buyerWealth||0, rw=cusH?.renterWealth||0;
-          const bRoi=((bw-up)/up*100).toFixed(1), rRoi=((rw-up)/up*100).toFixed(1);
-          const bCagr=((Math.pow(Math.max(0.01,bw/up),1/hp)-1)*100).toFixed(1);
-          const rCagr=((Math.pow(Math.max(0.01,rw/up),1/hp)-1)*100).toFixed(1);
-          const advRoi=(abs/up*100).toFixed(1), advCagr=((Math.pow(1+abs/up,1/hp)-1)*100).toFixed(1);
+          const bRoi=((bw-up)/up*100), rRoi=((rw-up)/up*100);
+          const bCagr=((Math.pow(Math.max(0.01,bw/up),1/hp)-1)*100);
+          const rCagr=((Math.pow(Math.max(0.01,rw/up),1/hp)-1)*100);
+          const diffRoi=Math.abs(bRoi-rRoi).toFixed(1), diffCagr=Math.abs(bCagr-rCagr).toFixed(1);
           const winner=adv>=0?"Buying":"Renting";
           return <>
-            <div style={{fontSize:13,color:T.text2,marginBottom:6,lineHeight:1.7}}>
-              <span style={{fontWeight:600,color:T.accent}}>Buying ROI:</span> {bRoi}% ({bCagr}%/yr) · <span style={{fontWeight:600,color:T.green}}>Renting ROI:</span> {rRoi}% ({rCagr}%/yr)
+            <div style={{fontSize:13,color:T.text2,marginBottom:8,lineHeight:1.8}}>
+              <span style={{fontWeight:600,color:T.accent}}>Buying:</span> {ff(Math.round(bw))} total wealth · {bRoi.toFixed(1)}% ROI ({bCagr.toFixed(1)}%/yr)<br/>
+              <span style={{fontWeight:600,color:T.green}}>Renting:</span> {ff(Math.round(rw))} total wealth · {rRoi.toFixed(1)}% ROI ({rCagr.toFixed(1)}%/yr)
             </div>
             <div style={{fontSize:20,fontWeight:700,marginBottom:2}}>
-              {winner} wins by {advRoi}% ROI
-              <span style={{fontSize:14,fontWeight:600,color:T.text2}}> ({advCagr}%/yr)</span>
+              {winner} wins by {diffRoi}% ROI
+              <span style={{fontSize:14,fontWeight:600,color:T.text2}}> ({diffCagr}%/yr)</span>
             </div>
             <div style={{fontSize:13,color:T.text3,marginBottom:8}}>
-              {ff(abs)} advantage over {hp} years on {ff(Math.round(up))} invested capital
+              {ff(abs)} advantage at year {hp} on {ff(Math.round(up))} invested capital
               {toUSD(abs)&&<span>{toUSD(abs)}</span>}
             </div>
           </>;
         })()}
-        <div style={{fontSize:13,color:T.text2,marginBottom:8}}>
-          {ff(personal.monthlyPayment)}/mo in {CURRENCIES[cur]?.name||cur}{toUSD(personal.monthlyPayment)} + {ff(personal.downPayment)} down → {ff(cusR.homePrice)} home{toUSD(cusR.homePrice)}.
-        </div>
         {insights.map((ins,i)=><div key={i} style={{fontSize:13,marginBottom:4,color:T.text1,lineHeight:1.6}}>
           {ins.icon} {ins.text}
           {ins.icon==="🟢"&&<div style={{fontSize:11,color:T.text3,marginTop:2}}>The sensitivity chart below shows that even when any single assumption is nudged ±1%, the same side still wins.</div>}
@@ -1160,7 +1167,7 @@ function RentVsBuyV3() {
           {fxOverride!=null&&<button style={{fontSize:10,color:T.accent,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}} onClick={()=>setFxOverride(null)}>Reset to default</button>}
           <span style={{fontSize:9,color:T.text3}}>Default: {CURRENCIES[cur]?.rate} (Apr 2026 est.)</span>
         </div>}
-        <div style={{marginTop:8,fontSize:10,fontWeight:700,color:T.text1,background:`${T.accent}15`,padding:"6px 10px",borderRadius:4,border:`1px solid ${T.accent}33`,fontStyle:"italic"}}>For educational purposes only. Not financial, tax, or investment advice.</div>
+        <div style={{marginTop:8,fontSize:10,fontWeight:700,color:T.text1,background:`${T.accent}15`,padding:"6px 10px",borderRadius:4,border:`1px solid ${T.accent}33`,fontStyle:"italic",textAlign:"center"}}>For educational purposes only. Not financial, tax, or investment advice.</div>
       </div>
 
       {/* CHART */}
@@ -1177,21 +1184,18 @@ function RentVsBuyV3() {
           </select>
         </div>
 
-        {chartType==="wealth"&&<ChartShell data={chartData} sym={sym}>
-          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
-          {cusR.breakeven&&<ReferenceLine x={cusR.breakeven} stroke="#dc2626" strokeDasharray="4 4" label={{value:"BE",position:"top",fontSize:10,fill:"#dc2626"}}/>}
-          <Line type="monotone" dataKey="cusBuyer" name="Custom Buyer" stroke={T.accent} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="cusRenter" name="Custom Renter" stroke={T.green} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="locABuyer" name={`${locALabel} Buyer`} stroke={T.accent} strokeWidth={1} dot={false} strokeDasharray="6 3" opacity={0.5}/>
-          <Line type="monotone" dataKey="locARenter" name={`${locALabel} Renter`} stroke={T.green} strokeWidth={1} dot={false} strokeDasharray="6 3" opacity={0.5}/>
+        {chartType==="buyer"&&<ChartShell data={chartData} sym={sym}>
+          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Sell yr ${hp}`,position:"top",fontSize:10,fill:"#f59e0b"}}/>
+          <Line type="monotone" dataKey="cusBuyer" name="Custom Buyer" stroke={T.text1} strokeWidth={2.5} dot={false}/>
+          <Line type="monotone" dataKey="scenBuyer" name="Scenario Buyer" stroke={T.purple} strokeWidth={2} dot={false}/>
+          <Line type="monotone" dataKey="locABuyer" name={`${locALabel} Buyer`} stroke={T.accent} strokeWidth={1.5} dot={false} strokeDasharray="6 3"/>
         </ChartShell>}
 
-        {chartType==="scenWealth"&&<ChartShell data={chartData} sym={sym}>
-          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
-          <Line type="monotone" dataKey="scenBuyer" name="Scenario Buyer" stroke={T.purple} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="scenRenter" name="Scenario Renter" stroke={T.green} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="locABuyer" name={`${locALabel} Buyer`} stroke={T.accent} strokeWidth={1} dot={false} strokeDasharray="6 3" opacity={0.5}/>
-          <Line type="monotone" dataKey="locARenter" name={`${locALabel} Renter`} stroke={T.green} strokeWidth={1} dot={false} strokeDasharray="6 3" opacity={0.5}/>
+        {chartType==="renter"&&<ChartShell data={chartData} sym={sym}>
+          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Sell yr ${hp}`,position:"top",fontSize:10,fill:"#f59e0b"}}/>
+          <Line type="monotone" dataKey="cusRenter" name="Custom Renter" stroke={T.text1} strokeWidth={2.5} dot={false}/>
+          <Line type="monotone" dataKey="scenRenter" name="Scenario Renter" stroke={T.purple} strokeWidth={2} dot={false}/>
+          <Line type="monotone" dataKey="locARenter" name={`${locALabel} Renter`} stroke={T.green} strokeWidth={1.5} dot={false} strokeDasharray="6 3"/>
         </ChartShell>}
 
         {chartType==="cost"&&<ChartShell data={chartData} sym={sym}>
@@ -1216,26 +1220,42 @@ function RentVsBuyV3() {
         </ChartShell>}
 
         {chartType==="tornado"&&(()=>{
-          const mx=sensitivity[0]?.swing||1, up=cusR.upfront||1;
+          const upf=cusR.upfront||1;
+          const maxHalf=Math.max(...sensitivity.map(s=>Math.max(Math.abs(s.dnA-s.base),Math.abs(s.upA-s.base))))||1;
           return <div style={{padding:"8px 0"}}>
             {sensitivity.map((s,i)=>{
-              const pct=s.swing/mx*100, netDir=s.upA-s.dnA;
-              return <div key={s.key} style={{display:"flex",alignItems:"center",marginBottom:10,gap:10}}>
-                <div style={{width:150,fontSize:12,textAlign:"right",color:T.text1,fontWeight:i===0?700:500}}>{s.name} <span style={{color:T.text3}}>({s.fmt})</span>{i===0&&<span title="Most impactful variable — this single assumption moves the outcome the most"> ★</span>}</div>
-                <div style={{flex:1,height:24,background:T.muted,borderRadius:6,overflow:"hidden"}}>
-                  <div style={{width:`${Math.max(2,pct)}%`,height:"100%",background:netDir>=0?`${T.accent}40`:`${T.green}40`,border:`1px solid ${netDir>=0?T.accent:T.green}`,borderRadius:6}}/>
+              const dn=s.dnA-s.base, up2=s.upA-s.base;
+              const leftW=Math.abs(Math.min(0,dn))/maxHalf*48;
+              const rightW=Math.max(0,up2)/maxHalf*48;
+              const leftR=Math.max(0,dn)/maxHalf*48;
+              const rightR=Math.abs(Math.min(0,up2))/maxHalf*48;
+              const dnPct=(Math.abs(dn)/upf*100).toFixed(0), upPct=(Math.abs(up2)/upf*100).toFixed(0);
+              return <div key={s.key} style={{marginBottom:14}}>
+                <div style={{display:"flex",alignItems:"center",gap:8}}>
+                  <div style={{width:70,fontSize:10,textAlign:"right",fontFamily:THEME_MONO,color:T.text3}}>
+                    <div>{dn<0?`−${dnPct}%`:`+${dnPct}%`}</div>
+                    <div>{f(Math.abs(dn))}</div>
+                  </div>
+                  <div style={{width:120,fontSize:12,textAlign:"right",color:T.text1,fontWeight:i===0?700:500}}>{s.name}{i===0&&" ★"}</div>
+                  <div style={{flex:1,height:28,position:"relative",background:T.muted,borderRadius:6}}>
+                    <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.text1+"60"}}/>
+                    {leftW>0&&<div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,leftW)}%`,background:`${T.green}40`,borderRadius:"4px 0 0 4px",border:`1px solid ${T.green}`}}/>}
+                    {rightW>0&&<div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,rightW)}%`,background:`${T.accent}1F`,borderRadius:"0 4px 4px 0",border:`1px solid ${T.accent}`}}/>}
+                    {leftR>0&&<div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,leftR)}%`,background:`${T.accent}1F`,borderRadius:"0 4px 4px 0",border:`1px solid ${T.accent}`}}/>}
+                    {rightR>0&&<div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,rightR)}%`,background:`${T.green}40`,borderRadius:"4px 0 0 4px",border:`1px solid ${T.green}`}}/>}
+                  </div>
+                  <div style={{width:70,fontSize:10,textAlign:"left",fontFamily:THEME_MONO,color:T.text3}}>
+                    <div>{up2>0?`+${upPct}%`:`−${upPct}%`}</div>
+                    <div>{f(Math.abs(up2))}</div>
+                  </div>
                 </div>
-                <div style={{width:85,textAlign:"right"}}>
-                  <div style={{fontSize:12,fontWeight:700,fontFamily:THEME_MONO}}>{(s.swing/up*100).toFixed(0)}%</div>
-                  <div style={{fontSize:9,color:T.text3,fontFamily:THEME_MONO}}>{f(s.swing)}</div>
-                </div>
+                <div style={{textAlign:"center",fontSize:9,color:T.text3,marginTop:2}}>Total swing: {(s.swing/upf*100).toFixed(0)}% ({f(s.swing)})</div>
               </div>;
             })}
-            <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:12,fontSize:11,color:T.text2}}>
-              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:12,height:12,background:`${T.green}40`,border:`1px solid ${T.green}`,borderRadius:3,display:"inline-block"}}/>Net favors renting</span>
-              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:12,height:12,background:`${T.accent}40`,border:`1px solid ${T.accent}`,borderRadius:3,display:"inline-block"}}/>Net favors buying</span>
+            <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:8,fontSize:11,color:T.text2}}>
+              <span>◀ − favors renting</span> | <span>+ favors buying ▶</span>
             </div>
-            <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>% = swing relative to {ff(Math.round(up))} invested capital</div>
+            <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>% = change relative to {ff(Math.round(upf))} invested capital</div>
           </div>;
         })()}
 

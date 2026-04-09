@@ -847,13 +847,13 @@ function RentVsBuyV3() {
 
   // Rich bottom line insights
   const insights = useMemo(() => {
-    const adv=cusH?.advantage||0, abs=Math.abs(adv), ins=[];
+    const adv=cusH?.advantage||0, abs=Math.abs(adv), up=cusR.upfront||1, roiPct=(abs/up*100).toFixed(0), ins=[];
     if (sensitivity.length>=2 && sensitivity[0].swing>abs && sensitivity[1].swing>abs) {
       ins.push({icon:"🔴",text:`Highly assumption-dependent — both ${sensitivity[0].name.toLowerCase()} and ${sensitivity[1].name.toLowerCase()} could each independently flip this verdict.`});
     } else if (topSens && topSens.swing>abs) {
-      ins.push({icon:"🟡",text:`Fragile — ${topSens.name.toLowerCase()} (${topSens.fmt}) swings the outcome by ${f(topSens.swing)}, exceeding your ${ff(abs)} advantage.`});
+      ins.push({icon:"🟡",text:`Fragile — ${topSens.name.toLowerCase()} (${topSens.fmt}) swings the outcome by ${(topSens.swing/up*100).toFixed(0)}% of capital, exceeding your ${roiPct}% advantage.`});
     } else {
-      ins.push({icon:"🟢",text:`Robust — no single variable swing exceeds your ${ff(abs)} advantage.`});
+      ins.push({icon:"🟢",text:`Robust — no single variable swing exceeds your ${roiPct}% ROI advantage.`});
     }
     if (cusR.breakeven && Math.abs(cusR.breakeven-hp)<=2) ins.push({icon:"⏱",text:`Break-even (yr ${cusR.breakeven}) is close to your sell year (${hp}). ±1 year materially changes the outcome.`});
     if (personal.discipline>=0.99) ins.push({icon:"💡",text:`Assuming 100% investment discipline — every dollar of surplus is invested. Try 70% for a reality check.`});
@@ -1098,11 +1098,23 @@ function RentVsBuyV3() {
       {/* VERDICT CALLOUT — between inputs and chart */}
       {tutorial&&<div className="tut"><b>4</b>Your result — one sentence telling you who wins, by how much, and whether the verdict is robust or fragile. The colored icons (🟢🟡🔴) rate confidence.</div>}
       <div style={{...S.card,background:cusH?.advantage>=0?`${T.accent}0A`:`${T.green}0A`,borderColor:cusH?.advantage>=0?T.accent:T.green}}>
-        <div style={{fontSize:18,fontWeight:700,marginBottom:6}}>
-          {cusH?.advantage>=0?"Buying":"Renting"} wins by {ff(Math.abs(cusH?.advantage))} at year {hp}.
-          {toUSD(Math.abs(cusH?.advantage))&&<span style={{fontSize:13,fontWeight:400,color:T.text3}}>{toUSD(Math.abs(cusH?.advantage))}</span>}
-        </div>
-        <div style={{fontSize:14,color:T.text2,marginBottom:8}}>
+        {(()=>{
+          const adv=cusH?.advantage||0, abs=Math.abs(adv), upfront=cusR.upfront||1;
+          const roi=(abs/upfront*100).toFixed(1);
+          const cagr=((Math.pow(1+abs/upfront,1/hp)-1)*100).toFixed(1);
+          const winner=adv>=0?"Buying":"Renting";
+          return <>
+            <div style={{fontSize:20,fontWeight:700,marginBottom:2}}>
+              {winner} wins by {roi}% ROI
+              <span style={{fontSize:14,fontWeight:600,color:T.text2}}> ({cagr}% annualized)</span>
+            </div>
+            <div style={{fontSize:13,color:T.text3,marginBottom:8}}>
+              {ff(abs)} over {hp} years on {ff(Math.round(upfront))} invested capital
+              {toUSD(abs)&&<span>{toUSD(abs)}</span>}
+            </div>
+          </>;
+        })()}
+        <div style={{fontSize:13,color:T.text2,marginBottom:8}}>
           {ff(personal.monthlyPayment)}/mo in {CURRENCIES[cur]?.name||cur}{toUSD(personal.monthlyPayment)} + {ff(personal.downPayment)} down → {ff(cusR.homePrice)} home{toUSD(cusR.homePrice)}.
         </div>
         {insights.map((ins,i)=><div key={i} style={{fontSize:13,marginBottom:4,color:T.text1,lineHeight:1.6}}>
@@ -1176,7 +1188,7 @@ function RentVsBuyV3() {
         </ChartShell>}
 
         {chartType==="tornado"&&(()=>{
-          const mx=sensitivity[0]?.swing||1;
+          const mx=sensitivity[0]?.swing||1, up=cusR.upfront||1;
           return <div style={{padding:"8px 0"}}>
             {sensitivity.map((s,i)=><div key={s.key} style={{display:"flex",alignItems:"center",marginBottom:10,gap:10}}>
               <div style={{width:150,fontSize:12,textAlign:"right",color:T.text1,fontWeight:i===0?700:500}}>{s.name} <span style={{color:T.text3}}>({s.fmt})</span>{i===0&&<span title="Most impactful variable — this single assumption moves the outcome the most"> ★</span>}</div>
@@ -1185,9 +1197,13 @@ function RentVsBuyV3() {
                 <div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,Math.abs(Math.min(0,s.dnA-s.base))/mx*48)}%`,background:`${T.green}40`,borderRadius:"4px 0 0 4px",border:`1px solid ${T.green}`}}/>
                 <div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,Math.max(0,s.upA-s.base)/mx*48)}%`,background:`${T.accent}1F`,borderRadius:"0 4px 4px 0",border:`1px solid ${T.accent}`}}/>
               </div>
-              <div style={{width:75,fontSize:11,fontFamily:THEME_MONO,textAlign:"right",fontWeight:600}}>{f(s.swing)}</div>
+              <div style={{width:85,textAlign:"right"}}>
+                <div style={{fontSize:12,fontWeight:700,fontFamily:THEME_MONO}}>{(s.swing/up*100).toFixed(0)}%</div>
+                <div style={{fontSize:9,color:T.text3,fontFamily:THEME_MONO}}>{f(s.swing)}</div>
+              </div>
             </div>)}
             <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:12,fontSize:11,color:T.text2}}>◀ Favors renting | Favors buying ▶</div>
+            <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>% = swing relative to {ff(Math.round(up))} invested capital</div>
           </div>;
         })()}
 
@@ -1213,7 +1229,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.9 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.95 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

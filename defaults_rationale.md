@@ -40,7 +40,7 @@ Parameters are grouped by how they enter the model. "Sensitivity" is rated Low/M
 - **Sensitivity:** Critical — the single most important user choice. Short holds almost always favor renting. Long holds almost always favor buying. The crossover is typically 5–10 years.
 - **Warning triggers:** Below 3: "Transaction costs alone (~9% of home value) make buying very unlikely to win at this horizon." Above 40: "Consider that life circumstances, not just finances, typically drive the decision to sell."
 
-### Renter Discipline
+### Investment Discipline
 - **Default:** 100% (theoretical)
 - **What it is:** What percentage of the renter's monthly savings (the difference when renting is cheaper than buying) actually gets invested. At 100%, the renter perfectly invests every dollar of surplus. At 60%, they invest 60% and spend 40%.
 - **Source:** Bernstein & Koudijs, "The Mortgage Piggy Bank" (QJE 2024). Key finding: $1 of mortgage amortization translates to ~$1 of net wealth accumulation — homeowners don't reduce other savings to offset mortgage payments. Instead, they increase labor supply (~25%) and reduce consumption (~75%). This means mortgages function as a powerful forced-savings device. Renters, lacking this forced mechanism, rarely invest all surplus. The Federal Reserve SCF 2019 showed median renter net worth of $6,300 vs. $255,000 for homeowners — partly due to income differences, but discipline is a major factor.

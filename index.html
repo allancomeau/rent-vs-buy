@@ -782,6 +782,7 @@ function RentVsBuyV3() {
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
   const [tutorial,setTutorial]=useState(false);
+  const [downTarget,setDownTarget]=useState(20);
   const guideRef=React.useRef(null);
   const [theme,setTheme]=useState(saved?.th||"light");
 
@@ -1008,15 +1009,43 @@ function RentVsBuyV3() {
       <div style={S.card}>
         <div style={S.sTitle}>Your Situation</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
-          <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment}/></div>
+          <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment} hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down`}/></div>
           <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="5+ yr to recoup costs"/></div>
           <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Renter Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={100} hint="60-75% realistic"/></div>
           <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
-        <div style={{textAlign:"center",padding:"8px 12px",marginTop:12,background:T.muted,borderRadius:6,border:`1px solid ${T.border}`}}>
-          <span style={{fontSize:13,fontWeight:700,color:T.text1}}>{ff(cusR.homePrice)} home</span>
-          <span style={{fontSize:11,color:T.text2}}> — {ff(cusR.loan)} loan ({(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down) · {ff(Math.round(cusR.monthlyPmt))}/mo P&I</span>
-          {toUSD(cusR.homePrice)&&<span style={{fontSize:11,color:T.text3}}> {toUSD(cusR.homePrice)}</span>}
+        <div style={{padding:"10px 14px",marginTop:12,background:T.muted,borderRadius:8,border:`1px solid ${T.border}`,fontSize:12}}>
+          <div style={{textAlign:"center",marginBottom:8}}>
+            <span style={{fontSize:14,fontWeight:700,color:T.text1}}>{ff(cusR.homePrice)} home</span>
+            <span style={{color:T.text2}}> — {ff(cusR.loan)} loan · {ff(Math.round(cusR.monthlyPmt))}/mo P&I</span>
+            {toUSD(cusR.homePrice)&&<span style={{fontSize:11,color:T.text3}}> {toUSD(cusR.homePrice)}</span>}
+          </div>
+          <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"6px 16px",fontSize:11,color:T.text2}}>
+            {(()=>{
+              const dp=personal.downPayment, hp=cusR.homePrice, pct=dp/hp*100;
+              const tgtAmt=hp*downTarget/100, gap=tgtAmt-dp, pmiRate=pct>=20?0:pct>=15?0.002:pct>=10?0.003:0.005;
+              const pmiMo=pmiRate>0?Math.round(cusR.loan*pmiRate/12):0;
+              const recIncome=Math.round(personal.monthlyPayment*12/0.28);
+              const buyCost=Math.round(hp*cusP.closingPct), sellCost=Math.round(hp*cusP.sellingPct);
+              return <>
+                <div style={{padding:"4px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>Down: </span>{pct.toFixed(1)}% ({ff(dp)})
+                  <span style={{color:T.text3}}> · Target: </span>
+                  <input type="number" min={3} max={50} value={downTarget} style={{width:40,padding:"1px 4px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,fontFamily:THEME_MONO,textAlign:"right",background:T.card,color:T.text1}} onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v)&&v>=3&&v<=50)setDownTarget(v);}}/>%
+                  {Math.abs(gap)>100&&<span style={{color:gap>0?"#f59e0b":T.green,fontWeight:600}}> ({gap>0?`${ff(Math.round(gap))} short`:"target met"})</span>}
+                </div>
+                {pmiMo>0&&<div style={{padding:"4px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>PMI est: </span>~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity
+                </div>}
+                <div style={{padding:"4px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>Income check: </span>{ff(personal.monthlyPayment)}/mo → ~{ff(recIncome)}/yr recommended (28% ratio)
+                </div>
+                <div style={{padding:"4px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>Transaction costs: </span>Buy {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip
+                </div>
+              </>;
+            })()}
+          </div>
         </div>
       </div>
 
@@ -1171,7 +1200,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.8 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.9 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

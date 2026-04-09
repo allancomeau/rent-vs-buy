@@ -782,7 +782,6 @@ function RentVsBuyV3() {
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
   const [tutorial,setTutorial]=useState(false);
-  const [downTarget,setDownTarget]=useState(20);
   const guideRef=React.useRef(null);
   const [theme,setTheme]=useState(saved?.th||"light");
 
@@ -1019,20 +1018,21 @@ function RentVsBuyV3() {
             <span style={{fontSize:14,fontWeight:700,color:T.text1}}>{ff(cusR.homePrice)} home</span>
             <span style={{color:T.text2}}> — {ff(cusR.loan)} loan · {ff(Math.round(cusR.monthlyPmt))}/mo P&I</span>
             {toUSD(cusR.homePrice)&&<span style={{fontSize:11,color:T.text3}}> {toUSD(cusR.homePrice)}</span>}
+            <div style={{fontSize:11,marginTop:4,color:T.text3}}>
+              {c.name} median: {ff(c.national.medianPrice)}
+              {(()=>{const r=cusR.homePrice/c.national.medianPrice;return r<0.85?" — well below median":r<1.15?" — near median":" — above median";})()}
+            </div>
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"6px 16px",fontSize:11,color:T.text2}}>
             {(()=>{
               const dp=personal.downPayment, hp=cusR.homePrice, pct=dp/hp*100;
-              const tgtAmt=hp*downTarget/100, gap=tgtAmt-dp, pmiRate=pct>=20?0:pct>=15?0.002:pct>=10?0.003:0.005;
+              const pmiRate=pct>=20?0:pct>=15?0.002:pct>=10?0.003:0.005;
               const pmiMo=pmiRate>0?Math.round(cusR.loan*pmiRate/12):0;
               const recIncome=Math.round(personal.monthlyPayment*12/0.28);
               const buyCost=Math.round(hp*cusP.closingPct), sellCost=Math.round(hp*cusP.sellingPct);
               return <>
                 <div style={{padding:"4px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Down: </span>{pct.toFixed(1)}% ({ff(dp)})
-                  <span style={{color:T.text3}}> · Target: </span>
-                  <input type="number" min={3} max={50} value={downTarget} style={{width:40,padding:"1px 4px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,fontFamily:THEME_MONO,textAlign:"right",background:T.card,color:T.text1}} onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v)&&v>=3&&v<=50)setDownTarget(v);}}/>%
-                  {Math.abs(gap)>100&&<span style={{color:gap>0?"#f59e0b":T.green,fontWeight:600}}> ({gap>0?`${ff(Math.round(gap))} short`:"target met"})</span>}
+                  <span style={{fontWeight:600,color:T.text1}}>Down: </span>{pct.toFixed(1)}% ({ff(dp)}){pct<20&&<span style={{color:"#f59e0b"}}> — {ff(Math.round(hp*0.2-dp))} more for 20%</span>}
                 </div>
                 {pmiMo>0&&<div style={{padding:"4px 0"}}>
                   <span style={{fontWeight:600,color:T.text1}}>PMI est: </span>~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity

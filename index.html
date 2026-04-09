@@ -29,7 +29,7 @@
     select:hover:not(:focus) { border-color: var(--slider-thumb, #93c5fd); }
     details summary { list-style: none; }
     details summary::-webkit-details-marker { display: none; }
-    .tut { display: flex; align-items: center; gap: 10px; padding: 10px 16px; background: var(--tut-bg, #EFF6FF); border: 1.5px solid var(--tut-border, #BFDBFE); border-radius: 10px; font-size: 13px; color: var(--tut-text, #1e40af); margin-bottom: 10px; line-height: 1.4; font-weight: 500; }
+    .tut { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; background: var(--tut-bg, #EFF6FF); border: 1.5px solid var(--tut-border, #BFDBFE); border-radius: 10px; font-size: 13px; color: var(--tut-text, #1e40af); margin-bottom: 10px; line-height: 1.5; font-weight: 500; }
     @media (prefers-reduced-motion: no-preference) {
       .tut { animation: tutFade 0.4s ease-out; }
     }
@@ -595,6 +595,7 @@ const RESEARCH_FILES = [
   { name: "Math Verification & Bug Audit", file: "rent-vs-buy-sim-audit.md" },
   { name: "UI/UX Design Research", file: "UI_and_UX_Research_Report.md" },
   { name: "FAQ: 115 Research-Backed Questions", file: "FAQ.md" },
+  { name: "Legal Disclaimers & Privacy", file: "legal_disclaimers.md" },
 ];
 
 function runSensitivity(params, hp) {
@@ -1020,7 +1021,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* THREE PANELS */}
-      {tutorial&&<div className="tut"><b>3</b>Three scenarios side by side — <strong>Location</strong> uses real sourced data (locked). <strong>Scenario</strong> tests presets like "low rate era" or "housing correction." <strong>Custom</strong> is your sandbox — drag sliders or type exact values.</div>}
+      {tutorial&&<div className="tut"><b>3</b><span>Three scenarios side by side — <strong>Location</strong> uses real sourced data (locked). <strong>Scenario</strong> tests presets like "low rate era" or "housing correction." <strong>Custom</strong> is your sandbox — drag sliders or type exact values.</span></div>}
       <div style={S.panels}>
         {/* LOCATION */}
         <div style={S.panel}>
@@ -1083,7 +1084,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* CHART */}
-      {tutorial&&<div className="tut"><b>5</b>Visualize the math — the dropdown switches between 6 views. <strong>"Advantage"</strong> = buyer wealth minus renter wealth (positive means buying wins). "Wealth paths" shows each side's total net worth. "Tornado" reveals which single assumption drives your result most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</div>}
+      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 6 views. <strong>"Advantage"</strong> = buyer wealth minus renter wealth (positive means buying wins). "Wealth paths" shows each side's total net worth. "Tornado" reveals which single assumption drives your result most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
       <div style={S.card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:12,flexWrap:"wrap"}}>
           <div style={{flex:"1 1 200px",minWidth:0}}>
@@ -1170,9 +1171,10 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.74 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
-        <div>This tool is for educational and discussion purposes only and does not constitute financial, tax, or investment advice.</div>
-        <div style={{marginTop:2}}>Consult a qualified financial advisor before making real estate or investment decisions.</div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.8 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
+        <div style={{marginTop:2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
+        <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>
       </div>
     </div>
   );

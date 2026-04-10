@@ -441,7 +441,7 @@ function simulate(p) {
   const monthlyPmt = loan > 0 && mr > 0
     ? loan * (mr * Math.pow(1 + mr, nPmts)) / (Math.pow(1 + mr, nPmts) - 1)
     : loan > 0 ? loan / nPmts : 0;
-  const startRent = monthlyPmt;
+  const startRent = p.startRent != null ? p.startRent : monthlyPmt;
 
   let balance = loan;
   let renterPortfolio = upfront;
@@ -524,17 +524,27 @@ function buildParams(country, metro, personal, rateOverride) {
   const nat = c.national;
   const rate = rateOverride ?? d.mortgageRate;
   const term = personal.mortgageTerm ?? d.mortgageTerm;
-  const loan = backsolveLoan(personal.monthlyPayment, rate, term);
-  const homePrice = loan + personal.downPayment;
-  const downPct = personal.downPayment / homePrice;
+  const propTaxRate = metro?.propTaxRate ?? nat.propTaxRate;
+  const insRate = metro?.insRate ?? nat.insRate;
+  const maintRate = nat.maintRate;
+  // Budget-first: derive P&I from buyBudget using closed-form solution
+  const buyB = personal.buyBudget;
+  const D = personal.downPayment;
+  const mRate = (propTaxRate + insRate + maintRate) / 12;
+  const r = rate / 12, n = term * 12;
+  const rn = Math.pow(1 + r, n);
+  const k = r > 0 ? (rn - 1) / (r * rn) : n;
+  const pi = Math.max(0, (buyB - D * mRate) / (1 + k * mRate));
+  const loan = pi * k;
+  const homePrice = loan + D;
+  const downPct = homePrice > 0 ? D / homePrice : 0;
+  const rentBudget = personal.rentBudget ?? buyB;
   return {
     homePrice, downPct, mortgageRate: rate, mortgageTerm: term,
     appreciation: metro?.appreciation5yr ?? nat.appreciation5yr,
     rentGrowth: metro?.rentGrowth ?? nat.rentGrowth,
     inflation: d.inflation, investReturn: d.investReturn,
-    propTaxRate: metro?.propTaxRate ?? nat.propTaxRate,
-    maintRate: nat.maintRate,
-    insRate: metro?.insRate ?? nat.insRate,
+    propTaxRate, maintRate, insRate,
     marginalTax: d.marginalTax, stdDeduction: d.stdDeduction,
     saltCap: d.saltCap, otherItemized: personal.otherItemized ?? 0,
     capGainsRate: d.capGainsRate, capGainsExclusion: d.capGainsExclusion,
@@ -542,6 +552,7 @@ function buildParams(country, metro, personal, rateOverride) {
     renterIns: d.renterIns, discipline: personal.discipline ?? 1.0,
     simYears: personal.simYears ?? 30,
     holdingPeriod: personal.holdingPeriod ?? 15,
+    startRent: rentBudget,
   };
 }
 
@@ -565,7 +576,8 @@ const PRESETS = [
 const DEFAULT_METROS = { US:"us-nyc",CA:"ca-tor",UK:"uk-lon",AU:"au-syd",DE:"de-ber",IE:"ie-dub",NZ:"nz-akl",FR:"fr-par",ES:"es-mad",NL:"nl-ams",IT:"it-mil",SE:"se-sto",CH:"ch-zur",JP:"jp-tok",SG:"sg-sg",KR:"kr-sel" };
 const RANGES = { investReturn:{lo:0.05,hi:0.12}, appreciation:{lo:-0.02,hi:0.08}, rentGrowth:{lo:0.01,hi:0.06}, propTaxRate:{lo:0.001,hi:0.025}, insRate:{lo:0.001,hi:0.02}, mortgageRate:{lo:0.025,hi:0.09}, maintRate:{lo:0.005,hi:0.025} };
 const TIPS = {
-  monthlyPayment:"Your current monthly housing outflow. Both buyer and renter start from this amount.",
+  rentBudget:"Monthly rent you'd pay. When linked to buy budget, ensures an apples-to-apples comparison.",
+  buyBudget:"Total monthly housing cost if buying — includes P&I, property tax, insurance, and maintenance. The tool derives your affordable home price from this budget.",
   downPayment:"Cash toward purchase. The renter invests this + closing costs instead.",
   mortgageTerm:"Length of the mortgage. 30yr US, 25yr CA/UK, 20yr DE.",
   holdingPeriod:"When you'd sell. Each year is a 'if I liquidated now' snapshot — NOT a sell-then-rent transition.",
@@ -740,16 +752,19 @@ const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemp
 </div>;
 
 // Shared panel for Scenario and Custom — one component, two instances
-const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params,holdYr,sym,beSens,presetMode,presetId,onPreset}) => {
+const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params,holdYr,sym,beSens,presetMode,presetId,onPreset,onClose}) => {
   const active = Object.keys(overrides).length > 0;
   const hd = result.data[Math.min(holdYr,params.simYears)-1];
   return <div style={S.panel}>
     <div style={{...S.pH,background:active?colorBg:T.muted,color:active?color:T.text3,borderBottom:`2px solid ${active?color:T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",transition:"all 200ms"}}>
       <span>{title}{!active&&<span style={{fontWeight:400,textTransform:"none"}}> — {presetMode==="select"?"select a preset":"adjust values"}</span>}</span>
+      <div style={{display:"flex",alignItems:"center",gap:4}}>
       {presetMode==="select"
         ? <select style={{...S.select,fontSize:10}} value={presetId} onChange={e=>onPreset(e.target.value)}>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
         : <select style={{...S.select,fontSize:10}} value="" onChange={e=>{if(e.target.value)onPreset(e.target.value);}}><option value="">Load preset…</option>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
       }
+      {onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>}
+      </div>
     </div>
     <div style={S.pB}>
       <VerdictBox advantage={hd?.advantage} homePrice={result.homePrice} holdYr={holdYr} sym={sym}/>
@@ -777,6 +792,7 @@ function RentVsBuyV3() {
   const [chartType,setChartType]=useState("networth");
   const [showData,setShowData]=useState(false);
   const [hoveredBar,setHoveredBar]=useState(-1);
+  const [showWhatIf,setShowWhatIf]=useState(false);
   const [chartDescOpen,setChartDescOpen]=useState(true);
   const [bannerOpen,setBannerOpen]=useState(true);
   const [guideTab,setGuideTab]=useState("overview");
@@ -811,10 +827,22 @@ function RentVsBuyV3() {
   const countryMetros=METROS.filter(m=>m.country===country);
   const findM=id=>METROS.find(m=>m.id===id)||null;
 
-  const [personal,setPersonal]=useState(saved?.p||{
-    monthlyPayment:c.personalDefaults.monthlyPayment, downPayment:c.personalDefaults.downPayment,
-    mortgageTerm:c.defaults.mortgageTerm, holdingPeriod:15, simYears:c.defaults.mortgageTerm+5, discipline:0.65, otherItemized:0,
+  const [personal,setPersonal]=useState(()=>{
+    const s=saved?.p||{};
+    // Backward compat: old URLs have monthlyPayment → map to both budgets
+    const mp=s.monthlyPayment;
+    return {
+      rentBudget:s.rentBudget??mp??c.personalDefaults.monthlyPayment,
+      buyBudget:s.buyBudget??mp??c.personalDefaults.monthlyPayment,
+      downPayment:s.downPayment??c.personalDefaults.downPayment,
+      mortgageTerm:s.mortgageTerm??c.defaults.mortgageTerm,
+      holdingPeriod:s.holdingPeriod??15,
+      simYears:s.simYears??(c.defaults.mortgageTerm+5),
+      discipline:s.discipline??0.65,
+      otherItemized:s.otherItemized??0,
+    };
   });
+  const [budgetLinked,setBudgetLinked]=useState(()=>!saved?.p||saved.p.rentBudget==null||saved.p.rentBudget===saved.p.buyBudget);
   const up=key=>val=>setPersonal(prev=>({...prev,[key]:val}));
   const hp=personal.holdingPeriod;
   const eLocA=linked?null:findM(locAMetro), eLocB=findM(locBMetro);
@@ -886,12 +914,12 @@ function RentVsBuyV3() {
     setCountry(nc);setLocAMetro(null);setLocBMetro(DEFAULT_METROS[nc]||"");
     setScenOvr({});setCusOvr({});setPresetId("ref");setFxOverride(null);
     const nd=COUNTRIES[nc];
-    setPersonal(prev=>({...prev,monthlyPayment:nd.personalDefaults.monthlyPayment,downPayment:nd.personalDefaults.downPayment,mortgageTerm:nd.defaults.mortgageTerm}));
+    setPersonal(prev=>({...prev,rentBudget:nd.personalDefaults.monthlyPayment,buyBudget:nd.personalDefaults.monthlyPayment,downPayment:nd.personalDefaults.downPayment,mortgageTerm:nd.defaults.mortgageTerm}));
   };
 
   // Chart type configs
   const CHARTS = {
-    networth:{label:"Net worth by strategy",title:"Net Worth: Buyer vs. Renter",sub:"Total wealth for each strategy across all scenarios · solid = custom, purple = scenario, dashed = location"},
+    networth:{label:"Net worth by strategy",title:"Net Worth: Buyer vs. Renter",sub:"Total wealth for each strategy · solid = custom (★), dashed = location · add What-If for preset comparison"},
     tornado:{label:"Sensitivity chart",title:"Sensitivity: Which Assumptions Matter?",sub:"Each bar shows how much the outcome swings when one variable changes · sorted by impact · ★ marks the single most impactful variable"},
     cost:{label:"Annual cost",title:"What You Pay Each Year",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
     assets:{label:"Equity & investments",title:"Home Equity & Investment Portfolios",sub:"Home equity = home value minus mortgage balance · renter portfolio starts with down payment + closing costs invested · buyer portfolio grows after mortgage payoff"},
@@ -952,7 +980,7 @@ function RentVsBuyV3() {
             {guideTab==="overview"&&<>
               <p><strong style={{color:T.text1}}>What this model does:</strong> Compares two parallel wealth paths — buying a home vs. renting and investing the difference — starting from the same monthly cash outflow. At your chosen time horizon, it calculates total net wealth after taxes, transaction costs, and capital gains.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>The core premise:</strong> Starting monthly rent equals the monthly mortgage payment. Both paths begin from the same dollar outflow. Rent grows; mortgage stays fixed. This isolates the financial question from the lifestyle question.</p>
-              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Three panels:</strong> <em>Location</em> = real locked market data for two locations. <em>Scenario</em> = preset market conditions (12 options). <em>Custom</em> = fully editable sandbox. All three use the same simulation engine.</p>
+              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Panels:</strong> <em>Location</em> = real locked market data for two locations. <em>Custom</em> = fully editable sandbox. <em>What-If</em> (optional) = preset market conditions (12 options). All use the same simulation engine.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Snapshots, not transitions:</strong> Each year is an independent "if I sold now" evaluation. Year 15 does NOT model selling then renting — it shows total wealth if you liquidated at that point.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Quick start:</strong> Set your actual rent as "Monthly Payment," savings as "Down Payment," and how long you'd stay. Then try Investment Discipline at 70%. Click any <span style={{color:T.accent,fontWeight:700}}>?</span> for details.</p>
             </>}
@@ -987,7 +1015,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:4}}>Taxes don't change the direction as much as people expect — but the $500K primary residence exclusion is massive and stable (enacted 1997, unchanged since). The real issue is the mortgage interest deduction: post-TCJA, the $30K standard deduction means most homeowners get $0 incremental tax benefit. This model captures that correctly. Most online calculators don't.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"Why does renting win so often at default settings?"</strong></p>
-              <p style={{marginTop:4}}>Two reasons. First, the default assumes 75% investment discipline — most of the surplus gets invested. Try 50% (the "Investment Discipline" slider) for a reality check. Second, at current mortgage rates (~6%), there's a 4% spread between what stocks return (10% CAGR) and what the mortgage costs. That gap compounds. Change either rate and watch the verdict flip.</p>
+              <p style={{marginTop:4}}>Two reasons. First, the default assumes 65% investment discipline — a realistic middle ground. Try 50% for a reality check or 75% for an optimistic case. Second, at current mortgage rates (~6%), there's a 4% spread between what stocks return (10% CAGR) and what the mortgage costs. That gap compounds. Change either rate and watch the verdict flip.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"I did my own math and got different numbers."</strong></p>
               <p style={{marginTop:4}}>Great — check which variables differ. The sensitivity chart (chart dropdown → "Sensitivity chart") shows which single assumption drives your result. Usually it's investment return, appreciation, or discipline. If your algebra gives the same core equation (down payment compounded vs. home appreciation + monthly surplus compounded), you've independently validated the model. The simulation adds month-precise amortization, tax treatment, and transaction costs on top of that foundation.</p>
@@ -996,7 +1024,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:4}}>True in many markets, especially in 2024–2026 with rates above 6%. That's the "imputed rent" gap — the owner consumes housing services worth more than their payment buys. This model isolates the <em>financial</em> question only: which path builds more wealth? Quality-of-life differences (space, stability, customization, landlord risk) are real but not quantifiable. They're documented in "What the Model Doesn't Capture" on GitHub.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"Can I trust a model this simple?"</strong></p>
-              <p style={{marginTop:4}}>It's not simple — it runs 780 monthly amortization steps per simulation, 4 scenarios simultaneously, and 12 sensitivity perturbations. What it IS is transparent: every assumption is editable, every default is sourced, and every formula is documented. The academic foundations (Poterba, Jordà, Bernstein-Koudijs) are linked in Sources. The full math audit is on GitHub. Verify anything you want.</p>
+              <p style={{marginTop:4}}>It's not simple — it runs 780 monthly amortization steps per simulation, multiple scenarios simultaneously, and 12 sensitivity perturbations. What it IS is transparent: every assumption is editable, every default is sourced, and every formula is documented. The academic foundations (Poterba, Jordà, Bernstein-Koudijs) are linked in Sources. The full math audit is on GitHub. Verify anything you want.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"What should I actually do with this?"</strong></p>
               <p style={{marginTop:4}}>Enter YOUR numbers (real rent, real savings, real timeline). Look at the verdict. Then break it: slide the discipline to 70%, try a different rate, change the sell year. The goal isn't to get one answer — it's to understand which assumptions your decision depends on and how sensitive it is to being wrong about them.</p>
@@ -1006,11 +1034,17 @@ function RentVsBuyV3() {
       </details>
 
       {/* PERSONAL */}
-      {tutorial&&<div className="tut"><b>2</b>Set your real numbers — what you pay (or would pay) monthly, how much you've saved, and how long you'd stay. These are shared across all scenarios below.</div>}
+      {tutorial&&<div className="tut"><b>2</b>Set your budgets — what you'd spend monthly on rent vs. buying, how much you've saved for a down payment, and how long you'd stay. These are shared across all scenarios below.</div>}
       <div style={S.card}>
         <div style={S.sTitle}>Your Situation</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
-          <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment} hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down`}/></div>
+          <div style={{display:"flex",alignItems:"flex-start",gap:4}}>
+            <div style={{flex:1}}><NumInput label="Rent Budget" value={personal.rentBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>({...prev,rentBudget:v,buyBudget:v}));else up("rentBudget")(v);}} step={100} prefix={sym} tip="Monthly rent you'd pay. When linked, equals buy budget for apples-to-apples."/></div>
+            <button onClick={()=>setBudgetLinked(!budgetLinked)} style={{marginTop:22,cursor:"pointer",background:budgetLinked?`${T.accent}1A`:"transparent",border:`1px solid ${budgetLinked?T.accent:T.border}`,borderRadius:6,padding:"4px 6px",fontSize:11,fontWeight:700,color:budgetLinked?T.accent:T.text3,flexShrink:0}} title={budgetLinked?"Unlink to set different rent & buy budgets":"Link rent & buy budgets"}>🔗</button>
+            <div style={{flex:1}}><NumInput label="Buy Budget" value={personal.buyBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>({...prev,rentBudget:v,buyBudget:v}));else up("buyBudget")(v);}} step={100} prefix={sym} tip="Total monthly housing cost if buying (P&I + tax + ins + maint). Home price is derived from this."/></div>
+            <div style={{flex:1}}><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment} hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down`}/></div>
+          </div>
+          {!budgetLinked&&Math.abs(personal.rentBudget-personal.buyBudget)/(personal.buyBudget||1)>0.10&&<div style={{fontSize:10,color:"#b45309",padding:"4px 10px",background:"#fef3c7",borderRadius:6,border:"1px solid #f59e0b"}}>⚠ Rent and buy budgets differ by more than 10% — comparison may not reflect equal affordability.</div>}
           <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="Median US tenure: 10-13 yr"/></div>
           <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Investment Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={75} hint="60-75% realistic"/></div>
         </div>
@@ -1029,11 +1063,12 @@ function RentVsBuyV3() {
           const dpPct=personal.downPayment/hp2*100;
           const pmiRate=dpPct>=20?0:dpPct>=15?0.002:dpPct>=10?0.003:0.005;
           const pmiMo=pmiRate>0?Math.round(ln*pmiRate/12):0;
-          const tot=pmt+ptm+im+mm+pmiMo, surplus=tot-pmt;
+          const tot=pmt+ptm+im+mm+pmiMo;
           return <div style={{fontSize:11,color:T.text2,marginTop:8,padding:"6px 12px",background:`${T.accent}08`,borderRadius:6,lineHeight:1.6}}>
-            <span style={{fontWeight:600}}>Rent = {ff(pmt)}/mo</span> (set by your Monthly Payment).
-            <span style={{fontWeight:600}}> Buyer's true cost = ~{ff(tot)}/mo</span> (P&I + {ff(ptm)} tax + {ff(im)} ins + {ff(mm)} maint{pmiMo>0?` + ${ff(pmiMo)} PMI`:""}).
-            The renter keeps the <span style={{fontWeight:600}}>{ff(surplus)}/mo surplus + {ff(Math.round(cusR.upfront))} upfront</span> (down + closing) invested.
+            <span style={{fontWeight:600}}>Rent = {ff(Math.round(personal.rentBudget))}/mo</span>.
+            <span style={{fontWeight:600}}> Buyer = ~{ff(tot)}/mo</span> ({ff(pmt)} P&I + {ff(ptm)} tax + {ff(im)} ins + {ff(mm)} maint{pmiMo>0?` + ${ff(pmiMo)} PMI`:""}).
+            The renter invests <span style={{fontWeight:600}}>{ff(Math.round(cusR.upfront))} upfront</span> (down + closing).
+            {!budgetLinked&&<span> Budgets differ: rent {ff(Math.round(personal.rentBudget))}, buy {ff(Math.round(personal.buyBudget))}.</span>}
           </div>;
         })()}
         <div style={{padding:"10px 14px",marginTop:12,background:T.muted,borderRadius:8,border:`1px solid ${T.border}`,fontSize:12}}>
@@ -1071,21 +1106,21 @@ function RentVsBuyV3() {
         </div>
       </div>
 
-      {/* THREE PANELS */}
-      {tutorial&&<div className="tut"><b>3</b><span>Three scenarios side by side — <strong>Location</strong> uses real sourced data (locked). <strong>Scenario</strong> tests presets like "low rate era" or "housing correction." <strong>Custom</strong> is your sandbox — drag sliders or type exact values.</span></div>}
-      <div style={S.panels}>
-        {/* LOCATION */}
-        <div style={S.panel}>
-          <div style={{...S.pH,background:`${T.accent}0F`,color:T.accent,borderBottom:`2px solid ${T.accent}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:6}}>
+      {/* PANELS — Location full-width, Your Assumptions + optional What-If below */}
+      {tutorial&&<div className="tut"><b>3</b><span>Compare scenarios — <strong>Location</strong> shows real sourced data (locked). <strong>Your Assumptions</strong> is your sandbox — type exact values. Click <strong>"+ Add What-If"</strong> to test presets like "low rate era" or "housing correction."</span></div>}
+
+      {/* LOCATION — full width */}
+      <div style={{...S.panel,marginBottom:16}}>
+        <div style={{...S.pH,background:T.muted,color:T.text2,borderBottom:`2px solid ${T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",gap:6}}>
             <span>Location</span>
-            <select style={{...S.select,fontSize:10,flex:1,maxWidth:140}} value={country} onChange={e=>chgCountry(e.target.value)}>
-              {Object.entries(COUNTRIES).map(([k,v])=><option key={k} value={k}>{v.name}</option>)}
-            </select>
             <button style={{cursor:"pointer",background:linked?`${T.accent}1A`:"transparent",border:`1px solid ${linked?T.accent:T.border}`,borderRadius:6,padding:"2px 8px",fontSize:10,fontWeight:700,color:linked?T.accent:T.text3}} onClick={()=>setLinked(!linked)} title={linked?"Compare two metros":"Lock A to national"}>🔗</button>
           </div>
-          <div style={S.pB}>
-            <div style={{marginBottom:12,paddingBottom:12,borderBottom:`1px solid ${T.border}`}}>
+          <div style={{...S.pB,display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(260px, 100%), 1fr))",gap:16}}>
+            <div>
               <div style={{fontSize:11,fontWeight:700,color:T.text2,marginBottom:6}}>A: {locALabel}</div>
+              <select style={{...S.select,width:"100%",marginBottom:6}} value={country} onChange={e=>chgCountry(e.target.value)}>
+                {Object.entries(COUNTRIES).map(([k,v])=><option key={k} value={k}>{v.name}</option>)}
+              </select>
               {!linked&&<select style={{...S.select,width:"100%",marginBottom:8}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select>}
               {linked&&<div style={{fontSize:10,color:T.text3,marginBottom:6,fontStyle:"italic"}}>🔗 National avg. Click 🔗 for two metros.</div>}
               <VerdictBox advantage={locAH?.advantage} homePrice={locAR.homePrice} holdYr={hp} sym={sym}/>
@@ -1098,10 +1133,23 @@ function RentVsBuyV3() {
               <div style={{fontSize:10,color:T.text3,fontFamily:THEME_MONO}}>Home {ff(locBR.homePrice)} · <span title="First year where buying catches up to renting in total wealth">First break-even: {locBR.breakeven?`Yr ${locBR.breakeven}`:"Never"}</span></div>
             </div>
           </div>
-        </div>
+      </div>
 
-        <ScenarioPanel title="Scenario" color={T.purple} colorBg={`${T.purple}0F`} overrides={scenOvr} setOverrides={setScenOvr} result={scenR} params={scenP} holdYr={hp} sym={sym} presetMode="select" presetId={presetId} onPreset={id=>{setPresetId(id);setScenOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}}/>
-        {(()=>{const cusKeys=Object.keys(cusOvr);const isEdited=cusKeys.length>0&&!PRESETS.some(p=>{const pk=Object.keys(p.overrides);return pk.length===cusKeys.length&&pk.every(k=>p.overrides[k]===cusOvr[k]);});return <ScenarioPanel title={isEdited?"Custom (edited)":"Custom"} color={isEdited?T.text1:T.text3} colorBg={T.muted} overrides={cusOvr} setOverrides={setCusOvr} result={cusR} params={cusP} holdYr={hp} sym={sym} beSens={beSens} presetMode="load" onPreset={id=>setCusOvr(PRESETS.find(x=>x.id===id)?.overrides||{})}/>;})()}
+      {/* YOUR ASSUMPTIONS + WHAT-IF */}
+      <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
+        <div style={{flex:"2 1 320px",minWidth:0}}>
+        {(()=>{const cusKeys=Object.keys(cusOvr);const isEdited=cusKeys.length>0&&!PRESETS.some(p=>{const pk=Object.keys(p.overrides);return pk.length===cusKeys.length&&pk.every(k=>p.overrides[k]===cusOvr[k]);});return <ScenarioPanel title={isEdited?"Your Assumptions (edited)":"Your Assumptions"} color={isEdited?T.accent:T.text2} colorBg={`${T.accent}0F`} overrides={cusOvr} setOverrides={setCusOvr} result={cusR} params={cusP} holdYr={hp} sym={sym} beSens={beSens} presetMode="load" onPreset={id=>setCusOvr(PRESETS.find(x=>x.id===id)?.overrides||{})}/>;})()}
+        </div>
+        <div style={{flex:"1 1 200px",minWidth:0,maxWidth:showWhatIf?undefined:200}}>
+        {showWhatIf?<ScenarioPanel title="What-If" color={T.purple} colorBg={`${T.purple}0F`} overrides={scenOvr} setOverrides={setScenOvr} result={scenR} params={scenP} holdYr={hp} sym={sym} presetMode="select" presetId={presetId} onPreset={id=>{setPresetId(id);setScenOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} onClose={()=>setShowWhatIf(false)}/>
+        :<div style={{...S.panel,display:"flex",alignItems:"center",justifyContent:"center",minHeight:120,cursor:"pointer",border:`2px dashed ${T.border}`,background:"transparent",height:"100%"}} onClick={()=>setShowWhatIf(true)}>
+          <div style={{textAlign:"center",color:T.text3}}>
+            <div style={{fontSize:20,marginBottom:4}}>+</div>
+            <div style={{fontSize:11,fontWeight:600}}>Add What-If</div>
+            <div style={{fontSize:10,marginTop:2}}>Test a preset scenario</div>
+          </div>
+        </div>}
+        </div>
       </div>
 
       {/* VERDICT CALLOUT — between inputs and chart */}
@@ -1151,7 +1199,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* CHART */}
-      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
+      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
       <div style={S.card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:12,flexWrap:"wrap"}}>
           <div style={{flex:"1 1 200px",minWidth:0}}>
@@ -1169,8 +1217,8 @@ function RentVsBuyV3() {
           {cusR.breakeven&&<ReferenceLine x={cusR.breakeven} stroke="#dc2626" strokeDasharray="4 4" label={{value:"BE",position:"top",fontSize:10,fill:"#dc2626"}}/>}
           <Line type="monotone" dataKey="cusBuyer" name="★ Buyer" stroke={T.accent} strokeWidth={2.5} dot={false}/>
           <Line type="monotone" dataKey="cusRenter" name="★ Renter" stroke={T.green} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="scenBuyer" name="Scenario Buyer" stroke={T.purple} strokeWidth={1.5} dot={false}/>
-          <Line type="monotone" dataKey="scenRenter" name="Scenario Renter" stroke={T.purple} strokeWidth={1.5} dot={false} strokeDasharray="4 2"/>
+          {showWhatIf&&<Line type="monotone" dataKey="scenBuyer" name="What-If Buyer" stroke={T.purple} strokeWidth={1.5} dot={false}/>}
+          {showWhatIf&&<Line type="monotone" dataKey="scenRenter" name="What-If Renter" stroke={T.purple} strokeWidth={1.5} dot={false} strokeDasharray="4 2"/>}
           <Line type="monotone" dataKey="locABuyer" name={`${locALabel} Buyer`} stroke={T.text3} strokeWidth={1} dot={false} strokeDasharray="6 3"/>
           <Line type="monotone" dataKey="locARenter" name={`${locALabel} Renter`} stroke={T.text3} strokeWidth={1} dot={false} strokeDasharray="2 2"/>
           <Line type="monotone" dataKey="locBBuyer" name={`${locBLabel} Buyer`} stroke={T.text3} strokeWidth={1} dot={false} strokeDasharray="8 4" opacity={0.5}/>
@@ -1261,7 +1309,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.98 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

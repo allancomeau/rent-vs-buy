@@ -776,6 +776,7 @@ function RentVsBuyV3() {
   const [cusOvr,setCusOvr]=useState(saved?.co||{});
   const [chartType,setChartType]=useState("networth");
   const [showData,setShowData]=useState(false);
+  const [hoveredBar,setHoveredBar]=useState(-1);
   const [chartDescOpen,setChartDescOpen]=useState(true);
   const [bannerOpen,setBannerOpen]=useState(true);
   const [guideTab,setGuideTab]=useState("overview");
@@ -812,7 +813,7 @@ function RentVsBuyV3() {
 
   const [personal,setPersonal]=useState(saved?.p||{
     monthlyPayment:c.personalDefaults.monthlyPayment, downPayment:c.personalDefaults.downPayment,
-    mortgageTerm:c.defaults.mortgageTerm, holdingPeriod:15, simYears:c.defaults.mortgageTerm+5, discipline:0.75, otherItemized:0,
+    mortgageTerm:c.defaults.mortgageTerm, holdingPeriod:15, simYears:c.defaults.mortgageTerm+5, discipline:0.65, otherItemized:0,
   });
   const up=key=>val=>setPersonal(prev=>({...prev,[key]:val}));
   const hp=personal.holdingPeriod;
@@ -1010,16 +1011,20 @@ function RentVsBuyV3() {
         <div style={S.sTitle}>Your Situation</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
           <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment} hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down`}/></div>
-          <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="5+ yr to recoup costs"/></div>
+          <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="Median US tenure: 10-13 yr"/></div>
           <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Investment Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={75} hint="60-75% realistic"/></div>
           <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
         {(()=>{
-          const ptm=Math.round(cusR.homePrice*cusP.propTaxRate/12), im=Math.round(cusR.homePrice*cusP.insRate/12), mm=Math.round(cusR.homePrice*cusP.maintRate/12);
-          const tot=Math.round(cusR.monthlyPmt)+ptm+im+mm, surplus=tot-Math.round(cusR.monthlyPmt);
+          const hp2=cusR.homePrice, ln=cusR.loan, pmt=Math.round(cusR.monthlyPmt);
+          const ptm=Math.round(hp2*cusP.propTaxRate/12), im=Math.round(hp2*cusP.insRate/12), mm=Math.round(hp2*cusP.maintRate/12);
+          const dpPct=personal.downPayment/hp2*100;
+          const pmiRate=dpPct>=20?0:dpPct>=15?0.002:dpPct>=10?0.003:0.005;
+          const pmiMo=pmiRate>0?Math.round(ln*pmiRate/12):0;
+          const tot=pmt+ptm+im+mm+pmiMo, surplus=tot-pmt;
           return <div style={{fontSize:11,color:T.text2,marginTop:8,padding:"6px 12px",background:`${T.accent}08`,borderRadius:6,lineHeight:1.6}}>
-            <span style={{fontWeight:600}}>Rent = {ff(Math.round(cusR.monthlyPmt))}/mo</span> (set by your Monthly Payment).
-            <span style={{fontWeight:600}}> Buyer's true cost = ~{ff(tot)}/mo</span> (P&I + {ff(ptm)} tax + {ff(im)} ins + {ff(mm)} maint).
+            <span style={{fontWeight:600}}>Rent = {ff(pmt)}/mo</span> (set by your Monthly Payment).
+            <span style={{fontWeight:600}}> Buyer's true cost = ~{ff(tot)}/mo</span> (P&I + {ff(ptm)} tax + {ff(im)} ins + {ff(mm)} maint{pmiMo>0?` + ${ff(pmiMo)} PMI`:""}).
             The renter keeps the <span style={{fontWeight:600}}>{ff(surplus)}/mo surplus + {ff(Math.round(cusR.upfront))} upfront</span> (down + closing) invested.
           </div>;
         })()}
@@ -1046,23 +1051,12 @@ function RentVsBuyV3() {
                   {medRatio<0.85?" — well below median":medRatio<1.15?" — near median":" — above median"}
                 </div>
               </div>
-              <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"4px 16px",fontSize:11,color:T.text2}}>
-                <div style={{padding:"3px 0",gridColumn:"1 / -1"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Buyer total: </span>{ff(totalBuyerMo)}/mo
-                  <span style={{color:T.text3}}> = {ff(pmt)} P&I + {ff(propTaxMo)} tax + {ff(insMo)} ins + {ff(maintMo)} maint{pmiMo>0?` + ${ff(pmiMo)} PMI`:""}</span>
-                </div>
-                {dpPct<20&&<div style={{padding:"3px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>20% threshold: </span>{ff(Math.round(hp2*0.2-personal.downPayment))} more to avoid PMI
-                </div>}
-                {pmiMo>0&&<div style={{padding:"3px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>PMI est: </span>~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity
-                </div>}
-                <div style={{padding:"3px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Income check: </span>{ff(pmt)}/mo P&I → ~{ff(recIncome)}/yr recommended (28%)
-                </div>
-                <div style={{padding:"3px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Costs: </span>Buy {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip
-                </div>
+              <div style={{fontSize:11,color:T.text2,textAlign:"center",lineHeight:1.8}}>
+                <div><span style={{fontWeight:600,color:T.text1}}>Buyer total:</span> {ff(totalBuyerMo)}/mo <span style={{color:T.text3}}>({ff(pmt)} P&I + {ff(propTaxMo)} tax + {ff(insMo)} ins + {ff(maintMo)} maint{pmiMo>0?` + ${ff(pmiMo)} PMI`:""})</span></div>
+                {dpPct<20&&<div><span style={{fontWeight:600,color:T.text1}}>20% threshold:</span> {ff(Math.round(hp2*0.2-personal.downPayment))} more to avoid PMI</div>}
+                {pmiMo>0&&<div><span style={{fontWeight:600,color:T.text1}}>PMI est:</span> ~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity</div>}
+                <div><span style={{fontWeight:600,color:T.text1}}>Income check:</span> {ff(pmt)}/mo P&I → ~{ff(recIncome)}/yr recommended (28%)</div>
+                <div><span style={{fontWeight:600,color:T.text1}}>Costs:</span> Buy {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip</div>
               </div>
             </>;
           })()}
@@ -1195,41 +1189,45 @@ function RentVsBuyV3() {
         {chartType==="tornado"&&(()=>{
           const upf=cusR.upfront||1;
           const maxHalf=Math.max(...sensitivity.map(s=>Math.max(Math.abs(s.dnA-s.base),Math.abs(s.upA-s.base))))||1;
+          const advLabel=(a)=>{const w=a>=0?"Buy":"Rent";const r=Math.abs(a);return{w,roi:(r/upf*100).toFixed(0),amt:f(r)};};
           return <div style={{padding:"8px 0"}}>
+            <div style={{textAlign:"center",fontSize:11,color:T.text2,marginBottom:12}}>All variables adjusted by the same scale: <span style={{fontWeight:700}}>{sensitivity[0]?.fmt}</span> where applicable</div>
             {sensitivity.map((s,i)=>{
               const dn=s.dnA-s.base, up2=s.upA-s.base;
-              const leftW=Math.abs(dn)/maxHalf*48;
-              const rightW=Math.abs(up2)/maxHalf*48;
-              const leftColor=dn>=0?T.accent:T.green;
-              const rightColor=up2>=0?T.accent:T.green;
-              const dnPct=(Math.abs(dn)/upf*100).toFixed(0), upPct=(Math.abs(up2)/upf*100).toFixed(0);
+              const leftW=Math.abs(dn)/maxHalf*48, rightW=Math.abs(up2)/maxHalf*48;
+              const leftColor=s.dnA>=0?T.accent:T.green, rightColor=s.upA>=0?T.accent:T.green;
+              const dnV=advLabel(s.dnA), upV=advLabel(s.upA);
               return <div key={s.key} style={{marginBottom:14}}>
-                <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:70,fontSize:10,textAlign:"right",fontFamily:THEME_MONO}}>
-                    <div style={{fontWeight:600,color:leftColor}}>{dnPct}%</div>
-                    <div style={{color:T.text3}}>{f(Math.abs(dn))}</div>
+                <div style={{display:"flex",alignItems:"center",gap:6}}>
+                  <div style={{width:75,fontSize:10,textAlign:"right",fontFamily:THEME_MONO}}>
+                    <div style={{fontWeight:600,color:s.dnA>=0?T.accent:T.green}}>{dnV.w} {dnV.roi}%</div>
+                    <div style={{color:T.text3}}>{dnV.amt}</div>
                   </div>
-                  <div style={{width:120,fontSize:12,textAlign:"right",color:T.text1,fontWeight:i===0?700:500}}>{s.name}{i===0&&" ★"}</div>
-                  <div style={{flex:1,height:28,position:"relative",background:T.muted,borderRadius:6}}>
+                  <div style={{width:100,fontSize:12,textAlign:"right",color:T.text1,fontWeight:i===0?700:500}}>{s.name}{i===0&&" ★"}</div>
+                  <div style={{flex:1,height:28,position:"relative",background:T.muted,borderRadius:6,cursor:"help"}} onMouseEnter={()=>setHoveredBar(i)} onMouseLeave={()=>setHoveredBar(-1)}>
                     <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.text1+"60"}}/>
-                    {leftW>0&&<div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,leftW)}%`,background:`${leftColor}30`,borderRadius:"4px 0 0 4px",border:`1px solid ${leftColor}`}}/>}
-                    {rightW>0&&<div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,rightW)}%`,background:`${rightColor}30`,borderRadius:"0 4px 4px 0",border:`1px solid ${rightColor}`}}/>}
+                    {leftW>0&&<div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,leftW)}%`,background:`${leftColor}30`,borderRadius:"4px 0 0 4px",border:`1px solid ${leftColor}`,pointerEvents:"none"}}/>}
+                    {rightW>0&&<div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,rightW)}%`,background:`${rightColor}30`,borderRadius:"0 4px 4px 0",border:`1px solid ${rightColor}`,pointerEvents:"none"}}/>}
+                    {hoveredBar===i&&<div style={{position:"absolute",top:-54,left:"50%",transform:"translateX(-50%)",background:T.card,border:`1px solid ${T.border}`,borderRadius:6,padding:"6px 10px",fontSize:10,color:T.text2,whiteSpace:"nowrap",zIndex:10,boxShadow:"0 2px 8px rgba(0,0,0,.15)",lineHeight:1.5,fontFamily:THEME_MONO}}>
+                      <div>−{s.fmt.replace("±","")}: <span style={{fontWeight:600,color:s.dnA>=0?T.accent:T.green}}>{dnV.w}</span> by {dnV.amt} ({dnV.roi}% ROI)</div>
+                      <div>+{s.fmt.replace("±","")}: <span style={{fontWeight:600,color:s.upA>=0?T.accent:T.green}}>{upV.w}</span> by {upV.amt} ({upV.roi}% ROI)</div>
+                      <div style={{color:T.text3}}>Swing: {f(s.swing)}</div>
+                    </div>}
                   </div>
-                  <div style={{width:70,fontSize:10,textAlign:"left",fontFamily:THEME_MONO}}>
-                    <div style={{fontWeight:600,color:rightColor}}>{upPct}%</div>
-                    <div style={{color:T.text3}}>{f(Math.abs(up2))}</div>
+                  <div style={{width:75,fontSize:10,textAlign:"left",fontFamily:THEME_MONO}}>
+                    <div style={{fontWeight:600,color:s.upA>=0?T.accent:T.green}}>{upV.w} {upV.roi}%</div>
+                    <div style={{color:T.text3}}>{upV.amt}</div>
                   </div>
                 </div>
-                <div style={{textAlign:"center",fontSize:9,color:T.text3,marginTop:2}}>Total swing: {(s.swing/upf*100).toFixed(0)}% ({f(s.swing)})</div>
               </div>;
             })}
             <div style={{display:"flex",justifyContent:"center",gap:16,marginTop:8,fontSize:11,color:T.text2}}>
-              <span>◀ −%</span>
-              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:`${T.accent}30`,border:`1px solid ${T.accent}`,borderRadius:2,display:"inline-block"}}/>favors buying</span>
-              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:`${T.green}30`,border:`1px solid ${T.green}`,borderRadius:2,display:"inline-block"}}/>favors renting</span>
-              <span>+% ▶</span>
+              <span>◀ −{sensitivity[0]?.fmt.replace("±","")}</span>
+              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:`${T.accent}30`,border:`1px solid ${T.accent}`,borderRadius:2,display:"inline-block"}}/>buying wins</span>
+              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:`${T.green}30`,border:`1px solid ${T.green}`,borderRadius:2,display:"inline-block"}}/>renting wins</span>
+              <span>+{sensitivity[0]?.fmt.replace("±","")} ▶</span>
             </div>
-            <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>% = change relative to {ff(Math.round(upf))} invested capital</div>
+            <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>Hover any bar for full details · % = ROI on {ff(Math.round(upf))} invested capital</div>
           </div>;
         })()}
 
@@ -1255,7 +1253,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.95 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.97 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

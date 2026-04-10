@@ -4,6 +4,32 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v3.9.96 — April 2026
+
+### UX Updates & Chart Consolidation
+- **Charts consolidated to 4:** Net Worth (8-line combined buyer/renter across custom, scenario, and both locations), Sensitivity Chart, Annual Cost, Equity & Investments (combined home equity + investment portfolios). Removed separate buyer/renter, advantage, equity-only, and portfolio-only charts.
+- **Sensitivity chart redesigned:** Shows resulting verdict (winner + ROI% + $) on each side of every bar. Color indicates direction (blue=buying wins, green=renting wins) independently per side. ±delta prominently displayed. Hover on bars for full details. Negative always left, positive always right.
+- **Home value callout simplified:** Removed editable down payment % input (caused confusion showing two conflicting home prices). Now shows single engine-derived home price with all insights centered.
+- **Callout CSS centered:** All text in home value callout now consistently centered.
+- **Sell year hint updated:** "5+ yr to recoup costs" → "Median US tenure: 10-13 yr" (NAR 2024).
+
+---
+
+## v3.9.95 — April 2026
+
+### ROI, CAGR & UX Updates
+- **ROI verdict display:** Verdict now shows both sides independently — "Buying: $523K total wealth · 468% ROI (12.3%/yr)" and "Renting: $704K total wealth · 665% ROI (14.5%/yr)". Winner by simple ROI subtraction. Dollar advantage demoted to supporting text.
+- **Investment Discipline renamed:** "Renter Discipline" → "Investment Discipline" across all files. TIPS tooltip updated to clarify it applies to both sides' surplus. Reflects Bernstein-Koudijs asymmetry: mortgage = forced savings, renter surplus = voluntary.
+- **Buyer cost breakdown:** New summary between inputs and callout: "Rent = $2,000/mo. Buyer's true cost = ~$2,775/mo (P&I + tax + ins + maint). Renter keeps the $775/mo surplus + $92,407 upfront invested."
+- **First break-even:** All break-even labels now say "First break-even" to clarify multiple crossover possibility.
+- **Break-even sensitivity clarified:** "(appr ±1%: 7/3)" → "(if appr. 3.0%: yr 7 · 5.0%: yr 3)".
+- **Sim length default:** Changed from fixed 30 years to mortgage term + 5 (35 for US). Charts always show post-payoff inflection point.
+- **Confidence text on own line:** 🟢🟡🔴 explanations wrap to separate line below icon+text.
+- **Verdict disclaimer centered.**
+- **NaN bug fixed:** Callout referenced wrong property names (propTax→propTaxRate, insurance→insRate, maintenance→maintRate).
+
+---
+
 ## v3.9.9 — April 2026
 
 ### Financial Snapshot & Polish
@@ -124,87 +150,6 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 ### Theme Bug Fixes
 - **Midnight pill fix:** Active pill now uses `v.card` background + `v.text1` text — guaranteed contrast for every theme.
 - **3 new themes:** Nord (Scandinavian blue-gray), Sand (warm paper/desert), Moss (forest green dark). 10 themes total.
-- **Default chart:** Changed from Advantage to Total Wealth — non-alarming first impression.
-
----
-
-## v3.7 — April 2026
-
-### UX & Communication
-- **Open source banner:** Dismissible banner emphasizing open source + Git links. Theme-aware colors. Closes for session, reappears on refresh.
-- **Tutorial toggle switch:** Replaced button with iOS-style toggle. Hover tooltip explains function.
-- **Chart auto-description:** Collapsible explanation panel that auto-opens when switching chart types.
-- **Large-advantage explainer:** When advantage exceeds $200K at 100% discipline, inline explanation with compound math and 70% discipline suggestion.
-- **FAQ tab expanded:** Link to full 115-question FAQ on GitHub with Ctrl+F hint. FAQ.md added as 7th research file.
-- **Emoji cleanup:** Removed decorative emojis (🎓📋📖📄). Kept functional (🟢🟡🔴💡📌⚠️⏱🔗🔒).
-- **Share link tooltip:** Hover text explains "Saves all your inputs as a shareable URL."
-
----
-
-## v3.6 — April 2026
-
-### UX
-- **Header centered:** Question-as-headline ("Should I Rent or Buy?"), centered layout with theme/tutorial/share controls in a row below.
-- **FAQ tab:** Added 4th guide tab with 7 inline questions addressing common objections (returns comparison, tax exclusion, renting wins, own math validation, quality gap, trust, practical use).
-- **Tutorial nudge:** One-line hint below header when tutorial is off, linking to Tutorial and FAQ.
-
----
-
-## v3.5 — April 2026
-
-### UI/UX Overhaul
-- **Theme system:** 7 color themes — Light (default), Dark, Midnight (terminal-style), Warm (reduced eye strain), Slate (neutral professional), Ocean (dark blue marine), Ember (dark warm). Theme selector rendered as colored pill buttons in the header. Theme persists via shareable URLs.
-- **Chart-table merge:** Data table is now an expandable section ("▸ View Year-by-Year Data") inside the chart card, replacing the separate bottom card. Cleaner layout, one less scroll target.
-- **Chart clarity:** Chart dropdown labels rewritten for non-technical users ("Who wins & by how much", "What You Pay Each Year", "What matters most"). Subtitles explain each view in plain English.
-- **Micro-interactions:** Slider filled-track gradient shows position, input border highlight on hover, smooth button transitions, slider thumb glow on hover. All backed by UI/UX research (Stripe, Vercel, Bloomberg patterns).
-- **Mobile responsive:** Panels auto-stack below 320px via CSS auto-fit grid. Input font bumped to 16px to prevent iOS Safari zoom. Touch targets minimum 44px.
-- **Disclaimers:** "Educational only — not financial advice" placed in 4 locations (header, guide, bottom line callout, footer) without being overbearing.
-- **Footer:** Links to Allan Comeau's LinkedIn and GitHub source repository.
-- **Page title:** Updated for LinkedIn link previews ("Should I Rent or Buy? | Interactive Financial Simulation").
-
-### Research & Documentation
-- Added 6th research file: UI/UX Design Research (design tokens, typography, layout patterns).
-- All 6 research docs hyperlinked in Sources & Limitations tab.
-
-### Code Quality
-- Removed dead `tableSync` state and `TABLE_COLS` object (dead code from table merge).
-- Theme system uses module-level `let T` updated on each render — minimal refactoring, zero prop-drilling.
-- CSS custom properties (`--slider-bg`, `--slider-thumb`, `--tut-*`) enable theme-aware pseudo-element styling.
-
----
-
-## v3.0 — April 2026
-
-### Architecture
-- **Monthly-Payment-First:** Primary inputs are Monthly Payment ($) and Down Payment ($). Home price derived via backsolve formula.
-- **Three-panel layout:** Location (locked reference, dual-metro with 🔗 link toggle), Scenario (12 presets, editable), Custom (fully editable sandbox).
-- **Single HTML file:** No build tools, no backend. React 18 + Recharts via CDN (unpkg). Babel Standalone for JSX compilation.
-- **Engine as pure function:** `simulate()` is deterministic — same inputs, same outputs. Zero side effects.
-
-### Features
-- 16 countries, 54 metros with sourced data (FHFA, ABS, ONS, Destatis, etc.)
-- 3 international tax buckets: Bucket A (no deduction), Bucket B (NL/SE partial), US (full excess itemization)
-- 12 presets: Match reference, Low/High rate era, Conservative, Hot market, Stagnant, Inflation surge, Rate cuts, Stock underperformance, Housing correction, Best case buy/rent
-- 6 chart types: Advantage (all scenarios), Wealth paths, Annual cost, Equity buildup, Portfolio comparison, Sensitivity tornado
-- Sensitivity analysis: ±delta on 6 variables, sorted by impact, tornado visualization
-- Combined Bottom Line callout with 7 conditional insights (🟢 Robust, 🟡 Fragile, 🔴 Highly assumption-dependent, ⏱ breakeven proximity, 💡 discipline, 📌 negative spread, ⚠ high appreciation)
-- Click tooltips (?) on all inputs and table column headers (TIPS + TABLE_TIPS)
-- Sliders on all market inputs + personal inputs with out-of-bounds amber indicator
-- Editable FX rates with USD conversion display for non-US countries
-- URL state sharing (base64 hash encoding)
-- Tutorial mode (6 guided steps)
-- Guide open by default with 3 tabs (How It Works, Methodology, Sources & Limitations)
-
-### Engine Bug Fixes (from math audit)
-- Bug 1: Final mortgage payment now uses `mi + mp` instead of full `monthlyPmt` (was overstating buyer costs in payoff year)
-- Bug 2: Selling costs now reduce capital gain per IRS Publication 523 (`homeVal - sellCosts - homePrice`)
-
-### Research Documents
-- `rent_vs_buy_research_report.md` — Academic foundations (Poterba, Shiller, Jordà, Himmelberg, Ben Felix)
-- `rent_vs_buy_research_report_v2.md` — Volatility drag, arithmetic vs geometric means
-- `defaults_rationale.md` — Every default value sourced, 16 countries, 475 lines
-- `what_model_doesnt_capture.md` — Known limitations with directional bias analysis
-- `rent-vs-buy-sim-audit.md` — Formula-by-formula math verification, 23 items reviewed- **3 new themes:** Nord (Scandinavian blue-gray), Sand (warm paper/desert), Moss (forest green dark). 10 themes total.
 - **Default chart:** Changed from Advantage to Total Wealth — non-alarming first impression.
 
 ---

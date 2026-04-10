@@ -884,12 +884,26 @@ function RentVsBuyV3() {
   // Rich bottom line insights
   const insights = useMemo(() => {
     const adv=cusH?.advantage||0, abs=Math.abs(adv), up=cusR.upfront||1, roiPct=(abs/up*100).toFixed(0), ins=[];
-    if (sensitivity.length>=2 && sensitivity[0].swing>abs && sensitivity[1].swing>abs) {
-      ins.push({icon:"🔴",text:`Highly assumption-dependent — both ${sensitivity[0].name.toLowerCase()} and ${sensitivity[1].name.toLowerCase()} could each independently flip this verdict.`});
-    } else if (topSens && topSens.swing>abs) {
-      ins.push({icon:"🟡",text:`Fragile — ${topSens.name.toLowerCase()} (${topSens.fmt}) swings the outcome by ${(topSens.swing/up*100).toFixed(0)}% of capital, exceeding your ${roiPct}% advantage.`});
+    const hp2=cusR.homePrice||1, verdictPct=abs/hp2;
+    // Gate confidence by verdict strength
+    if (verdictPct>=0.15) {
+      ins.push({icon:"🟢",text:`Robust — ${roiPct}% ROI advantage is strong relative to home value (${(verdictPct*100).toFixed(0)}%).`});
+    } else if (verdictPct>=0.05) {
+      // Moderate verdict: cap at 🟡
+      if (topSens && topSens.swing>abs) {
+        ins.push({icon:"🟡",text:`Moderate but sensitive — ${topSens.name.toLowerCase()} (${topSens.fmt}) could narrow or widen this ${roiPct}% advantage.`});
+      } else {
+        ins.push({icon:"🟢",text:`Robust — no single variable swing exceeds your ${roiPct}% ROI advantage.`});
+      }
     } else {
-      ins.push({icon:"🟢",text:`Robust — no single variable swing exceeds your ${roiPct}% ROI advantage.`});
+      // Marginal/too-close: full sensitivity
+      if (sensitivity.length>=2 && sensitivity[0].swing>abs && sensitivity[1].swing>abs) {
+        ins.push({icon:"🔴",text:`Highly assumption-dependent — both ${sensitivity[0].name.toLowerCase()} and ${sensitivity[1].name.toLowerCase()} could each independently flip this verdict.`});
+      } else if (topSens && topSens.swing>abs) {
+        ins.push({icon:"🟡",text:`Fragile — ${topSens.name.toLowerCase()} (${topSens.fmt}) swings the outcome by ${(topSens.swing/up*100).toFixed(0)}% of capital, exceeding your ${roiPct}% advantage.`});
+      } else {
+        ins.push({icon:"🟢",text:`Robust — no single variable swing exceeds your ${roiPct}% ROI advantage.`});
+      }
     }
     if (cusR.breakeven && Math.abs(cusR.breakeven-hp)<=2) ins.push({icon:"⏱",text:`First break-even (yr ${cusR.breakeven}) is close to your sell year (${hp}). ±1 year materially changes the outcome.`});
     if (personal.discipline>=0.99) ins.push({icon:"💡",text:`Assuming 100% investment discipline — every dollar of surplus is invested. Try 70% for a reality check.`});

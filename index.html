@@ -774,7 +774,7 @@ function RentVsBuyV3() {
   const [presetId,setPresetId]=useState("ref");
   const [scenOvr,setScenOvr]=useState(saved?.so||{});
   const [cusOvr,setCusOvr]=useState(saved?.co||{});
-  const [chartType,setChartType]=useState("wealth");
+  const [chartType,setChartType]=useState("networth");
   const [showData,setShowData]=useState(false);
   const [chartDescOpen,setChartDescOpen]=useState(true);
   const [bannerOpen,setBannerOpen]=useState(true);
@@ -782,7 +782,6 @@ function RentVsBuyV3() {
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
   const [tutorial,setTutorial]=useState(false);
-  const [downPctInput,setDownPctInput]=useState("");
   const guideRef=React.useRef(null);
   const [theme,setTheme]=useState(saved?.th||"light");
 
@@ -837,6 +836,7 @@ function RentVsBuyV3() {
     scen:scenR.data[i]?.advantage, cus:d.advantage,
     cusBuyer:d.buyerWealth, cusRenter:d.renterWealth,
     locABuyer:locAR.data[i]?.buyerWealth, locARenter:locAR.data[i]?.renterWealth,
+    locBBuyer:locBR.data[i]?.buyerWealth, locBRenter:locBR.data[i]?.renterWealth,
     scenBuyer:scenR.data[i]?.buyerWealth, scenRenter:scenR.data[i]?.renterWealth,
     cusNetBuyer:d.netBuyerCost, cusRenterCost:d.totalRenterCost,
     cusEquity:d.equity, cusHomeVal:d.homeVal, cusBalance:d.balance, cusPrincipal:d.yrPrincipal,
@@ -890,12 +890,10 @@ function RentVsBuyV3() {
 
   // Chart type configs
   const CHARTS = {
-    buyer:{label:"Buyer net worth",title:"Buyer Net Worth Across Scenarios",sub:"How the buyer's total wealth (home equity + investments − costs) compares across location, scenario, and custom assumptions"},
-    renter:{label:"Renter net worth",title:"Renter Net Worth Across Scenarios",sub:"How the renter's total wealth (investment portfolio − taxes) compares across location, scenario, and custom assumptions"},
+    networth:{label:"Net worth by strategy",title:"Net Worth: Buyer vs. Renter",sub:"Total wealth for each strategy across all scenarios · solid = custom, purple = scenario, dashed = location"},
     tornado:{label:"Sensitivity chart",title:"Sensitivity: Which Assumptions Matter?",sub:"Each bar shows how much the outcome swings when one variable changes · sorted by impact · ★ marks the single most impactful variable"},
-    cost:{label:"Annual cost (custom)",title:"What You Pay Each Year",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
-    equity:{label:"Home equity (custom)",title:"Home Equity Over Time",sub:"How much of the home you actually own · home value minus remaining mortgage balance"},
-    portfolio:{label:"Invested savings (custom)",title:"Investment Portfolios",sub:"Renter's portfolio starts with the down payment + closing costs the buyer spent · buyer's portfolio grows after mortgage payoff frees up cash"},
+    cost:{label:"Annual cost",title:"What You Pay Each Year",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
+    assets:{label:"Equity & investments",title:"Home Equity & Investment Portfolios",sub:"Home equity = home value minus mortgage balance · renter portfolio starts with down payment + closing costs invested · buyer portfolio grows after mortgage payoff"},
   };
 
   return (
@@ -1027,60 +1025,40 @@ function RentVsBuyV3() {
         })()}
         <div style={{padding:"10px 14px",marginTop:12,background:T.muted,borderRadius:8,border:`1px solid ${T.border}`,fontSize:12}}>
           {(()=>{
-            const enginePct=personal.downPayment/cusR.homePrice*100;
-            const userPct=downPctInput!==""?parseFloat(downPctInput):null;
-            const activePct=(userPct!=null&&userPct>0)?userPct:enginePct;
-            const supportedHome=personal.downPayment/(activePct/100);
-            const supportedLoan=supportedHome-personal.downPayment;
-            const mr=cusP.mortgageRate/12, nP=cusP.mortgageTerm*12;
-            const supportedPmt=supportedLoan>0&&mr>0?supportedLoan*(mr*Math.pow(1+mr,nP))/(Math.pow(1+mr,nP)-1):supportedLoan>0?supportedLoan/nP:0;
-            const pmiRate=activePct>=20?0:activePct>=15?0.002:activePct>=10?0.003:0.005;
-            const pmiMo=pmiRate>0?Math.round(supportedLoan*pmiRate/12):0;
-            const recIncome=Math.round(supportedPmt*12/0.28);
-            const buyCost=Math.round(supportedHome*cusP.closingPct), sellCost=Math.round(supportedHome*cusP.sellingPct);
-            const medRatio=supportedHome/c.national.medianPrice;
+            const hp2=cusR.homePrice, ln=cusR.loan, pmt=Math.round(cusR.monthlyPmt);
+            const dpPct=(personal.downPayment/hp2*100).toFixed(1);
+            const pmiRate=dpPct>=20?0:dpPct>=15?0.002:dpPct>=10?0.003:0.005;
+            const pmiMo=pmiRate>0?Math.round(ln*pmiRate/12):0;
+            const propTaxMo=Math.round(hp2*cusP.propTaxRate/12);
+            const insMo=Math.round(hp2*cusP.insRate/12);
+            const maintMo=Math.round(hp2*cusP.maintRate/12);
+            const totalBuyerMo=pmt+propTaxMo+insMo+maintMo+pmiMo;
+            const recIncome=Math.round(pmt*12/0.28);
+            const buyCost=Math.round(hp2*cusP.closingPct), sellCost=Math.round(hp2*cusP.sellingPct);
+            const medRatio=hp2/c.national.medianPrice;
             return <>
               <div style={{textAlign:"center",marginBottom:8}}>
-                <div style={{marginBottom:4}}>
-                  <span style={{fontSize:11,color:T.text2}}>{ff(personal.downPayment)} down at </span>
-                  <input inputMode="numeric" value={downPctInput!==""?downPctInput:enginePct.toFixed(1)} style={{width:48,padding:"2px 4px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:13,fontWeight:700,fontFamily:THEME_MONO,textAlign:"right",background:T.card,color:T.text1}} onChange={e=>{const raw=e.target.value;setDownPctInput(raw);}} onBlur={()=>{if(downPctInput==="")return;const v=parseFloat(downPctInput);if(isNaN(v)||v<=0||v>80)setDownPctInput("");}}/>
-                  <span style={{fontSize:11,color:T.text2}}>% → </span>
-                  <span style={{fontSize:15,fontWeight:700,color:T.text1}}>{ff(Math.round(supportedHome))} home</span>
-                </div>
-                <div style={{fontSize:11,color:T.text2}}>{ff(Math.round(supportedLoan))} loan · {ff(Math.round(supportedPmt))}/mo P&I at {fmtPct(cusP.mortgageRate)}</div>
+                <span style={{fontSize:15,fontWeight:700,color:T.text1}}>{ff(hp2)} home</span>
+                <span style={{fontSize:11,color:T.text2}}> — {ff(ln)} loan ({dpPct}% down) · {ff(pmt)}/mo P&I at {fmtPct(cusP.mortgageRate)}</span>
+                {toUSD(hp2)&&<span style={{fontSize:10,color:T.text3}}> {toUSD(hp2)}</span>}
                 <div style={{fontSize:11,marginTop:3,color:T.text3}}>
                   {c.name} median: {ff(c.national.medianPrice)}
                   {medRatio<0.85?" — well below median":medRatio<1.15?" — near median":" — above median"}
                 </div>
-                {userPct!=null&&Math.abs(supportedHome-cusR.homePrice)>1000&&<div style={{fontSize:10,marginTop:3,color:T.accent}}>Payment-first model uses {ff(cusR.homePrice)} (from {ff(personal.monthlyPayment)}/mo)</div>}
               </div>
               <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"4px 16px",fontSize:11,color:T.text2}}>
-                {(()=>{
-                  const propTaxMo=Math.round(supportedHome*cusP.propTaxRate/12);
-                  const insMo=Math.round(supportedHome*cusP.insRate/12);
-                  const maintMo=Math.round(supportedHome*cusP.maintRate/12);
-                  const totalBuyerMo=Math.round(supportedPmt)+propTaxMo+insMo+maintMo+pmiMo;
-                  const renterMo=Math.round(supportedPmt); // rent = mortgage payment in this model
-                  const surplus=totalBuyerMo-renterMo;
-                  return <>
-                    <div style={{padding:"3px 0",gridColumn:"1 / -1"}}>
-                      <span style={{fontWeight:600,color:T.text1}}>Buyer total: </span>{ff(totalBuyerMo)}/mo
-                      <span style={{color:T.text3}}> = {ff(Math.round(supportedPmt))} P&I + {ff(propTaxMo)} tax + {ff(insMo)} ins + {ff(maintMo)} maint{pmiMo>0?` + ${ff(pmiMo)} PMI`:""}</span>
-                    </div>
-                    <div style={{padding:"3px 0",gridColumn:"1 / -1",color:T.text3,fontSize:10}}>
-                      Renter pays {ff(renterMo)}/mo rent (equal to P&I). The {ff(surplus)}/mo ownership surplus {personal.downPayment>0&&`+ ${ff(Math.round(cusR.upfront))} upfront (down + closing)`} is what the renter keeps invested.
-                    </div>
-                  </>;
-                })()}
-                {activePct<20&&<div style={{padding:"3px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>20% threshold: </span>{ff(Math.round(supportedHome*0.2-personal.downPayment))} more to avoid PMI
+                <div style={{padding:"3px 0",gridColumn:"1 / -1"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>Buyer total: </span>{ff(totalBuyerMo)}/mo
+                  <span style={{color:T.text3}}> = {ff(pmt)} P&I + {ff(propTaxMo)} tax + {ff(insMo)} ins + {ff(maintMo)} maint{pmiMo>0?` + ${ff(pmiMo)} PMI`:""}</span>
+                </div>
+                {dpPct<20&&<div style={{padding:"3px 0"}}>
+                  <span style={{fontWeight:600,color:T.text1}}>20% threshold: </span>{ff(Math.round(hp2*0.2-personal.downPayment))} more to avoid PMI
                 </div>}
                 {pmiMo>0&&<div style={{padding:"3px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>PMI est <span style={{color:T.accent,cursor:"pointer"}} onClick={e=>{e.target.closest('div').querySelector('.pmiTip')?.classList.toggle('open')}}>?</span>: </span>~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity
-                  <div className="pmiTip" style={{display:"none",fontSize:10,color:T.text3,marginTop:2,lineHeight:1.5}}>Private Mortgage Insurance — required when down payment is below 20%. Rate varies by credit score and LTV. This is a simplified estimate; actual PMI is not modeled in the simulation engine. <span style={{color:T.accent,cursor:"pointer"}} onClick={e=>e.target.closest('.pmiTip').style.display='none'}>(close)</span></div>
+                  <span style={{fontWeight:600,color:T.text1}}>PMI est: </span>~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity
                 </div>}
                 <div style={{padding:"3px 0"}}>
-                  <span style={{fontWeight:600,color:T.text1}}>Income check: </span>{ff(Math.round(supportedPmt))}/mo → ~{ff(recIncome)}/yr recommended (28%)
+                  <span style={{fontWeight:600,color:T.text1}}>Income check: </span>{ff(pmt)}/mo P&I → ~{ff(recIncome)}/yr recommended (28%)
                 </div>
                 <div style={{padding:"3px 0"}}>
                   <span style={{fontWeight:600,color:T.text1}}>Costs: </span>Buy {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip
@@ -1171,7 +1149,7 @@ function RentVsBuyV3() {
       </div>
 
       {/* CHART */}
-      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 6 views. <strong>"Net worth by strategy"</strong> shows buyer vs. renter total wealth with location reference lines. <strong>"Sensitivity chart"</strong> reveals which single assumption drives your result most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
+      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
       <div style={S.card}>
         <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:12,gap:12,flexWrap:"wrap"}}>
           <div style={{flex:"1 1 200px",minWidth:0}}>
@@ -1184,18 +1162,17 @@ function RentVsBuyV3() {
           </select>
         </div>
 
-        {chartType==="buyer"&&<ChartShell data={chartData} sym={sym}>
+        {chartType==="networth"&&<ChartShell data={chartData} sym={sym}>
           <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Sell yr ${hp}`,position:"top",fontSize:10,fill:"#f59e0b"}}/>
-          <Line type="monotone" dataKey="cusBuyer" name="Custom Buyer" stroke={T.text1} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="scenBuyer" name="Scenario Buyer" stroke={T.purple} strokeWidth={2} dot={false}/>
-          <Line type="monotone" dataKey="locABuyer" name={`${locALabel} Buyer`} stroke={T.accent} strokeWidth={1.5} dot={false} strokeDasharray="6 3"/>
-        </ChartShell>}
-
-        {chartType==="renter"&&<ChartShell data={chartData} sym={sym}>
-          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Sell yr ${hp}`,position:"top",fontSize:10,fill:"#f59e0b"}}/>
-          <Line type="monotone" dataKey="cusRenter" name="Custom Renter" stroke={T.text1} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="scenRenter" name="Scenario Renter" stroke={T.purple} strokeWidth={2} dot={false}/>
-          <Line type="monotone" dataKey="locARenter" name={`${locALabel} Renter`} stroke={T.green} strokeWidth={1.5} dot={false} strokeDasharray="6 3"/>
+          {cusR.breakeven&&<ReferenceLine x={cusR.breakeven} stroke="#dc2626" strokeDasharray="4 4" label={{value:"BE",position:"top",fontSize:10,fill:"#dc2626"}}/>}
+          <Line type="monotone" dataKey="cusBuyer" name="★ Buyer" stroke={T.accent} strokeWidth={2.5} dot={false}/>
+          <Line type="monotone" dataKey="cusRenter" name="★ Renter" stroke={T.green} strokeWidth={2.5} dot={false}/>
+          <Line type="monotone" dataKey="scenBuyer" name="Scenario Buyer" stroke={T.purple} strokeWidth={1.5} dot={false}/>
+          <Line type="monotone" dataKey="scenRenter" name="Scenario Renter" stroke={T.purple} strokeWidth={1.5} dot={false} strokeDasharray="4 2"/>
+          <Line type="monotone" dataKey="locABuyer" name={`${locALabel} Buyer`} stroke={T.text3} strokeWidth={1} dot={false} strokeDasharray="6 3"/>
+          <Line type="monotone" dataKey="locARenter" name={`${locALabel} Renter`} stroke={T.text3} strokeWidth={1} dot={false} strokeDasharray="2 2"/>
+          <Line type="monotone" dataKey="locBBuyer" name={`${locBLabel} Buyer`} stroke={T.text3} strokeWidth={1} dot={false} strokeDasharray="8 4" opacity={0.5}/>
+          <Line type="monotone" dataKey="locBRenter" name={`${locBLabel} Renter`} stroke={T.text3} strokeWidth={1} dot={false} strokeDasharray="2 4" opacity={0.5}/>
         </ChartShell>}
 
         {chartType==="cost"&&<ChartShell data={chartData} sym={sym}>
@@ -1205,18 +1182,14 @@ function RentVsBuyV3() {
           <Line type="monotone" dataKey="cusRenterCost" name="Renter Cost" stroke={T.green} strokeWidth={2} dot={false}/>
         </ChartShell>}
 
-        {chartType==="equity"&&<ChartShell data={chartData} sym={sym}>
+        {chartType==="assets"&&<ChartShell data={chartData} sym={sym}>
           <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
+          {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={{value:"Paid off",position:"top",fontSize:10,fill:T.text3}}/>}
           <Line type="monotone" dataKey="cusHomeVal" name="Home Value" stroke={T.text3} strokeWidth={1.5} dot={false} strokeDasharray="4 2"/>
-          <Line type="monotone" dataKey="cusBalance" name="Mortgage Balance" stroke="#dc2626" strokeWidth={2} dot={false}/>
-          <Line type="monotone" dataKey="cusEquity" name="Equity" stroke={T.accent} strokeWidth={2.5} dot={false}/>
-        </ChartShell>}
-
-        {chartType==="portfolio"&&<ChartShell data={chartData} sym={sym}>
-          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
-          {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={{value:"Mtg paid",position:"top",fontSize:10,fill:T.text3}}/>}
+          <Line type="monotone" dataKey="cusBalance" name="Mortgage Balance" stroke="#dc2626" strokeWidth={1.5} dot={false}/>
+          <Line type="monotone" dataKey="cusEquity" name="Home Equity" stroke={T.accent} strokeWidth={2.5} dot={false}/>
           <Line type="monotone" dataKey="cusRenterInv" name="Renter Portfolio" stroke={T.green} strokeWidth={2.5} dot={false}/>
-          <Line type="monotone" dataKey="cusBuyerInv" name="Buyer Portfolio" stroke={T.accent} strokeWidth={2.5} dot={false}/>
+          <Line type="monotone" dataKey="cusBuyerInv" name="Buyer Portfolio" stroke={T.accent} strokeWidth={1.5} dot={false} strokeDasharray="6 3"/>
         </ChartShell>}
 
         {chartType==="tornado"&&(()=>{
@@ -1225,35 +1198,36 @@ function RentVsBuyV3() {
           return <div style={{padding:"8px 0"}}>
             {sensitivity.map((s,i)=>{
               const dn=s.dnA-s.base, up2=s.upA-s.base;
-              const leftW=Math.abs(Math.min(0,dn))/maxHalf*48;
-              const rightW=Math.max(0,up2)/maxHalf*48;
-              const leftR=Math.max(0,dn)/maxHalf*48;
-              const rightR=Math.abs(Math.min(0,up2))/maxHalf*48;
+              const leftW=Math.abs(dn)/maxHalf*48;
+              const rightW=Math.abs(up2)/maxHalf*48;
+              const leftColor=dn>=0?T.accent:T.green;
+              const rightColor=up2>=0?T.accent:T.green;
               const dnPct=(Math.abs(dn)/upf*100).toFixed(0), upPct=(Math.abs(up2)/upf*100).toFixed(0);
               return <div key={s.key} style={{marginBottom:14}}>
                 <div style={{display:"flex",alignItems:"center",gap:8}}>
-                  <div style={{width:70,fontSize:10,textAlign:"right",fontFamily:THEME_MONO,color:T.text3}}>
-                    <div>{dn<0?`−${dnPct}%`:`+${dnPct}%`}</div>
-                    <div>{f(Math.abs(dn))}</div>
+                  <div style={{width:70,fontSize:10,textAlign:"right",fontFamily:THEME_MONO}}>
+                    <div style={{fontWeight:600,color:leftColor}}>{dnPct}%</div>
+                    <div style={{color:T.text3}}>{f(Math.abs(dn))}</div>
                   </div>
                   <div style={{width:120,fontSize:12,textAlign:"right",color:T.text1,fontWeight:i===0?700:500}}>{s.name}{i===0&&" ★"}</div>
                   <div style={{flex:1,height:28,position:"relative",background:T.muted,borderRadius:6}}>
                     <div style={{position:"absolute",left:"50%",top:0,bottom:0,width:1,background:T.text1+"60"}}/>
-                    {leftW>0&&<div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,leftW)}%`,background:`${T.green}40`,borderRadius:"4px 0 0 4px",border:`1px solid ${T.green}`}}/>}
-                    {rightW>0&&<div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,rightW)}%`,background:`${T.accent}1F`,borderRadius:"0 4px 4px 0",border:`1px solid ${T.accent}`}}/>}
-                    {leftR>0&&<div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,leftR)}%`,background:`${T.accent}1F`,borderRadius:"0 4px 4px 0",border:`1px solid ${T.accent}`}}/>}
-                    {rightR>0&&<div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,rightR)}%`,background:`${T.green}40`,borderRadius:"4px 0 0 4px",border:`1px solid ${T.green}`}}/>}
+                    {leftW>0&&<div style={{position:"absolute",right:"50%",top:3,bottom:3,width:`${Math.min(48,leftW)}%`,background:`${leftColor}30`,borderRadius:"4px 0 0 4px",border:`1px solid ${leftColor}`}}/>}
+                    {rightW>0&&<div style={{position:"absolute",left:"50%",top:3,bottom:3,width:`${Math.min(48,rightW)}%`,background:`${rightColor}30`,borderRadius:"0 4px 4px 0",border:`1px solid ${rightColor}`}}/>}
                   </div>
-                  <div style={{width:70,fontSize:10,textAlign:"left",fontFamily:THEME_MONO,color:T.text3}}>
-                    <div>{up2>0?`+${upPct}%`:`−${upPct}%`}</div>
-                    <div>{f(Math.abs(up2))}</div>
+                  <div style={{width:70,fontSize:10,textAlign:"left",fontFamily:THEME_MONO}}>
+                    <div style={{fontWeight:600,color:rightColor}}>{upPct}%</div>
+                    <div style={{color:T.text3}}>{f(Math.abs(up2))}</div>
                   </div>
                 </div>
                 <div style={{textAlign:"center",fontSize:9,color:T.text3,marginTop:2}}>Total swing: {(s.swing/upf*100).toFixed(0)}% ({f(s.swing)})</div>
               </div>;
             })}
-            <div style={{display:"flex",justifyContent:"center",gap:24,marginTop:8,fontSize:11,color:T.text2}}>
-              <span>◀ − favors renting</span> | <span>+ favors buying ▶</span>
+            <div style={{display:"flex",justifyContent:"center",gap:16,marginTop:8,fontSize:11,color:T.text2}}>
+              <span>◀ −%</span>
+              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:`${T.accent}30`,border:`1px solid ${T.accent}`,borderRadius:2,display:"inline-block"}}/>favors buying</span>
+              <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:`${T.green}30`,border:`1px solid ${T.green}`,borderRadius:2,display:"inline-block"}}/>favors renting</span>
+              <span>+% ▶</span>
             </div>
             <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>% = change relative to {ff(Math.round(upf))} invested capital</div>
           </div>;

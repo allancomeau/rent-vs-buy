@@ -1013,8 +1013,16 @@ function RentVsBuyV3() {
           <div><NumInput label="Monthly Payment" value={personal.monthlyPayment} onChange={up("monthlyPayment")} step={100} prefix={sym} tip={TIPS.monthlyPayment}/><NumInput label="Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip={TIPS.downPayment} hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down`}/></div>
           <div><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40}/><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="Median US tenure: 10-13 yr"/></div>
           <div><NumInput label="Sim Length" value={personal.simYears} onChange={v=>setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}))} step={1} suffix="yr" tip={TIPS.simYears} sliderMin={5} sliderMax={65}/><NumInput label="Investment Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={75} hint="60-75% realistic"/></div>
-          <div>{c.defaults.marginalTax>0&&<NumInput label="Other Itemized" value={personal.otherItemized} onChange={up("otherItemized")} step={1000} prefix={sym} tip="Charitable, medical, etc."/>}</div>
         </div>
+        {(()=>{
+          const w=[];
+          if(personal.mortgageTerm<15||personal.mortgageTerm>30) w.push(`Mortgage term ${personal.mortgageTerm}yr is outside typical 15-30yr range`);
+          if(hp<3) w.push(`Selling in year ${hp} — transaction costs often exceed gains under 3-5 years`);
+          if(hp>30) w.push(`Sell in year ${hp} — few homeowners hold 30+ years`);
+          if(personal.discipline>0.80) w.push(`${(personal.discipline*100).toFixed(0)}% discipline is above research-backed realistic range (50-80%)`);
+          if(personal.discipline<0.40) w.push(`${(personal.discipline*100).toFixed(0)}% discipline — below 40%, most surplus is consumed rather than invested`);
+          return w.length>0?<div style={{fontSize:10,color:"#b45309",padding:"5px 10px",marginTop:6,background:"#fef3c7",borderRadius:6,border:"1px solid #f59e0b",lineHeight:1.6}}>{w.map((m,i)=><div key={i}>⚠ {m}</div>)}</div>:null;
+        })()}
         {(()=>{
           const hp2=cusR.homePrice, ln=cusR.loan, pmt=Math.round(cusR.monthlyPmt);
           const ptm=Math.round(hp2*cusP.propTaxRate/12), im=Math.round(hp2*cusP.insRate/12), mm=Math.round(hp2*cusP.maintRate/12);
@@ -1253,7 +1261,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.97 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.98 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

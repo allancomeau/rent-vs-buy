@@ -68,6 +68,7 @@
       .tut { font-size:12px; }
       input[type=number],select { font-size:16px; min-height:44px; }
       button { min-height:44px; }
+      button.compact-btn { min-height:0; }
     }
     @media(max-width:480px){
       body { font-size:14px; overflow-x:hidden; }
@@ -837,7 +838,7 @@ const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params
   const presetSelect = presetMode==="select"
     ? <select style={{...S.select,fontSize:10}} value={presetId} onChange={e=>onPreset(e.target.value)}>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
     : <select style={{...S.select,fontSize:10}} value="" onChange={e=>{if(e.target.value)onPreset(e.target.value);}}><option value="">Load preset…</option>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>;
-  const closeBtn = onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>;
+  const closeBtn = onClose&&<button onClick={onClose} className="compact-btn" style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>;
   return <div style={S.panel}>
     <div style={{...S.pH,background:active?colorBg:T.muted,color:active?color:T.text3,borderBottom:`2px solid ${active?color:T.border}`,transition:"all 200ms"}}>
       <div style={{textAlign:"center",marginBottom:8}}>{titleSpan}</div>
@@ -1038,7 +1039,7 @@ function RentVsBuyV3() {
               const sep = (k==="dark");
               return <React.Fragment key={k}>
                 {sep&&<div style={{width:1,height:14,background:T.border,margin:"0 2px"}}/>}
-                <button onClick={()=>setTheme(k)} aria-label={`${v.name} theme`} aria-pressed={active} style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:v.accent,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
+                <button onClick={()=>setTheme(k)} aria-label={`${v.name} theme`} aria-pressed={active} className="compact-btn" style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:v.accent,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
               </React.Fragment>;
             })}
           </div>
@@ -1187,13 +1188,13 @@ function RentVsBuyV3() {
               <span style={{fontSize:11,color:T.text2}}>1 {cur} = $</span>
               <input type="number" inputMode="decimal" autoComplete="off" step={0.01} min={0.0001} value={fxRate} aria-label={`Exchange rate ${cur} to USD`} title={`Default: ${CURRENCIES[cur]?.rate} (Apr 2026)`} style={{width:70,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,fontFamily:THEME_MONO,textAlign:"right"}} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>0)setFxOverride(v);}}/>
               <span style={{fontSize:11,color:T.text2}}>USD</span>
-              {fxOverride!=null&&<button style={{fontSize:13,color:T.accent,background:"none",border:"none",cursor:"pointer",padding:"0 2px",lineHeight:1}} title="Reset to default" onClick={()=>setFxOverride(null)}>↺</button>}
+              {fxOverride!=null&&<button className="compact-btn" style={{fontSize:13,color:T.accent,background:"none",border:"none",cursor:"pointer",padding:"0 2px",lineHeight:1}} title="Reset to default" onClick={()=>setFxOverride(null)}>↺</button>}
             </>}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(260px, 100%), 1fr))",gap:16}}>
             <div>
-              {!linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select style={{...S.select,flex:1,border:`1px solid ${T.accent}66`,background:`${T.accent}08`}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select><button style={{cursor:"pointer",background:`${T.accent}1A`,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:T.accent,flexShrink:0}} onClick={()=>setLinked(true)} title="Lock A to national">🔗</button></div>}
-              {linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select disabled style={{...S.select,flex:1,opacity:0.5,cursor:"not-allowed"}}><option>National Average (linked)</option></select><button style={{cursor:"pointer",background:T.accent,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}} onClick={()=>setLinked(false)} title="Unlock to select a metro">🔗</button></div>}
+              {!linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select style={{...S.select,flex:1,border:`1px solid ${T.accent}66`,background:`${T.accent}08`}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select><button className="compact-btn" style={{cursor:"pointer",background:`${T.accent}1A`,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:T.accent,flexShrink:0}} onClick={()=>setLinked(true)} title="Lock A to national">🔗</button></div>}
+              {linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select disabled style={{...S.select,flex:1,opacity:0.5,cursor:"not-allowed"}}><option>National Average (linked)</option></select><button className="compact-btn" style={{cursor:"pointer",background:T.accent,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}} onClick={()=>setLinked(false)} title="Unlock to select a metro">🔗</button></div>}
               <VerdictBox advantage={locAH?.advantage} homePrice={locAR.homePrice} holdYr={hp} sym={sym} breakeven={locAR.breakeven} params={locAP}/>
             </div>
             <div>

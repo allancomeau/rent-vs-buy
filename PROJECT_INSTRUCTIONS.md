@@ -6,7 +6,7 @@ Every decision filters through code quality first, in order:
 
 1. **Accuracy** — Every calculation traceable and correct. No silent assumptions.
 2. **Simplicity** — Fewer lines, fewer parameters, fewer branches. Complexity is a bug.
-3. **Redundancy elimination** — One source of truth per value. No duplicated state.
+3. **Redundancy elimination** — One source of truth per value. No duplicated state, definitions, constants, or code. When stale aliases or dead entries are noticed, remove them in the same pass.
 4. **Explainability** — Every default, formula, and assumption documented inline or in research docs.
 5. **Testability** — The simulation engine is a pure function: same inputs → same outputs.
 
@@ -309,3 +309,4 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 4. **Simplicity over completeness.** If a feature can't be implemented correctly, document it as a text note.
 5. **Customizability as credibility.** Users control all assumptions and see how results change.
 6. **Open source as trust.** Every formula, default, and data source is documented and accessible.
+7. **Emojis must earn their place.** Decorative emojis (🔧, 📐, 🎉, etc.) that don't carry semantic or functional meaning are removed. Emojis that ARE functional — link toggles (🔗), theme selectors (✕ close), inline icons that replace words ("↺" reset, "▶" disclosure arrow) — stay. This was codified after a dedicated cleanup iteration; new emoji additions should be justified, not reflexive.

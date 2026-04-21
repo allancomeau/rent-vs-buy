@@ -4,6 +4,19 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v3.9.99.11 — April 2026
+
+### Glossary Tab (content build)
+- **New "Glossary" tab in Guide widget** — 5th tab, positioned right of FAQ. Reuses existing `S.tab` / `S.tabA` styling for visual consistency with the other four tabs. Tab ID = `"gl"`.
+- **`GLOSSARY` const array (module-level)** — 15 entries for the data-table columns, driven by structured data rather than hand-written JSX. Each entry: `{id, name, def, formula?, ex?, note?}`. Optional fields render conditionally — entries without a formula just skip the formula line. Future additions are array entries, not JSX edits.
+- **Rich entry format** — Each glossary entry includes a 1-2 sentence definition, optional formula (monospace), worked example, and interpretation note where applicable. Column name rendered in monospace (`THEME_MONO`) inside a `<strong>` so it visually matches how the header appears in the actual data table. Example: `Equity — Your ownership stake... | Home value − Mortgage balance | Example: $500K − $300K = $200K | Note: Selling costs (~6-8%) reduce actual take-home.`
+- **Anchor IDs ready for iteration 3** — Each entry renders with `id="gl-<name>"` and `className={methodHighlight===g.id?"target-highlight":""}` — same pattern as the Felix methodology entry in v3.9.99.8. v3.9.99.12's `<GlossaryLink>` component can use the existing `methodHighlight` state and `target-highlight` CSS animation without new infrastructure.
+- **`TABLE_TIPS` pruned 25 → 15 keys** — Removed 10 stale aliases left over from earlier column renames: `"Buyer W"`, `"Renter W"`, `"Advantage"`, `"Home Value"`, `"Yr Principal"`, `"Balance"`, `"Buyer Cost"`, `"Renter Cost"`, `"Buyer Inv"`, `"Renter Inv"`. Active inline `<Tip>` tooltips still work via the 15 remaining keys — each of the 15 table headers matches exactly one key. Aligns with the v3.9.99.10-codified redundancy principle (no duplicated state, definitions, constants, or code).
+- **No UI wiring yet** — existing `<Tip>` tooltips in table headers continue to function; iteration 3 (v3.9.99.12) handles the click-to-jump migration. Table remains fully usable during the interim.
+- **Scale pattern deferred, not scaffolded** — Considered implementing nested `<details>` subsections inside the Glossary tab preemptively (to segment future "Data table columns" / "Input callouts" / "Market concepts" sections). Shipped flat instead. Over-engineering for the current 15-entry state. The `.disclosure-icon` CSS class from v3.9.99.9 is already reusable if/when we cross ~25-30 entries and need structural subdivision.
+
+---
+
 ## v3.9.99.10 — April 2026
 
 ### Small UI Polish (glossary build preparation)

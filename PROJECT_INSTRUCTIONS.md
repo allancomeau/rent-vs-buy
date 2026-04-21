@@ -20,7 +20,7 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9.99.9 — UX & Pre-v4 Polish
+## Current State: v3.9.99.10 — Small UI Polish
 
 ### Architecture
 
@@ -244,27 +244,27 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.7 | SEO/Webdesign | theme-color, favicon, apple-touch-icon, LICENSE link fix, savings hint breakdown |
 | v3.9.99.8 | Math & Rigor | Input boundary hardening (`clampPersonal`), Felix 5% rule inline cross-check + Methodology note, "What is Felix?" scroll-and-highlight pattern, renters insurance removed from default engine calc |
 | v3.9.99.9 | UX & Pre-v4 Polish | FX inline in Location, iOS/Android inputMode + autocomplete, disclosure ▶ arrow, labelBox rect+border chart labels, themes 8→6 (Citrus/Moss removed, light reordered), chart dropdown reorder (Sensitivity 1st), Paid off marker on all 3 line charts, print stylesheet |
+| v3.9.99.10 | Small UI Polish | Pill colors use accent, Location/Your Assumptions/What-If titles centered on own lines, Guide summary renamed, sync-discipline rule codified |
 
 ---
 
 ## Pending Items
 
-### v3.9.99.10 — Small UI Polish + Glossary Migration
-**Iteration 1 (small items):**
-- [ ] **Warm theme pill color fix** — Inactive pill uses `v.bg` which for Warm (`#FBF7F2`) reads pink/cream, not orange. Switch inactive background to `v.accent` → every theme pill becomes a clearly identifiable colored dot representing its character. Simple reversible change.
-- [ ] **Location + Your Assumptions title centering** — Currently titles share a single flex row with their content (dropdown, share button, etc.). Restructure: title centered on its own line, content row below. Improves readability on both desktop and mobile (especially mobile). Leave What-If as-is (already sparse).
+### v3.9.99.11 — Glossary Tab (content build)
+- [ ] **New "Glossary" tab in Guide widget** — positioned right of FAQ, 5th tab. Umbrella for all definitions (starting with table columns, open to expansion for input terms, market concepts, etc.).
+- [ ] **15 data-table column definitions in formula + worked-example format** — Each entry gets an anchor ID for jump-linking. Format: "Column name · Formula · Example: $500K − $300K = $200K · One-line note on interpretation." Upgrades `TABLE_TIPS` content quality simultaneously (current one-sentence definitions get richer).
+- [ ] **No UI wiring yet** — iteration 3 handles link migration. Existing `<Tip>` tooltips continue to work during the interim so the table remains usable.
 
-**Iteration 2 (glossary build):**
-- [ ] **Glossary subsection in Methodology** — New "Table Columns" (or "Glossary") subsection listing all 15 data-table column definitions in formula + worked example format (e.g., "Home equity = Home value − Mortgage balance | $500K − $300K = $200K"). Single source of truth. Upgrades `TABLE_TIPS` content from one-sentence prose at the same time.
+### v3.9.99.12 — Glossary Link Migration
+- [ ] **`<GlossaryLink term=.../>` component** — Reusable, follows the Felix `methodHighlight` pattern from v3.9.99.8. Click opens Guide `<details>`, switches to Glossary tab, scrolls to anchor, flashes definition for 2.5 seconds.
+- [ ] **Replace 15 `<Tip>` tooltips in data-table header** — Primary target. Fixes Allan's brother's "table numbers don't trace easily" feedback and the narrow-cell tooltip overlap.
+- [ ] **Shorten inline tooltip content where callouts migrate** — e.g., "Mortgage Interest Rate. Most Impactful Variable. 1%..." becomes just "Mortgage Interest Rate" inline; the rich "most impactful" note + examples live in the Glossary. Hover still works for quick recall; click jumps for full context.
+- [ ] **Leave input-field `<Tip>` tooltips alone for now** — hover-in-context works fine for short input definitions. Revisit in a future polish pass if needed.
 
-**Iteration 3 (wire-up):**
-- [ ] **`<GlossaryLink term=.../>` component + migration** — Reusable component replaces the 15 `<Tip>` tooltips in the data-table header row. Click → opens Guide `<details>` → switches to Methodology tab → scrolls to term → flashes via `methodHighlight` pattern from v3.9.99.8. Fixes the mobile tooltip-overflow issue and Allan's brother's "numbers don't trace easily back to formulas" feedback in one pass. Scope: data-table headers only — leave input-field `<Tip>` tooltips alone (hover-in-context works fine for short definitions).
-
-**Deferred (not blocking v3.9.99.10):**
-- [ ] **Post-deploy validation checklist (before v4):**
-  - [x] Confirm `inputMode="decimal"` / `"numeric"` show correct iOS keyboard — confirmed on iPhone 13 mini; Android unverified (will surface via user feedback if broken)
-  - [ ] Confirm `autoComplete="off"` suppresses browser autofill on all number inputs
-  - [x] Confirm "Paid off" label renders visibly on Net Worth chart with high-advantage scenarios — labelBox rect+border approach confirmed working
+### Deferred / Low-priority observations
+- [ ] **Android inputMode verification** — iPhone 13 mini confirmed in v3.9.99.9; Android keyboards unverified. Will surface via user feedback if broken.
+- [ ] **`autoComplete="off"` autofill behavior** — suppressed in v3.9.99.9 code; confirm no false-positive autofills on actual browsers.
+- [ ] **Narrow-desktop MarketInputs layout wrap** — at roughly ~420-680px viewport widths (unusual desktop-with-narrow-window use case), `MarketInputs` labels can wrap and push the `?` tooltip trigger to a new line, producing visual oddities like "Appreciation\n?" or "Rent Growth\n?". Observed once in the wild during a session resize. Not a common use case; indirect improvement from v3.9.99.12 (shorter tooltip triggers → less horizontal pressure), full fix would require stacking labels above inputs at narrow widths or using a min-width media query. Deferred unless it surfaces in real use.
 - [ ] **"Show values / Show YoY change" toggle** above table — prominent, not subtle; flips every cell between absolute and year-over-year delta
 - [ ] **Inflation ↔ rent-growth default-tie** with unlink affordance
 

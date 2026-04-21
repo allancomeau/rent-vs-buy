@@ -662,7 +662,25 @@ const CURRENCIES = {
   SEK:{rate:0.095,name:"Swedish kronor"},CHF:{rate:1.12,name:"Swiss francs"},JPY:{rate:0.0067,name:"Japanese yen"},
   SGD:{rate:0.75,name:"Singapore dollars"},KRW:{rate:0.00073,name:"South Korean won"},
 };
-const TABLE_TIPS = {Yr:"Simulation year",Home:"Current home value (price × appreciation)",Equity:"Home value minus mortgage balance",Int:"Mortgage interest paid this year",Princ:"Principal paid this year (builds equity)",Cost:"Total buyer cost: mortgage + tax + ins + maint",TaxB:"Tax benefit from excess itemization",NetBuy:"Buyer cost after tax benefit",Rent:"Annual rent (starts = mortgage pmt, grows yearly)",RntCst:"Total renter cost: annual rent (renter's insurance assumed budgeted in rent input)",BInv:"Buyer's investment portfolio (surplus after payoff)",RInv:"Renter's portfolio (seeded with down + closing costs)","Buyer W":"Buyer total: equity − sell costs − taxes + portfolio","Renter W":"Renter total: portfolio − cap gains tax",BuyW:"Buyer total: equity − sell costs − taxes + portfolio",RntW:"Renter total: portfolio − cap gains tax",Adv:"Buyer minus renter wealth. Positive = buying wins.",Advantage:"Buyer minus renter wealth. Positive = buying wins.","Home Value":"Current home market value","Yr Principal":"Principal paid this year",Balance:"Remaining mortgage balance","Buyer Cost":"Buyer annual net cost","Renter Cost":"Renter annual total cost","Buyer Inv":"Buyer's investment portfolio","Renter Inv":"Renter's investment portfolio"};
+const TABLE_TIPS = {Yr:"Simulation year",Home:"Current home value (price × appreciation)",Equity:"Home value minus mortgage balance",Int:"Mortgage interest paid this year",Princ:"Principal paid this year (builds equity)",Cost:"Total buyer cost: mortgage + tax + ins + maint",TaxB:"Tax benefit from excess itemization",NetBuy:"Buyer cost after tax benefit",Rent:"Annual rent (starts = mortgage pmt, grows yearly)",RntCst:"Total renter cost: annual rent (renter's insurance assumed budgeted in rent input)",BInv:"Buyer's investment portfolio (surplus after payoff)",RInv:"Renter's portfolio (seeded with down + closing costs)",BuyW:"Buyer total: equity − sell costs − taxes + portfolio",RntW:"Renter total: portfolio − cap gains tax",Adv:"Buyer minus renter wealth. Positive = buying wins."};
+// Glossary entries for the Guide's Glossary tab. Each entry gets an anchor ID for iteration-3 jump-and-highlight.
+const GLOSSARY = [
+  {id:"gl-yr",name:"Yr",def:"Simulation year, counted from the start of the mortgage or lease. Each row is a \"what if I stopped right now\" snapshot."},
+  {id:"gl-home",name:"Home",def:"Current market value of the home in the given year.",formula:"Purchase price × (1 + appreciation)^year",ex:"$413K × 1.04^10 ≈ $611K at 4%/yr"},
+  {id:"gl-equity",name:"Equity",def:"Your ownership stake — what you'd walk away with if you sold, before transaction costs.",formula:"Home value − Mortgage balance",ex:"$500K − $300K = $200K",note:"This is paper equity. Selling costs (~6-8%) reduce your actual take-home."},
+  {id:"gl-int",name:"Int",def:"Mortgage interest paid this year (sum of 12 monthly interest charges).",ex:"$333K loan @ 6%, year 1 ≈ $19,838",note:"Interest is front-loaded. Early years are mostly interest; later years are mostly principal."},
+  {id:"gl-princ",name:"Princ",def:"Principal paid this year — the portion of your P&I that reduces the mortgage balance.",formula:"(P&I × 12) − Int",ex:"$24K P&I − $20K int = $4K principal (year 1)"},
+  {id:"gl-cost",name:"Cost",def:"Buyer's total annual housing cost before any tax benefit.",formula:"P&I + Property tax + Insurance + Maintenance + PMI",note:"Opportunity cost of the down payment is tracked separately in the investment-portfolio columns."},
+  {id:"gl-taxb",name:"TaxB",def:"Tax benefit from the mortgage interest deduction, using the post-TCJA excess-itemization method.",formula:"max(0, (Int + SALT-capped Prop Tax) − Std Deduction) × Marginal Tax Rate",ex:"$23K itemizable < $30K standard → $0 benefit (US default)",note:"Most US filers post-TCJA get $0 here because the $30K standard deduction dominates. Non-US countries correctly produce $0 (marginalTax set to 0)."},
+  {id:"gl-netbuy",name:"NetBuy",def:"Buyer's net annual cost after the tax benefit.",formula:"Cost − TaxB",ex:"For most US defaults, NetBuy = Cost."},
+  {id:"gl-rent",name:"Rent",def:"Annual rent paid this year. Grows each year at the rent-growth rate.",formula:"Prior year rent × (1 + rent growth)",ex:"Year 1 $24K → Year 2 $24.96K at 4%/yr"},
+  {id:"gl-rntcst",name:"RntCst",def:"Total renter annual cost. Currently equals Rent.",note:"Renters insurance is assumed budgeted within the rent input (v3.9.99.8 default). Architecturally separate from Rent to support optional re-enable in a future Expert mode."},
+  {id:"gl-binv",name:"BInv",def:"Buyer's investment portfolio balance.",note:"Buyer invests any monthly surplus when rent exceeds total buyer cost. After the mortgage is paid off, the freed-up P&I is also invested. Usually stays near $0 during the mortgage years; grows rapidly after payoff."},
+  {id:"gl-rinv",name:"RInv",def:"Renter's investment portfolio balance.",formula:"Starts with down payment + closing costs; monthly surplus (Buyer Cost − Rent) × Discipline added each month",ex:"$91K seed + $500/mo @ 10% CAGR ≈ $1M after 25 years"},
+  {id:"gl-buyw",name:"BuyW",def:"Buyer's total wealth this year, assuming they sold the home.",formula:"Equity − Selling costs − Cap gains tax + BInv",note:"Selling costs typically 6-8% of home value. Cap gains tax applies only to appreciation above the $500K MFJ / $250K single exclusion in the US."},
+  {id:"gl-rntw",name:"RntW",def:"Renter's total wealth this year, assuming they liquidated the portfolio.",formula:"RInv − Cap gains tax on gains portion",note:"Cap gains tax applies only to the gains, not the full balance."},
+  {id:"gl-adv",name:"Adv",def:"Buyer minus renter wealth — the single headline number.",formula:"BuyW − RntW",ex:"$450K − $380K = +$70K advantage to buyer",note:"Positive = buying wins by that amount. This is what drives the verdict."},
+];
 const RESEARCH_BASE = "https://github.com/allancomeau/rent-vs-buy/blob/main/";
 const RESEARCH_FILES = [
   { name: "Research Report: Academic Foundations", file: "rent_vs_buy_research_report.md" },
@@ -1064,7 +1082,7 @@ function RentVsBuyV3() {
         </summary>
         <div style={{borderTop:`1px solid ${T.border}`}}>
           <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,padding:"0 20px",flexWrap:"wrap"}}>
-            {[["overview","How It Works"],["method","Methodology"],["limits","Sources & Limitations"],["faq","FAQ"]].map(([id,lbl])=>
+            {[["overview","How It Works"],["method","Methodology"],["limits","Sources & Limitations"],["faq","FAQ"],["gl","Glossary"]].map(([id,lbl])=>
               <button key={id} style={{...S.tab,...(guideTab===id?S.tabA:{})}} onClick={()=>setGuideTab(id)}>{lbl}</button>
             )}
           </div>
@@ -1121,6 +1139,18 @@ function RentVsBuyV3() {
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"What should I actually do with this?"</strong></p>
               <p style={{marginTop:4}}>Enter YOUR numbers (real rent, real savings, real timeline). Look at the verdict. Then break it: slide the discipline to 70%, try a different rate, change the sell year. The goal isn't to get one answer — it's to understand which assumptions your decision depends on and how sensitive it is to being wrong about them.</p>
+            </>}
+            {guideTab==="gl"&&<>
+              <p style={{fontWeight:600,color:T.text1,fontSize:14,marginBottom:6}}>Data-table columns</p>
+              <p style={{fontSize:11,color:T.text3,marginBottom:16}}>Definitions for each column in the year-by-year data table below the chart. Each entry includes the formula where applicable, a worked example, and interpretation notes.</p>
+              {GLOSSARY.map(g=>(
+                <p key={g.id} id={g.id} className={methodHighlight===g.id?"target-highlight":""} style={{marginTop:12}}>
+                  <strong style={{color:T.text1,fontFamily:THEME_MONO}}>{g.name}</strong> — {g.def}
+                  {g.formula&&<><br/><span style={{fontFamily:THEME_MONO,fontSize:11,color:T.text2}}>{g.formula}</span></>}
+                  {g.ex&&<><br/><span style={{fontSize:11,color:T.text3}}>Example: {g.ex}</span></>}
+                  {g.note&&<><br/><span style={{fontSize:11,color:T.text3,fontStyle:"italic"}}>{g.note}</span></>}
+                </p>
+              ))}
             </>}
           </div>
         </div>
@@ -1288,7 +1318,7 @@ function RentVsBuyV3() {
         </div>;
       })()}
 
-      {/* FX CONVERTER — now inline in Location header (v3.9.99.10) */}
+      {/* FX CONVERTER — now inline in Location header (v3.9.99.11) */}
 
       {/* CHART */}
       {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
@@ -1402,7 +1432,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.10 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.11 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

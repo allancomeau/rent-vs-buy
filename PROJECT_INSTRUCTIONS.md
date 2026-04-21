@@ -20,7 +20,7 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9.99.7 — SEO / Webdesign
+## Current State: v3.9.99.9 — UX & Pre-v4 Polish
 
 ### Architecture
 
@@ -209,7 +209,7 @@ Merges country defaults, metro overrides, personal inputs into flat parameter ob
 - Never serve without verification script
 - New React hooks must be added to destructuring on line ~87
 - The assembled `index.html` is the single source of truth
-- **Update CHANGELOG when a version is feature-complete, not when shipped.** Feature-complete = edits stopped and scope committed. Shipping is Allan's async step. Keeping the trigger at feature-complete prevents undocumented version stacking and survives session-handoff context loss.
+- **Update CHANGELOG AND PROJECT_INSTRUCTIONS when a version is feature-complete, not when shipped.** Feature-complete = edits stopped and scope committed. Shipping is Allan's async step. Both files update together: CHANGELOG gets the new version entry, PROJECT_INSTRUCTIONS updates the "Current State" header, adds the version row to the versioning table, and prunes completed items from the Pending list (moving any carry-overs to the next version's section). Keeping the trigger at feature-complete prevents undocumented version stacking and keeps context-doc and history-doc in sync across session handoffs.
 
 ---
 
@@ -243,33 +243,30 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.6 | UI/UX Polish | Location merged into Your Situation, chart dropdown as title, Sim Length moved, tutorial toggle below themes |
 | v3.9.99.7 | SEO/Webdesign | theme-color, favicon, apple-touch-icon, LICENSE link fix, savings hint breakdown |
 | v3.9.99.8 | Math & Rigor | Input boundary hardening (`clampPersonal`), Felix 5% rule inline cross-check + Methodology note, "What is Felix?" scroll-and-highlight pattern, renters insurance removed from default engine calc |
+| v3.9.99.9 | UX & Pre-v4 Polish | FX inline in Location, iOS/Android inputMode + autocomplete, disclosure ▶ arrow, labelBox rect+border chart labels, themes 8→6 (Citrus/Moss removed, light reordered), chart dropdown reorder (Sensitivity 1st), Paid off marker on all 3 line charts, print stylesheet |
 
 ---
 
 ## Pending Items
 
-### v3.9.99.8 — Math & Rigor
-- [ ] **Non-USD chart axis + data table currency** — engine supports 16 currencies but display layer hard-codes `$`. Confirm suspicion, fix display paths.
-- [ ] **External calibration**
-  - [ ] **Dynamic:** Ben Felix 5% rule inline check — compute `homePrice × 5% / 12` as break-even rent, compare to user's rent, show inline callout near verdict
-  - [ ] **Static:** brief Methodology tab note citing Felix and NYT calculator as benchmarks, explaining approach differences (if cost-benefit reasonable — must stay under ~100 words)
-- [ ] **Input boundary hardening** — reject `mortgageTerm ≤ 0`, enforce `downPct ∈ [0,1]`, clamp extreme values that currently produce `Infinity` or `NaN`
+### v3.9.99.10 — Small UI Polish + Glossary Migration
+**Iteration 1 (small items):**
+- [ ] **Warm theme pill color fix** — Inactive pill uses `v.bg` which for Warm (`#FBF7F2`) reads pink/cream, not orange. Switch inactive background to `v.accent` → every theme pill becomes a clearly identifiable colored dot representing its character. Simple reversible change.
+- [ ] **Location + Your Assumptions title centering** — Currently titles share a single flex row with their content (dropdown, share button, etc.). Restructure: title centered on its own line, content row below. Improves readability on both desktop and mobile (especially mobile). Leave What-If as-is (already sparse).
 
-### v3.9.99.9 — UX & Pre-v4 Polish
+**Iteration 2 (glossary build):**
+- [ ] **Glossary subsection in Methodology** — New "Table Columns" (or "Glossary") subsection listing all 15 data-table column definitions in formula + worked example format (e.g., "Home equity = Home value − Mortgage balance | $500K − $300K = $200K"). Single source of truth. Upgrades `TABLE_TIPS` content from one-sentence prose at the same time.
+
+**Iteration 3 (wire-up):**
+- [ ] **`<GlossaryLink term=.../>` component + migration** — Reusable component replaces the 15 `<Tip>` tooltips in the data-table header row. Click → opens Guide `<details>` → switches to Methodology tab → scrolls to term → flashes via `methodHighlight` pattern from v3.9.99.8. Fixes the mobile tooltip-overflow issue and Allan's brother's "numbers don't trace easily back to formulas" feedback in one pass. Scope: data-table headers only — leave input-field `<Tip>` tooltips alone (hover-in-context works fine for short definitions).
+
+**Deferred (not blocking v3.9.99.10):**
 - [ ] **Post-deploy validation checklist (before v4):**
-  - [ ] Confirm `inputMode="decimal"` / `"numeric"` show correct iOS keyboard (can't test in DevTools — requires actual device)
+  - [x] Confirm `inputMode="decimal"` / `"numeric"` show correct iOS keyboard — confirmed on iPhone 13 mini; Android unverified (will surface via user feedback if broken)
   - [ ] Confirm `autoComplete="off"` suppresses browser autofill on all number inputs
-  - [ ] Confirm "Paid off" label renders visibly on Net Worth chart with high-advantage scenarios
-- [ ] **FX converter inline next to country dropdown** — Currently renders as a separate card between Confidence and Chart; proposed move into the LOCATION header flex row (conditional on `cur !== "USD"`) for conceptual co-location with country choice. Use `flexWrap:"wrap"` for mobile graceful-wrap, replace "Reset" text button with `↺` icon, move "Default: X.XX (Apr 2026)" footnote into input `title` attribute.
-- [ ] **Table header glossary pattern** — Replace the 15 in-place `<Tip>` tooltips in the data-table header row with a reusable `<GlossaryLink term=.../>` component that jumps to a new "Table Columns" subsection in the Methodology tab and flashes the definition via the `methodHighlight` pattern from v3.9.99.8. Fixes current visual overlap where tooltips span across narrow table cells. Single-source-of-truth for column definitions lives in Methodology.
-- [ ] **Collapse-indicator affordance on `<details>` sections** — The Guide section uses native HTML `<details>`/`<summary>` but renders the summary as plain centered text with no visible arrow, +/−, or chevron. Entire header is already clickable (good), but the affordance isn't discoverable. Add a visible minimize/expand icon alongside the existing full-header click target — don't replace the click target, just signal it's interactive. Apply the same pattern to any other `<details>` sections we add.
-- [ ] **`inputmode="decimal"` + `autocomplete="off"` pass** — mobile keyboard optimization across all number inputs
-- [ ] **Table math traceability** — `TABLE_TIPS` upgraded from one-sentence prose to formula + worked example ("Home value − Mortgage balance | e.g., $500K − $300K = $200K")
+  - [x] Confirm "Paid off" label renders visibly on Net Worth chart with high-advantage scenarios — labelBox rect+border approach confirmed working
 - [ ] **"Show values / Show YoY change" toggle** above table — prominent, not subtle; flips every cell between absolute and year-over-year delta
 - [ ] **Inflation ↔ rent-growth default-tie** with unlink affordance
-- [ ] **Mortgage-payoff vertical marker** on Net Worth + Annual Cost charts (`ReferenceLine` at `mortgageTerm`, labeled "Mortgage paid off")
-- [ ] **Print stylesheet** — `@media print` basics so dark themes don't burn ink
-- [ ] **Static mobile audit findings applied** — static code pass produces issue list, targeted screenshots validate anything uncertain
 
 ### v4.0 — Input Architecture Rework + Mode Toggle
 - [ ] **Budget-first architecture (beginner mode):** Three primary inputs — **Rent Budget** (standalone, no link), **Monthly Buy Budget** (all-in: P&I + tax + ins + maint + PMI), **Savings Budget** (all-in: down payment + closing costs). Engine derives home price via closed-form from (S, M, t, k, A): `homePrice = (M + S·A − PMI) / ((1+k)·A + t/12)`. Addresses "closing costs ambushed me" user feedback — current UI makes buyers feel costs are hidden.

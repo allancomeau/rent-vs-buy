@@ -833,17 +833,27 @@ const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemp
 const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params,holdYr,sym,beSens,presetMode,presetId,onPreset,onClose,extraHeader}) => {
   const active = Object.keys(overrides).length > 0;
   const hd = result.data[Math.min(holdYr,params.simYears)-1];
+  const titleSpan = <span>{title}{!active&&<span style={{fontWeight:400,textTransform:"none"}}> — {presetMode==="select"?"select a preset":"adjust values"}</span>}</span>;
+  const presetSelect = presetMode==="select"
+    ? <select style={{...S.select,fontSize:10}} value={presetId} onChange={e=>onPreset(e.target.value)}>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
+    : <select style={{...S.select,fontSize:10}} value="" onChange={e=>{if(e.target.value)onPreset(e.target.value);}}><option value="">Load preset…</option>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>;
+  const closeBtn = onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>;
   return <div style={S.panel}>
-    <div style={{...S.pH,background:active?colorBg:T.muted,color:active?color:T.text3,borderBottom:`2px solid ${active?color:T.border}`,display:"flex",justifyContent:"space-between",alignItems:"center",transition:"all 200ms"}}>
-      <span>{title}{!active&&<span style={{fontWeight:400,textTransform:"none"}}> — {presetMode==="select"?"select a preset":"adjust values"}</span>}</span>
-      <div style={{display:"flex",alignItems:"center",gap:4}}>
-      {extraHeader}
-      {presetMode==="select"
-        ? <select style={{...S.select,fontSize:10}} value={presetId} onChange={e=>onPreset(e.target.value)}>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
-        : <select style={{...S.select,fontSize:10}} value="" onChange={e=>{if(e.target.value)onPreset(e.target.value);}}><option value="">Load preset…</option>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
-      }
-      {onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>}
-      </div>
+    <div style={{...S.pH,background:active?colorBg:T.muted,color:active?color:T.text3,borderBottom:`2px solid ${active?color:T.border}`,transition:"all 200ms"}}>
+      {extraHeader ? <>
+        <div style={{textAlign:"center",marginBottom:8}}>{titleSpan}</div>
+        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+          {extraHeader}
+          {presetSelect}
+          {closeBtn}
+        </div>
+      </> : <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+        {titleSpan}
+        <div style={{display:"flex",alignItems:"center",gap:4}}>
+          {presetSelect}
+          {closeBtn}
+        </div>
+      </div>}
     </div>
     <div style={S.pB}>
       <VerdictBox advantage={hd?.advantage} homePrice={result.homePrice} holdYr={holdYr} sym={sym} breakeven={result.breakeven} params={params}/>
@@ -1036,7 +1046,7 @@ function RentVsBuyV3() {
               const sep = (k==="dark");
               return <React.Fragment key={k}>
                 {sep&&<div style={{width:1,height:14,background:T.border,margin:"0 2px"}}/>}
-                <button onClick={()=>setTheme(k)} aria-label={`${v.name} theme`} aria-pressed={active} style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:v.bg,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
+                <button onClick={()=>setTheme(k)} aria-label={`${v.name} theme`} aria-pressed={active} style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:v.accent,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
               </React.Fragment>;
             })}
           </div>
@@ -1173,9 +1183,10 @@ function RentVsBuyV3() {
 
         {/* LOCATION — merged into Your Situation */}
         <div style={{marginTop:12,paddingTop:10,borderTop:`2px solid ${T.border}`}}>
-          <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
+          <div style={{textAlign:"center",marginBottom:6}}>
             <span style={{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:T.text2}}>Location</span>
-            <span style={{color:T.text3}}>·</span>
+          </div>
+          <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
             <select style={{...S.select,fontSize:11,border:`1px solid ${T.accent}66`,background:`${T.accent}08`,fontWeight:600}} value={country} onChange={e=>chgCountry(e.target.value)}>
               {Object.entries(COUNTRIES).map(([k,v])=><option key={k} value={k}>{v.name}</option>)}
             </select>
@@ -1284,7 +1295,7 @@ function RentVsBuyV3() {
         </div>;
       })()}
 
-      {/* FX CONVERTER — now inline in Location header (v3.9.99.9) */}
+      {/* FX CONVERTER — now inline in Location header (v3.9.99.10) */}
 
       {/* CHART */}
       {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
@@ -1398,7 +1409,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.9 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.10 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

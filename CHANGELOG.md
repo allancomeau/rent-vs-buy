@@ -4,6 +4,16 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v3.9.99.10 — April 2026
+
+### Small UI Polish (glossary build preparation)
+- **Theme pill colors** — Inactive pill background switched from `v.bg` (pale theme background) to `v.accent` (theme's signature accent color). Each pill now reads as a clearly identifiable colored dot representing its theme: Light → blue, Aqua → teal, Warm → orange, Dark → bright blue, Ocean → light blue, Ember → bright orange. Fixes a persistent issue where the Warm theme's pill read as pink/cream because its `bg` (`#FBF7F2`) was too desaturated to convey "orange" in a 20px dot. Tradeoff: users can no longer tell light vs dark theme from pill background alone (all are colored dots now); mitigated by the light/dark divider still being visually obvious and the active pill still using `v.card` as its expanded background.
+- **Section title centering — Location, Your Assumptions, What-If** — Three section headers restructured so the title lives on its own centered line with the control row (dropdowns, Share button, ✕ close) below. Previously all shared a single flex row with content, which cramped on desktop and broke on narrow mobile. Implemented via `ScenarioPanel` component unconditionally stacking its header (extracted `titleSpan`, `presetSelect`, `closeBtn` as variables to avoid duplication). Both Your Assumptions and What-If now render consistently.
+- **Guide summary rename** — "Guide, FAQ & Methodology" → "Guide". The enumerated tab list doesn't scale — we're adding a Glossary tab in v3.9.99.11, and future tabs would make the summary unwieldy. "Guide" is umbrella-level and future-proof.
+- **PROJECT_INSTRUCTIONS sync discipline codified** — Build Rules now explicitly require updating both CHANGELOG **and** PROJECT_INSTRUCTIONS when a version is feature-complete (current-state header, versioning table, pending-item pruning). Previous rule only covered CHANGELOG; PROJECT_INSTRUCTIONS had drifted — "Current State" still read v3.9.99.7 when we were on v3.9.99.9, and Pending Items held completed entries from v3.9.99.8 and v3.9.99.9. Now both files update together at feature-complete.
+
+---
+
 ## v3.9.99.9 — April 2026
 
 ### UX & Pre-v4 Polish

@@ -49,6 +49,8 @@
     select:hover:not(:focus) { border-color: var(--slider-thumb, #93c5fd); }
     details summary { list-style: none; }
     details summary::-webkit-details-marker { display: none; }
+    .disclosure-icon { display: inline-block; transition: transform 200ms ease; }
+    details[open] .disclosure-icon { transform: rotate(90deg); }
     .tut { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; background: var(--tut-bg, #EFF6FF); border: 1.5px solid var(--tut-border, #BFDBFE); border-radius: 10px; font-size: 13px; color: var(--tut-text, #1e40af); margin-bottom: 10px; line-height: 1.5; font-weight: 500; }
     @media (prefers-reduced-motion: no-preference) {
       .tut { animation: tutFade 0.4s ease-out; }
@@ -57,6 +59,8 @@
     @keyframes tutFade { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes introGlow { 0% { box-shadow: none; } 15%,45% { box-shadow: 0 0 10px 3px var(--slider-thumb, #3B82F6); } 30%,60% { box-shadow: none; } 100% { box-shadow: none; } }
     .intro-glow { animation: introGlow 3s ease-in-out 0.5s 1; }
+    @keyframes targetHighlight { 0%,100% { box-shadow: none; background: transparent; } 20%,60% { box-shadow: 0 0 0 3px var(--slider-thumb, #2563eb), 0 0 16px 2px var(--slider-thumb, #2563eb); background: color-mix(in srgb, var(--slider-thumb, #2563eb) 12%, transparent); } }
+    .target-highlight { animation: targetHighlight 2.5s ease-in-out 0.4s 1; border-radius: 8px; padding: 6px 10px; margin: -6px -10px; }
     button:hover { filter: brightness(0.95); }
     button:active { transform: scale(0.98); }
     button { transition: filter 150ms ease, transform 100ms ease, background-color 200ms ease, box-shadow 200ms ease; }
@@ -71,6 +75,23 @@
       .recharts-legend-wrapper { font-size:10px; }
       .recharts-yAxis .recharts-text { font-size:10px; }
       .recharts-xAxis .recharts-text { font-size:10px; }
+    }
+    @media print {
+      @page { margin: 0.5in; }
+      html, body { background: #ffffff !important; color: #000000 !important; font-size: 11pt; }
+      /* Force white bg + black text on every non-SVG element. SVG preserved so chart colors survive. */
+      *:not(svg):not(svg *) {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+        box-shadow: none !important;
+        border-color: #cccccc !important;
+      }
+      /* Keep selected dropdown values visible, drop the interactive chrome */
+      select { appearance: none !important; -webkit-appearance: none !important; border: none !important; padding: 0 !important; font-weight: 600; }
+      /* Hide elements that don't mean anything on paper */
+      input[type="range"], button, .disclosure-icon, .tut, .recharts-tooltip-wrapper { display: none !important; }
+      /* Don't split chart or legend across pages */
+      svg, .recharts-legend-wrapper { page-break-inside: avoid; }
     }
   </style>
 </head>
@@ -103,7 +124,7 @@ const COUNTRIES = {
       mortgageRate: 0.060, mortgageTerm: 30, marginalTax: 0.22,
       stdDeduction: 30000, saltCap: 40400, capGainsRate: 0.15,
       capGainsExclusion: 500000, sellingPct: 0.06, closingPct: 0.03,
-      investReturn: 0.10, inflation: 0.025, renterIns: 300,
+      investReturn: 0.10, inflation: 0.025, renterIns: 0,
     },
     national: {
       medianPrice: 415000, typicalRent: 2000,
@@ -120,7 +141,7 @@ const COUNTRIES = {
       mortgageRate: 0.045, mortgageTerm: 25, marginalTax: 0,  // No mortgage interest deduction in Canada
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.167,
       capGainsExclusion: 999999999, sellingPct: 0.05, closingPct: 0.03,
-      investReturn: 0.08, inflation: 0.025, renterIns: 400,
+      investReturn: 0.08, inflation: 0.025, renterIns: 0,
     },
     national: {
       medianPrice: 720000, typicalRent: 2100,
@@ -137,7 +158,7 @@ const COUNTRIES = {
       mortgageRate: 0.045, mortgageTerm: 25, marginalTax: 0,  // No mortgage interest deduction in UK
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.18,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.04,
-      investReturn: 0.08, inflation: 0.025, renterIns: 200,
+      investReturn: 0.08, inflation: 0.025, renterIns: 0,
     },
     national: {
       medianPrice: 290000, typicalRent: 1200,
@@ -154,7 +175,7 @@ const COUNTRIES = {
       mortgageRate: 0.055, mortgageTerm: 30, marginalTax: 0,  // No mortgage interest deduction on primary residence
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.165,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
-      investReturn: 0.09, inflation: 0.03, renterIns: 400,
+      investReturn: 0.09, inflation: 0.03, renterIns: 0,
     },
     national: {
       medianPrice: 985000, typicalRent: 2400,
@@ -171,7 +192,7 @@ const COUNTRIES = {
       mortgageRate: 0.035, mortgageTerm: 20, marginalTax: 0,  // No mortgage interest deduction on owner-occupied
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
       capGainsExclusion: 999999999, sellingPct: 0.04, closingPct: 0.10,
-      investReturn: 0.07, inflation: 0.02, renterIns: 200,
+      investReturn: 0.07, inflation: 0.02, renterIns: 0,
     },
     national: {
       medianPrice: 320000, typicalRent: 1100,
@@ -188,7 +209,7 @@ const COUNTRIES = {
       mortgageRate: 0.039, mortgageTerm: 30, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.33,
       capGainsExclusion: 999999999, sellingPct: 0.025, closingPct: 0.04,
-      investReturn: 0.08, inflation: 0.03, renterIns: 250,
+      investReturn: 0.08, inflation: 0.03, renterIns: 0,
     },
     national: {
       medianPrice: 375000, typicalRent: 1600,
@@ -205,7 +226,7 @@ const COUNTRIES = {
       mortgageRate: 0.055, mortgageTerm: 30, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.03,
-      investReturn: 0.08, inflation: 0.03, renterIns: 400,
+      investReturn: 0.08, inflation: 0.03, renterIns: 0,
     },
     national: {
       medianPrice: 810000, typicalRent: 2400,
@@ -222,7 +243,7 @@ const COUNTRIES = {
       mortgageRate: 0.033, mortgageTerm: 20, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.36,
       capGainsExclusion: 999999999, sellingPct: 0.05, closingPct: 0.08,
-      investReturn: 0.07, inflation: 0.02, renterIns: 200,
+      investReturn: 0.07, inflation: 0.02, renterIns: 0,
     },
     national: {
       medianPrice: 250000, typicalRent: 900,
@@ -239,7 +260,7 @@ const COUNTRIES = {
       mortgageRate: 0.030, mortgageTerm: 25, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.23,
       capGainsExclusion: 999999999, sellingPct: 0.04, closingPct: 0.10,
-      investReturn: 0.07, inflation: 0.025, renterIns: 200,
+      investReturn: 0.07, inflation: 0.025, renterIns: 0,
     },
     national: {
       medianPrice: 200000, typicalRent: 850,
@@ -256,7 +277,7 @@ const COUNTRIES = {
       mortgageRate: 0.037, mortgageTerm: 30, marginalTax: 0.37,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.06,
-      investReturn: 0.08, inflation: 0.02, renterIns: 200,
+      investReturn: 0.08, inflation: 0.02, renterIns: 0,
     },
     national: {
       medianPrice: 490000, typicalRent: 1500,
@@ -273,7 +294,7 @@ const COUNTRIES = {
       mortgageRate: 0.032, mortgageTerm: 25, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.26,
       capGainsExclusion: 999999999, sellingPct: 0.04, closingPct: 0.08,
-      investReturn: 0.07, inflation: 0.02, renterIns: 200,
+      investReturn: 0.07, inflation: 0.02, renterIns: 0,
     },
     national: {
       medianPrice: 220000, typicalRent: 800,
@@ -290,7 +311,7 @@ const COUNTRIES = {
       mortgageRate: 0.035, mortgageTerm: 30, marginalTax: 0.30,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.22,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
-      investReturn: 0.08, inflation: 0.02, renterIns: 1500,
+      investReturn: 0.08, inflation: 0.02, renterIns: 0,
     },
     national: {
       medianPrice: 3500000, typicalRent: 12000,
@@ -307,7 +328,7 @@ const COUNTRIES = {
       mortgageRate: 0.025, mortgageTerm: 25, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
-      investReturn: 0.07, inflation: 0.015, renterIns: 400,
+      investReturn: 0.07, inflation: 0.015, renterIns: 0,
     },
     national: {
       medianPrice: 900000, typicalRent: 2200,
@@ -324,7 +345,7 @@ const COUNTRIES = {
       mortgageRate: 0.015, mortgageTerm: 35, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.20,
       capGainsExclusion: 30000000, sellingPct: 0.05, closingPct: 0.07,
-      investReturn: 0.06, inflation: 0.02, renterIns: 15000,
+      investReturn: 0.06, inflation: 0.02, renterIns: 0,
     },
     national: {
       medianPrice: 45000000, typicalRent: 120000,
@@ -341,7 +362,7 @@ const COUNTRIES = {
       mortgageRate: 0.035, mortgageTerm: 25, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.04,
-      investReturn: 0.07, inflation: 0.02, renterIns: 300,
+      investReturn: 0.07, inflation: 0.02, renterIns: 0,
     },
     national: {
       medianPrice: 1200000, typicalRent: 3500,
@@ -358,7 +379,7 @@ const COUNTRIES = {
       mortgageRate: 0.04, mortgageTerm: 30, marginalTax: 0,
       stdDeduction: 0, saltCap: 999999, capGainsRate: 0.0,
       capGainsExclusion: 999999999, sellingPct: 0.03, closingPct: 0.05,
-      investReturn: 0.07, inflation: 0.025, renterIns: 200000,
+      investReturn: 0.07, inflation: 0.025, renterIns: 0,
     },
     national: {
       medianPrice: 600000000, typicalRent: 1200000,
@@ -445,6 +466,35 @@ const METROS = [
 // ═══════════════════════════════════════════════════════════════
 // ENGINE
 // ═══════════════════════════════════════════════════════════════
+// Hard boundaries for personal inputs. Values outside these ranges
+// produce NaN/Infinity or nonsense in the engine. Silent clamp on write.
+// Soft "unusual but legal" warnings live in NumInput's RANGES amber system.
+const PERSONAL_CLAMPS = {
+  rentBudget: [0, 100000],
+  buyBudget: [0, 100000],
+  downPayment: [0, 10000000],
+  mortgageTerm: [1, 50],
+  holdingPeriod: [1, 100],
+  simYears: [5, 100],
+  discipline: [0, 1],
+  otherItemized: [0, 1000000],
+};
+const clampPersonal = (p) => {
+  const out = {...p};
+  for (const k in PERSONAL_CLAMPS) {
+    const v = out[k];
+    if (v != null && !isNaN(v)) {
+      const [lo, hi] = PERSONAL_CLAMPS[k];
+      out[k] = Math.max(lo, Math.min(hi, v));
+    }
+  }
+  // holdingPeriod cannot exceed simYears (dependent bound)
+  if (out.simYears != null && out.holdingPeriod != null) {
+    out.holdingPeriod = Math.min(out.holdingPeriod, out.simYears);
+  }
+  return out;
+};
+
 function backsolveLoan(monthlyPayment, annualRate, termYears) {
   const r = annualRate / 12;
   const n = termYears * 12;
@@ -611,7 +661,7 @@ const CURRENCIES = {
   SEK:{rate:0.095,name:"Swedish kronor"},CHF:{rate:1.12,name:"Swiss francs"},JPY:{rate:0.0067,name:"Japanese yen"},
   SGD:{rate:0.75,name:"Singapore dollars"},KRW:{rate:0.00073,name:"South Korean won"},
 };
-const TABLE_TIPS = {Yr:"Simulation year",Home:"Current home value (price × appreciation)",Equity:"Home value minus mortgage balance",Int:"Mortgage interest paid this year",Princ:"Principal paid this year (builds equity)",Cost:"Total buyer cost: mortgage + tax + ins + maint",TaxB:"Tax benefit from excess itemization",NetBuy:"Buyer cost after tax benefit",Rent:"Annual rent (starts = mortgage pmt, grows yearly)",RntCst:"Total renter cost: rent + renter's insurance",BInv:"Buyer's investment portfolio (surplus after payoff)",RInv:"Renter's portfolio (seeded with down + closing costs)","Buyer W":"Buyer total: equity − sell costs − taxes + portfolio","Renter W":"Renter total: portfolio − cap gains tax",BuyW:"Buyer total: equity − sell costs − taxes + portfolio",RntW:"Renter total: portfolio − cap gains tax",Adv:"Buyer minus renter wealth. Positive = buying wins.",Advantage:"Buyer minus renter wealth. Positive = buying wins.","Home Value":"Current home market value","Yr Principal":"Principal paid this year",Balance:"Remaining mortgage balance","Buyer Cost":"Buyer annual net cost","Renter Cost":"Renter annual total cost","Buyer Inv":"Buyer's investment portfolio","Renter Inv":"Renter's investment portfolio"};
+const TABLE_TIPS = {Yr:"Simulation year",Home:"Current home value (price × appreciation)",Equity:"Home value minus mortgage balance",Int:"Mortgage interest paid this year",Princ:"Principal paid this year (builds equity)",Cost:"Total buyer cost: mortgage + tax + ins + maint",TaxB:"Tax benefit from excess itemization",NetBuy:"Buyer cost after tax benefit",Rent:"Annual rent (starts = mortgage pmt, grows yearly)",RntCst:"Total renter cost: annual rent (renter's insurance assumed budgeted in rent input)",BInv:"Buyer's investment portfolio (surplus after payoff)",RInv:"Renter's portfolio (seeded with down + closing costs)","Buyer W":"Buyer total: equity − sell costs − taxes + portfolio","Renter W":"Renter total: portfolio − cap gains tax",BuyW:"Buyer total: equity − sell costs − taxes + portfolio",RntW:"Renter total: portfolio − cap gains tax",Adv:"Buyer minus renter wealth. Positive = buying wins.",Advantage:"Buyer minus renter wealth. Positive = buying wins.","Home Value":"Current home market value","Yr Principal":"Principal paid this year",Balance:"Remaining mortgage balance","Buyer Cost":"Buyer annual net cost","Renter Cost":"Renter annual total cost","Buyer Inv":"Buyer's investment portfolio","Renter Inv":"Renter's investment portfolio"};
 const RESEARCH_BASE = "https://github.com/allancomeau/rent-vs-buy/blob/main/";
 const RESEARCH_FILES = [
   { name: "Research Report: Academic Foundations", file: "rent_vs_buy_research_report.md" },
@@ -657,13 +707,11 @@ const THEME_FONT = "'Inter',-apple-system,BlinkMacSystemFont,sans-serif";
 const THEME_MONO = "'SF Mono',ui-monospace,Menlo,monospace";
 const THEMES = {
   light:{ name:"Light", bg:"#F4F6F9", card:"#FFFFFF", muted:"#F1F5F9", text1:"#212529", text2:"#6C757D", text3:"#9CA3AF", border:"#E2E8F0", accent:"#2563eb", green:"#16a34a", purple:"#7c3aed", shadow:"0 1px 2px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.1)", slider:"#E2E8F0", sliderThumb:"#2563eb", tutBg:"#EFF6FF", tutBorder:"#BFDBFE", tutText:"#1e40af" },
-  warm:{ name:"Warm", bg:"#FBF7F2", card:"#FFFFFF", muted:"#F5EDE3", text1:"#3D2C1A", text2:"#8B7355", text3:"#B8A089", border:"#E8D5C0", accent:"#C45D2C", green:"#3A7D44", purple:"#7C5295", shadow:"0 1px 3px rgba(61,44,26,0.08), 0 2px 6px rgba(61,44,26,0.06)", slider:"#E8D5C0", sliderThumb:"#C45D2C", tutBg:"#FFF8F0", tutBorder:"#E8D5C0", tutText:"#C45D2C" },
   aqua:{ name:"Aqua", bg:"#F0FAFA", card:"#FFFFFF", muted:"#E0F5F5", text1:"#1A3636", text2:"#4A7878", text3:"#7AADAD", border:"#B0D8D8", accent:"#0D9494", green:"#2E8B57", purple:"#7C6AAE", shadow:"0 1px 2px rgba(13,148,148,0.06), 0 1px 3px rgba(13,148,148,0.08)", slider:"#B0D8D8", sliderThumb:"#0D9494", tutBg:"#E6F7F7", tutBorder:"#A0D0D0", tutText:"#0A7070" },
-  citrus:{ name:"Citrus", bg:"#FFFDF0", card:"#FFFFFF", muted:"#FFF6D0", text1:"#3D3518", text2:"#8A7A40", text3:"#B8A860", border:"#E8D88A", accent:"#E08A10", green:"#5EA020", purple:"#9060A0", shadow:"0 1px 2px rgba(61,53,24,0.06), 0 1px 3px rgba(61,53,24,0.08)", slider:"#E8D88A", sliderThumb:"#E08A10", tutBg:"#FFF8E0", tutBorder:"#E8D88A", tutText:"#8A6010" },
+  warm:{ name:"Warm", bg:"#FBF7F2", card:"#FFFFFF", muted:"#F5EDE3", text1:"#3D2C1A", text2:"#8B7355", text3:"#B8A089", border:"#E8D5C0", accent:"#C45D2C", green:"#3A7D44", purple:"#7C5295", shadow:"0 1px 3px rgba(61,44,26,0.08), 0 2px 6px rgba(61,44,26,0.06)", slider:"#E8D5C0", sliderThumb:"#C45D2C", tutBg:"#FFF8F0", tutBorder:"#E8D5C0", tutText:"#C45D2C" },
   dark:{ name:"Dark", bg:"#0D1117", card:"#161B22", muted:"#21262D", text1:"#E6EDF3", text2:"#8B949E", text3:"#6E7681", border:"#30363D", accent:"#58A6FF", green:"#3FB950", purple:"#BC8CFF", shadow:"0 1px 3px rgba(0,0,0,0.3), 0 2px 6px rgba(0,0,0,0.2)", slider:"#30363D", sliderThumb:"#58A6FF", tutBg:"#161B22", tutBorder:"#30363D", tutText:"#58A6FF" },
   ocean:{ name:"Ocean", bg:"#0F1D30", card:"#172236", muted:"#1E2E48", text1:"#D4E8F8", text2:"#85B0D0", text3:"#5A7A98", border:"#2C4460", accent:"#5CB8FF", green:"#50E0A0", purple:"#A88BFA", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#2C4460", sliderThumb:"#5CB8FF", tutBg:"#172236", tutBorder:"#2C4460", tutText:"#5CB8FF" },
   ember:{ name:"Ember", bg:"#1A1410", card:"#231D17", muted:"#2C241E", text1:"#E8DDD0", text2:"#A89580", text3:"#7A6B5A", border:"#3D3229", accent:"#E8854A", green:"#6DAA5C", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.25)", slider:"#3D3229", sliderThumb:"#E8854A", tutBg:"#231D17", tutBorder:"#3D3229", tutText:"#E8854A" },
-  moss:{ name:"Moss", bg:"#1A2118", card:"#222D1F", muted:"#2A3626", text1:"#D4E0CC", text2:"#8FA880", text3:"#5E7352", border:"#3A4A34", accent:"#7CB868", green:"#7CB868", purple:"#B088C8", shadow:"0 1px 4px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2)", slider:"#3A4A34", sliderThumb:"#7CB868", tutBg:"#222D1F", tutBorder:"#3A4A34", tutText:"#7CB868" },
 };
 const buildS = (t) => ({
   page:{fontFamily:THEME_FONT,maxWidth:1400,width:"min(100%, 1400px)",margin:"0 auto",padding:"clamp(12px, 3vw, 32px)",color:t.text1,background:t.bg,fontVariantNumeric:"tabular-nums",minHeight:"100svh",boxSizing:"border-box",overflowX:"hidden"},
@@ -716,7 +764,7 @@ const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,
       <Tip text={tipText}><span style={S.label}>{label}{locked&&<span style={{color:T.text3,fontSize:9}}> 🔒</span>}</span></Tip>
       <div style={{display:"flex",alignItems:"center",gap:3}}>
         {prefix&&<span style={{fontSize:12,color:T.text3,fontWeight:500}}>{prefix}</span>}
-        <input style={iStyle} type="number" value={value} step={step||1} readOnly={locked} tabIndex={locked?-1:0}
+        <input style={iStyle} type="number" inputMode="decimal" autoComplete="off" value={value} step={step||1} readOnly={locked} tabIndex={locked?-1:0}
           onChange={e=>{if(!locked){const val=parseFloat(e.target.value);if(!isNaN(val))onChange(val);}}} />
         {suffix&&<span style={{fontSize:12,color:T.text3,fontWeight:500}}>{suffix}</span>}
       </div>
@@ -746,6 +794,16 @@ const ChartTip = ({active,payload,sym}) => {
     <div style={{fontWeight:700,marginBottom:6}}>Year {payload[0]?.payload?.year}</div>
     {payload.map((p,i)=><div key={i} style={{color:p.color,marginBottom:2}}>{p.name}: {fmtFullC(p.value,sym)}</div>)}
   </div>;
+};
+
+// Reference-line label: rect background + colored border + text. Reads T.card at call time so it stays theme-aware.
+const labelBox = (text, color) => ({viewBox}) => {
+  const w = Math.max(30, text.length * 6 + 12);
+  const x = viewBox.x, y = viewBox.y + 4;
+  return <g>
+    <rect x={x - w/2} y={y} width={w} height={15} fill={T.card} stroke={color} strokeWidth={1} rx={3}/>
+    <text x={x} y={y + 11} fontSize={10} fill={color} textAnchor="middle" fontWeight={600}>{text}</text>
+  </g>;
 };
 
 const ChartShell = ({data,sym,children}) => (
@@ -815,6 +873,7 @@ function RentVsBuyV3() {
   const [chartDescOpen,setChartDescOpen]=useState(true);
   
   const [guideTab,setGuideTab]=useState("overview");
+  const [methodHighlight,setMethodHighlight]=useState(null);
   const [copied,setCopied]=useState(false);
   const [fxOverride,setFxOverride]=useState(null);
   const [tutorial,setTutorial]=useState(false);
@@ -850,7 +909,7 @@ function RentVsBuyV3() {
     const s=saved?.p||{};
     // Backward compat: old URLs have monthlyPayment → map to both budgets
     const mp=s.monthlyPayment;
-    return {
+    return clampPersonal({
       rentBudget:s.rentBudget??mp??c.personalDefaults.monthlyPayment,
       buyBudget:s.buyBudget??mp??c.personalDefaults.monthlyPayment,
       downPayment:s.downPayment??c.personalDefaults.downPayment,
@@ -859,10 +918,10 @@ function RentVsBuyV3() {
       simYears:s.simYears??(c.defaults.mortgageTerm+5),
       discipline:s.discipline??0.65,
       otherItemized:s.otherItemized??0,
-    };
+    });
   });
   const [budgetLinked,setBudgetLinked]=useState(()=>!saved?.p||saved.p.rentBudget==null||saved.p.rentBudget===saved.p.buyBudget);
-  const up=key=>val=>setPersonal(prev=>({...prev,[key]:val}));
+  const up=key=>val=>setPersonal(prev=>clampPersonal({...prev,[key]:val}));
   const hp=personal.holdingPeriod;
   const eLocA=linked?null:findM(locAMetro), eLocB=findM(locBMetro);
 
@@ -951,13 +1010,13 @@ function RentVsBuyV3() {
     setCountry(nc);setLocAMetro(null);setLocBMetro(DEFAULT_METROS[nc]||"");
     setScenOvr({});setCusOvr({});setPresetId("ref");setFxOverride(null);
     const nd=COUNTRIES[nc];
-    setPersonal(prev=>({...prev,rentBudget:nd.personalDefaults.monthlyPayment,buyBudget:nd.personalDefaults.monthlyPayment,downPayment:nd.personalDefaults.downPayment,mortgageTerm:nd.defaults.mortgageTerm}));
+    setPersonal(prev=>clampPersonal({...prev,rentBudget:nd.personalDefaults.monthlyPayment,buyBudget:nd.personalDefaults.monthlyPayment,downPayment:nd.personalDefaults.downPayment,mortgageTerm:nd.defaults.mortgageTerm}));
   };
 
   // Chart type configs
   const CHARTS = {
-    networth:{label:"Net worth by strategy",title:"Net Worth: Buyer vs. Renter",sub:"Total wealth for each strategy · solid = your assumptions (★), dashed = location · add What-If for preset comparison"},
     tornado:{label:"Sensitivity chart",title:"Sensitivity: Which Assumptions Matter?",sub:"Each bar shows how much the outcome swings when one variable changes · sorted by impact · ★ marks the single most impactful variable"},
+    networth:{label:"Net worth by strategy",title:"Net Worth: Buyer vs. Renter",sub:"Total wealth for each strategy · solid = your assumptions (★), dashed = location · add What-If for preset comparison"},
     cost:{label:"Annual cost",title:"What You Pay Each Year",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
     assets:{label:"Equity & investments",title:"Home Equity & Investment Portfolios",sub:"Home equity = home value minus mortgage balance · renter portfolio starts with down payment + closing costs invested · buyer portfolio grows after mortgage payoff"},
   };
@@ -996,7 +1055,8 @@ function RentVsBuyV3() {
       {/* GUIDE */}
       {tutorial&&<div className="tut"><b>1</b>Start with the Guide — it explains the model's logic and academic sources in about 2 minutes.</div>}
       <details ref={guideRef} id="guide-section" style={{...S.card,padding:0}}>
-        <summary style={{padding:"12px 16px",cursor:"pointer",textAlign:"center"}}>
+        <summary style={{padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
+          <span className="disclosure-icon" style={{fontSize:13,color:T.text2,lineHeight:1}}>▶</span>
           <div style={{fontSize:13,fontWeight:600,color:T.accent}}>Guide, FAQ & Methodology <span style={{fontSize:10,fontWeight:400,color:T.text3}}>— Open source · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent}} onClick={e=>e.stopPropagation()}>GitHub</a></span></div>
         </summary>
         <div style={{borderTop:`1px solid ${T.border}`}}>
@@ -1020,6 +1080,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Symmetric Surplus Investing:</strong> BOTH buyer and renter invest surplus cash. After mortgage payoff, the buyer's freed-up cash gets invested — not ignored like in most calculators.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Geometric Returns (10%, not 12%):</strong> Volatility drag: g ≈ a − σ²/2. With σ ≈ 20%, stocks lose ~2% to compounding friction. 10% CAGR is mathematically correct for deterministic models. 12% overstates by ~50% over 30 years. (Jacquier, Kane, Marcus FAJ 2003)</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Verdict Confidence:</strong> |advantage| / home price. &lt;2% too close, &lt;5% marginal, &lt;15% moderate, ≥15% strong.</p>
+              <p style={{marginTop:8}} className={methodHighlight==="felix"?"target-highlight":""}><strong style={{color:T.text1}}>Heuristic cross-check (Felix 5% rule):</strong> The Confidence card displays break-even rent ≈ 5% of home value per year. Ben Felix (PWL Capital) aggregates property tax, maintenance, cost of capital, and net appreciation into this single number — a quick directional check against more detailed models. It's a US-calibrated shorthand; non-US markets with different tax structures, rent controls, or appreciation rates may deviate. Felix is a second opinion, not a replacement for the full simulation.</p>
             </>}
             {guideTab==="limits"&&<>
               <p style={{fontWeight:600,color:T.text1,fontSize:14,marginBottom:8}}>Full Research Reports</p>
@@ -1068,9 +1129,9 @@ function RentVsBuyV3() {
         <div style={S.sTitle}>Your Situation</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
           <div>
-            <NumInput label={<span>Rent Payment <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>({...prev,buyBudget:prev.rentBudget}));}setBudgetLinked(!budgetLinked);}} style={{cursor:"pointer",color:budgetLinked?T.accent:T.text3,fontSize:10,background:budgetLinked?`${T.accent}1A`:"transparent",borderRadius:4,padding:"1px 4px",border:`1px solid ${budgetLinked?T.accent:T.border}`}} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.rentBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>({...prev,rentBudget:v,buyBudget:v}));else up("rentBudget")(v);}} step={100} prefix={sym} tip="Monthly rent you'd pay. When linked, equals mortgage P&I for apples-to-apples."/>
+            <NumInput label={<span>Rent Payment <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,buyBudget:prev.rentBudget}));}setBudgetLinked(!budgetLinked);}} style={{cursor:"pointer",color:budgetLinked?T.accent:T.text3,fontSize:10,background:budgetLinked?`${T.accent}1A`:"transparent",borderRadius:4,padding:"1px 4px",border:`1px solid ${budgetLinked?T.accent:T.border}`}} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.rentBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("rentBudget")(v);}} step={100} prefix={sym} tip="Monthly rent you'd pay. When linked, equals mortgage P&I for apples-to-apples."/>
             <div style={S.hint}>Extra invested: {ff(Math.round(Math.max(0,Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*(cusP.propTaxRate+cusP.insRate+cusP.maintRate)/12)-Math.round(personal.rentBudget))*personal.discipline))}/mo ({ff(Math.round(Math.max(0,Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*(cusP.propTaxRate+cusP.insRate+cusP.maintRate)/12)-Math.round(personal.rentBudget))))} surplus x {(personal.discipline*100).toFixed(0)}%)</div>
-            <NumInput label={<span>Mortgage P&I <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>({...prev,rentBudget:prev.buyBudget}));}setBudgetLinked(!budgetLinked);}} style={{cursor:"pointer",color:budgetLinked?T.accent:T.text3,fontSize:10,background:budgetLinked?`${T.accent}1A`:"transparent",borderRadius:4,padding:"1px 4px",border:`1px solid ${budgetLinked?T.accent:T.border}`}} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.buyBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>({...prev,rentBudget:v,buyBudget:v}));else up("buyBudget")(v);}} step={100} prefix={sym} tip="Your monthly mortgage principal and interest payment. Home price is derived from this + down payment."/>
+            <NumInput label={<span>Mortgage P&I <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,rentBudget:prev.buyBudget}));}setBudgetLinked(!budgetLinked);}} style={{cursor:"pointer",color:budgetLinked?T.accent:T.text3,fontSize:10,background:budgetLinked?`${T.accent}1A`:"transparent",borderRadius:4,padding:"1px 4px",border:`1px solid ${budgetLinked?T.accent:T.border}`}} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.buyBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("buyBudget")(v);}} step={100} prefix={sym} tip="Your monthly mortgage principal and interest payment. Home price is derived from this + down payment."/>
             <div style={S.hint}>Buyer total: {ff(Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*cusP.propTaxRate/12)+Math.round(cusR.homePrice*cusP.insRate/12)+Math.round(cusR.homePrice*cusP.maintRate/12))}/mo (+ {ff(Math.round(cusR.homePrice*cusP.propTaxRate/12))} tax + {ff(Math.round(cusR.homePrice*cusP.insRate/12))} ins + {ff(Math.round(cusR.homePrice*cusP.maintRate/12))} maint)</div>
           </div>
           <div><NumInput label="Savings / Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip="Your total savings. The buyer uses this as a down payment + pays closing costs. The renter invests the same total from day one." hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down + ${ff(Math.round(cusR.homePrice*cusP.closingPct))} closing = ${ff(Math.round(cusR.upfront))} upfront · renter invests same`}/><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40} hint="15 or 30yr most common"/></div>
@@ -1112,12 +1173,19 @@ function RentVsBuyV3() {
 
         {/* LOCATION — merged into Your Situation */}
         <div style={{marginTop:12,paddingTop:10,borderTop:`2px solid ${T.border}`}}>
-          <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:10}}>
+          <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,marginBottom:10,flexWrap:"wrap"}}>
             <span style={{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:T.text2}}>Location</span>
             <span style={{color:T.text3}}>·</span>
             <select style={{...S.select,fontSize:11,border:`1px solid ${T.accent}66`,background:`${T.accent}08`,fontWeight:600}} value={country} onChange={e=>chgCountry(e.target.value)}>
               {Object.entries(COUNTRIES).map(([k,v])=><option key={k} value={k}>{v.name}</option>)}
             </select>
+            {cur!=="USD"&&<>
+              <span style={{color:T.text3}}>·</span>
+              <span style={{fontSize:11,color:T.text2}}>1 {cur} = $</span>
+              <input type="number" inputMode="decimal" autoComplete="off" step={0.01} min={0.0001} value={fxRate} aria-label={`Exchange rate ${cur} to USD`} title={`Default: ${CURRENCIES[cur]?.rate} (Apr 2026)`} style={{width:70,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,fontFamily:THEME_MONO,textAlign:"right"}} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>0)setFxOverride(v);}}/>
+              <span style={{fontSize:11,color:T.text2}}>USD</span>
+              {fxOverride!=null&&<button style={{fontSize:13,color:T.accent,background:"none",border:"none",cursor:"pointer",padding:"0 2px",lineHeight:1}} title="Reset to default" onClick={()=>setFxOverride(null)}>↺</button>}
+            </>}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(260px, 100%), 1fr))",gap:16}}>
             <div>
@@ -1196,23 +1264,27 @@ function RentVsBuyV3() {
             {ins.icon==="\uD83D\uDFE1"&&<div style={{fontSize:11,color:T.text3,marginTop:2}}>Check the sensitivity chart below — the top variable can flip the verdict with a small change.</div>}
             {ins.icon==="\uD83D\uDD34"&&<div style={{fontSize:11,color:T.text3,marginTop:2}}>Multiple variables could each independently change the outcome. Non-financial factors should weigh heavily.</div>}
           </div>)}
+          {(()=>{
+            const felixBE=Math.round(cusR.homePrice*0.05/12);
+            const userRent=Math.round(personal.rentBudget);
+            if(felixBE<=0||userRent<=0)return null;
+            const diffPct=(userRent-felixBE)/felixBE;
+            let verdictText,verdictColor;
+            if(Math.abs(diffPct)<0.10){verdictText="close to the threshold";verdictColor=T.text2;}
+            else if(diffPct<0){verdictText=`${Math.abs(diffPct*100).toFixed(0)}% below → renting favored`;verdictColor=T.green;}
+            else{verdictText=`${(diffPct*100).toFixed(0)}% above → buying favored`;verdictColor=T.accent;}
+            return <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${T.border}60`,fontSize:11,color:T.text2,lineHeight:1.5}}>
+              📐 <strong style={{color:T.text1}}>Felix 5% rule:</strong> break-even rent ~{ff(felixBE)}/mo · Yours {ff(userRent)}/mo <span style={{color:verdictColor,fontWeight:600}}>({verdictText})</span>
+              <div style={{fontSize:10,color:T.text3,marginTop:2}}>Heuristic only — simulation above accounts for appreciation, taxes, and your discipline. <span onClick={()=>{setGuideTab("method");if(guideRef.current){guideRef.current.open=true;setTimeout(()=>{guideRef.current.scrollIntoView({behavior:"smooth",block:"start"});setMethodHighlight("felix");setTimeout(()=>setMethodHighlight(null),3000);},50);}}} style={{color:T.accent,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>What is Felix?</span></div>
+            </div>;
+          })()}
           {Math.abs(cusH?.advantage)>200000&&personal.discipline>=0.99&&<div style={{fontSize:12,color:T.text3,marginTop:6,padding:"6px 10px",background:T.muted,borderRadius:6,lineHeight:1.6}}>Why so large? At 100% discipline, the ~{((cusP.investReturn-cusP.mortgageRate)*100).toFixed(0)}% spread compounds over {hp} years. Try discipline at 70% for a reality check.</div>}
           {c.taxNote.includes("\u26A0\uFE0F")&&<div style={{marginTop:6,fontSize:11,color:wColor2,lineHeight:1.5}}>{"\u26A0\uFE0F"} {c.name}: {c.taxNote.replace(/\u26A0\uFE0F\s*\w+\s*\w*:\s*/i,"")}</div>}
           {warnings.length>0&&<div style={{marginTop:6,fontSize:11,color:wColor2,lineHeight:1.6}}>{warnings.map((w,i)=><div key={i}>{"\u26A0"} {w}</div>)}</div>}
         </div>;
       })()}
 
-      {/* FX CONVERTER */}
-      {cur!=="USD"&&<div style={{...S.card,marginBottom:16,padding:"8px 14px"}}>
-        <div style={{display:"flex",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-          <span style={{fontSize:11,color:T.text2}}>1 {cur} =</span>
-          <span style={{fontSize:11,color:T.text3}}>$</span>
-          <input type="number" step={0.01} min={0.0001} value={fxRate} aria-label={`Exchange rate ${cur} to USD`} style={{width:70,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:12,fontFamily:THEME_MONO,textAlign:"right"}} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>0)setFxOverride(v);}} />
-          <span style={{fontSize:11,color:T.text2}}>USD</span>
-          {fxOverride!=null&&<button style={{fontSize:10,color:T.accent,background:"none",border:"none",cursor:"pointer",textDecoration:"underline"}} onClick={()=>setFxOverride(null)}>Reset</button>}
-          <span style={{fontSize:9,color:T.text3}}>Default: {CURRENCIES[cur]?.rate} (Apr 2026)</span>
-        </div>
-      </div>}
+      {/* FX CONVERTER — now inline in Location header (v3.9.99.9) */}
 
       {/* CHART */}
       {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
@@ -1224,14 +1296,15 @@ function RentVsBuyV3() {
           <div style={{fontSize:11,color:T.text3,marginTop:4}}>{CHARTS[chartType]?.sub}</div>
           <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:4,marginTop:6,fontSize:11,color:T.text2}}>
             <span>Simulate</span>
-            <input type="number" value={personal.simYears} min={5} max={65} step={1} style={{...S.input,width:45,fontSize:11,padding:"3px 4px",textAlign:"center"}} onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v)&&v>=5)setPersonal(prev=>({...prev,simYears:v,holdingPeriod:Math.min(prev.holdingPeriod,v)}));}}/>
+            <input type="number" inputMode="numeric" autoComplete="off" value={personal.simYears} min={5} max={100} step={1} style={{...S.input,width:45,fontSize:11,padding:"3px 4px",textAlign:"center"}} onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v))setPersonal(prev=>clampPersonal({...prev,simYears:v}));}}/>
             <span>years</span>
           </div>
         </div>
 
         {chartType==="networth"&&<ChartShell data={chartData} sym={sym}>
-          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Sell yr ${hp}`,position:"top",fontSize:10,fill:"#f59e0b"}}/>
-          {cusR.breakeven&&<ReferenceLine x={cusR.breakeven} stroke="#dc2626" strokeDasharray="4 4" label={{value:"BE",position:"top",fontSize:10,fill:"#dc2626"}}/>}
+          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={labelBox(`Sell yr ${hp}`,"#f59e0b")}/>
+          {cusR.breakeven&&<ReferenceLine x={cusR.breakeven} stroke="#dc2626" strokeDasharray="4 4" label={labelBox("BE","#dc2626")}/>}
+          {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={labelBox("Paid off",T.text3)}/>}
           <Line type="monotone" dataKey="cusBuyer" name="★ Buyer" stroke={T.accent} strokeWidth={2.5} dot={false}/>
           <Line type="monotone" dataKey="cusRenter" name="★ Renter" stroke={T.green} strokeWidth={2.5} dot={false}/>
           {showWhatIf&&<Line type="monotone" dataKey="scenBuyer" name="What-If Buyer" stroke={T.purple} strokeWidth={1.5} dot={false}/>}
@@ -1243,15 +1316,15 @@ function RentVsBuyV3() {
         </ChartShell>}
 
         {chartType==="cost"&&<ChartShell data={chartData} sym={sym}>
-          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={{value:`Sell yr ${hp}`,position:"top",fontSize:10,fill:"#f59e0b"}}/>
-          {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={{value:"Paid off",position:"top",fontSize:10,fill:T.text3}}/>}
+          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={labelBox(`Sell yr ${hp}`,"#f59e0b")}/>
+          {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={labelBox("Paid off",T.text3)}/>}
           <Line type="monotone" dataKey="cusNetBuyer" name="Buyer Cost" stroke={T.accent} strokeWidth={2} dot={false}/>
           <Line type="monotone" dataKey="cusRenterCost" name="Renter Cost" stroke={T.green} strokeWidth={2} dot={false}/>
         </ChartShell>}
 
         {chartType==="assets"&&<ChartShell data={chartData} sym={sym}>
-          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2}/>
-          {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={{value:"Paid off",position:"top",fontSize:10,fill:T.text3}}/>}
+          <ReferenceLine x={hp} stroke="#f59e0b" strokeDasharray="6 4" strokeWidth={2} label={labelBox(`Sell yr ${hp}`,"#f59e0b")}/>
+          {cusP.mortgageTerm<=cusP.simYears&&<ReferenceLine x={cusP.mortgageTerm} stroke={T.text3} strokeDasharray="4 4" label={labelBox("Paid off",T.text3)}/>}
           <Line type="monotone" dataKey="cusHomeVal" name="Home Value" stroke={T.text3} strokeWidth={1.5} dot={false} strokeDasharray="4 2"/>
           <Line type="monotone" dataKey="cusBalance" name="Mortgage Balance" stroke="#dc2626" strokeWidth={1.5} dot={false}/>
           <Line type="monotone" dataKey="cusEquity" name="Home Equity" stroke={T.accent} strokeWidth={2.5} dot={false}/>
@@ -1325,7 +1398,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.7 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.9 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

@@ -68,7 +68,7 @@
       .tut { font-size:12px; }
       input[type=number],select { font-size:16px; min-height:44px; }
       button { min-height:44px; }
-      button.compact-btn { min-height:0; }
+      button.compact, input.compact, select.compact { min-height:0; }
     }
     @media(max-width:480px){
       body { font-size:14px; overflow-x:hidden; }
@@ -838,7 +838,7 @@ const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params
   const presetSelect = presetMode==="select"
     ? <select style={{...S.select,fontSize:10}} value={presetId} onChange={e=>onPreset(e.target.value)}>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>
     : <select style={{...S.select,fontSize:10}} value="" onChange={e=>{if(e.target.value)onPreset(e.target.value);}}><option value="">Load preset…</option>{PRESETS.map(p=><option key={p.id} value={p.id}>{p.name}</option>)}</select>;
-  const closeBtn = onClose&&<button onClick={onClose} className="compact-btn" style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>;
+  const closeBtn = onClose&&<button onClick={onClose} className="compact" style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>;
   return <div style={S.panel}>
     <div style={{...S.pH,background:active?colorBg:T.muted,color:active?color:T.text3,borderBottom:`2px solid ${active?color:T.border}`,transition:"all 200ms"}}>
       <div style={{textAlign:"center",marginBottom:8}}>{titleSpan}</div>
@@ -1039,7 +1039,7 @@ function RentVsBuyV3() {
               const sep = (k==="dark");
               return <React.Fragment key={k}>
                 {sep&&<div style={{width:1,height:14,background:T.border,margin:"0 2px"}}/>}
-                <button onClick={()=>setTheme(k)} aria-label={`${v.name} theme`} aria-pressed={active} className="compact-btn" style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:v.accent,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
+                <button onClick={()=>setTheme(k)} aria-label={`${v.name} theme`} aria-pressed={active} className="compact" style={{width:active?"auto":20,height:20,borderRadius:10,border:active?`2px solid ${v.accent}`:`2px solid ${T.border}`,background:active?v.card:v.accent,cursor:"pointer",fontSize:9,fontWeight:600,color:active?v.text1:"transparent",padding:active?"0 7px":0,display:"flex",alignItems:"center",justifyContent:"center",transition:"all 200ms",overflow:"hidden"}}>{active?v.name:""}</button>
               </React.Fragment>;
             })}
           </div>
@@ -1188,13 +1188,13 @@ function RentVsBuyV3() {
               <span style={{fontSize:11,color:T.text2}}>1 {cur} = $</span>
               <input type="number" inputMode="decimal" autoComplete="off" step={0.01} min={0.0001} value={fxRate} aria-label={`Exchange rate ${cur} to USD`} title={`Default: ${CURRENCIES[cur]?.rate} (Apr 2026)`} style={{width:70,padding:"3px 6px",border:`1px solid ${T.border}`,borderRadius:4,fontSize:11,fontFamily:THEME_MONO,textAlign:"right"}} onChange={e=>{const v=parseFloat(e.target.value);if(!isNaN(v)&&v>0)setFxOverride(v);}}/>
               <span style={{fontSize:11,color:T.text2}}>USD</span>
-              {fxOverride!=null&&<button className="compact-btn" style={{fontSize:13,color:T.accent,background:"none",border:"none",cursor:"pointer",padding:"0 2px",lineHeight:1}} title="Reset to default" onClick={()=>setFxOverride(null)}>↺</button>}
+              {fxOverride!=null&&<button className="compact" style={{fontSize:13,color:T.accent,background:"none",border:"none",cursor:"pointer",padding:"0 2px",lineHeight:1}} title="Reset to default" onClick={()=>setFxOverride(null)}>↺</button>}
             </>}
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(260px, 100%), 1fr))",gap:16}}>
             <div>
-              {!linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select style={{...S.select,flex:1,border:`1px solid ${T.accent}66`,background:`${T.accent}08`}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select><button className="compact-btn" style={{cursor:"pointer",background:`${T.accent}1A`,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:T.accent,flexShrink:0}} onClick={()=>setLinked(true)} title="Lock A to national">🔗</button></div>}
-              {linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select disabled style={{...S.select,flex:1,opacity:0.5,cursor:"not-allowed"}}><option>National Average (linked)</option></select><button className="compact-btn" style={{cursor:"pointer",background:T.accent,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}} onClick={()=>setLinked(false)} title="Unlock to select a metro">🔗</button></div>}
+              {!linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select style={{...S.select,flex:1,border:`1px solid ${T.accent}66`,background:`${T.accent}08`}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select><button className="compact" style={{cursor:"pointer",background:`${T.accent}1A`,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:T.accent,flexShrink:0}} onClick={()=>setLinked(true)} title="Lock A to national">🔗</button></div>}
+              {linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select disabled style={{...S.select,flex:1,opacity:0.5,cursor:"not-allowed"}}><option>National Average (linked)</option></select><button className="compact" style={{cursor:"pointer",background:T.accent,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}} onClick={()=>setLinked(false)} title="Unlock to select a metro">🔗</button></div>}
               <VerdictBox advantage={locAH?.advantage} homePrice={locAR.homePrice} holdYr={hp} sym={sym} breakeven={locAR.breakeven} params={locAP}/>
             </div>
             <div>
@@ -1208,7 +1208,7 @@ function RentVsBuyV3() {
       {/* YOUR ASSUMPTIONS + WHAT-IF */}
       <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
         <div style={{flex:"2 1 320px",minWidth:0}}>
-        {(()=>{const cusKeys=Object.keys(cusOvr);const isEdited=cusKeys.length>0&&!cusPresetId;const presetName=cusPresetId?PRESETS.find(p=>p.id===cusPresetId)?.name:null;const title=presetName?`Your Assumptions (${presetName})`:isEdited?"Your Assumptions (edited)":"Your Assumptions";return <ScenarioPanel title={title} color={presetName?T.purple:isEdited?T.accent:T.text2} colorBg={presetName?`${T.purple}0F`:`${T.accent}0F`} overrides={cusOvr} setOverrides={v=>{setCusPresetId(null);setCusOvr(v);}} result={cusR} params={cusP} holdYr={hp} sym={sym} beSens={beSens} presetMode="load" onPreset={id=>{setCusPresetId(id);setCusOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} extraHeader={<button onClick={share} title="Share all inputs as URL" style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize:10,fontWeight:700}}>{copied?"Copied!":"Share"}</button>}/>;})()}
+        {(()=>{const cusKeys=Object.keys(cusOvr);const isEdited=cusKeys.length>0&&!cusPresetId;const presetName=cusPresetId?PRESETS.find(p=>p.id===cusPresetId)?.name:null;const title=presetName?`Your Assumptions (${presetName})`:isEdited?"Your Assumptions (edited)":"Your Assumptions";return <ScenarioPanel title={title} color={presetName?T.purple:isEdited?T.accent:T.text2} colorBg={presetName?`${T.purple}0F`:`${T.accent}0F`} overrides={cusOvr} setOverrides={v=>{setCusPresetId(null);setCusOvr(v);}} result={cusR} params={cusP} holdYr={hp} sym={sym} beSens={beSens} presetMode="load" onPreset={id=>{setCusPresetId(id);setCusOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} extraHeader={<button onClick={share} className="compact" title="Share all inputs as URL" style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize:10,fontWeight:700}}>{copied?"Copied!":"Share"}</button>}/>;})()}
         </div>
         <div style={{flex:"1 1 200px",minWidth:0,maxWidth:showWhatIf?undefined:200}}>
         {showWhatIf?<ScenarioPanel title="What-If" color={T.purple} colorBg={`${T.purple}0F`} overrides={scenOvr} setOverrides={setScenOvr} result={scenR} params={scenP} holdYr={hp} sym={sym} presetMode="select" presetId={presetId} onPreset={id=>{setPresetId(id);setScenOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} onClose={()=>setShowWhatIf(false)}/>
@@ -1278,7 +1278,7 @@ function RentVsBuyV3() {
             else if(diffPct<0){verdictText=`${Math.abs(diffPct*100).toFixed(0)}% below → renting favored`;verdictColor=T.green;}
             else{verdictText=`${(diffPct*100).toFixed(0)}% above → buying favored`;verdictColor=T.accent;}
             return <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${T.border}60`,fontSize:11,color:T.text2,lineHeight:1.5}}>
-              📐 <strong style={{color:T.text1}}>Felix 5% rule:</strong> break-even rent ~{ff(felixBE)}/mo · Yours {ff(userRent)}/mo <span style={{color:verdictColor,fontWeight:600}}>({verdictText})</span>
+              <strong style={{color:T.text1}}>Felix 5% rule:</strong> break-even rent ~{ff(felixBE)}/mo · Yours {ff(userRent)}/mo <span style={{color:verdictColor,fontWeight:600}}>({verdictText})</span>
               <div style={{fontSize:10,color:T.text3,marginTop:2}}>Heuristic only — simulation above accounts for appreciation, taxes, and your discipline. <span onClick={()=>{setGuideTab("method");if(guideRef.current){guideRef.current.open=true;setTimeout(()=>{guideRef.current.scrollIntoView({behavior:"smooth",block:"start"});setMethodHighlight("felix");setTimeout(()=>setMethodHighlight(null),3000);},50);}}} style={{color:T.accent,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>What is Felix?</span></div>
             </div>;
           })()}
@@ -1300,7 +1300,7 @@ function RentVsBuyV3() {
           <div style={{fontSize:11,color:T.text3,marginTop:4}}>{CHARTS[chartType]?.sub}</div>
           <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:4,marginTop:6,fontSize:11,color:T.text2}}>
             <span>Simulate</span>
-            <input type="number" inputMode="numeric" autoComplete="off" value={personal.simYears} min={5} max={100} step={1} style={{...S.input,width:45,fontSize:11,padding:"3px 4px",textAlign:"center"}} onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v))setPersonal(prev=>clampPersonal({...prev,simYears:v}));}}/>
+            <input type="number" inputMode="numeric" autoComplete="off" className="compact" value={personal.simYears} min={5} max={100} step={1} style={{...S.input,width:45,fontSize:11,padding:"3px 4px",textAlign:"center"}} onChange={e=>{const v=parseInt(e.target.value);if(!isNaN(v))setPersonal(prev=>clampPersonal({...prev,simYears:v}));}}/>
             <span>years</span>
           </div>
         </div>

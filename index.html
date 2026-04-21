@@ -840,20 +840,12 @@ const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params
   const closeBtn = onClose&&<button onClick={onClose} style={{background:"none",border:"none",color:active?color:T.text3,cursor:"pointer",fontSize:14,padding:"0 2px",lineHeight:1}} title="Hide What-If panel">✕</button>;
   return <div style={S.panel}>
     <div style={{...S.pH,background:active?colorBg:T.muted,color:active?color:T.text3,borderBottom:`2px solid ${active?color:T.border}`,transition:"all 200ms"}}>
-      {extraHeader ? <>
-        <div style={{textAlign:"center",marginBottom:8}}>{titleSpan}</div>
-        <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,flexWrap:"wrap"}}>
-          {extraHeader}
-          {presetSelect}
-          {closeBtn}
-        </div>
-      </> : <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
-        {titleSpan}
-        <div style={{display:"flex",alignItems:"center",gap:4}}>
-          {presetSelect}
-          {closeBtn}
-        </div>
-      </div>}
+      <div style={{textAlign:"center",marginBottom:8}}>{titleSpan}</div>
+      <div style={{display:"flex",justifyContent:"center",alignItems:"center",gap:8,flexWrap:"wrap"}}>
+        {extraHeader}
+        {presetSelect}
+        {closeBtn}
+      </div>
     </div>
     <div style={S.pB}>
       <VerdictBox advantage={hd?.advantage} homePrice={result.homePrice} holdYr={holdYr} sym={sym} breakeven={result.breakeven} params={params}/>
@@ -1067,7 +1059,7 @@ function RentVsBuyV3() {
       <details ref={guideRef} id="guide-section" style={{...S.card,padding:0}}>
         <summary style={{padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
           <span className="disclosure-icon" style={{fontSize:13,color:T.text2,lineHeight:1}}>▶</span>
-          <div style={{fontSize:13,fontWeight:600,color:T.accent}}>Guide, FAQ & Methodology <span style={{fontSize:10,fontWeight:400,color:T.text3}}>— Open source · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent}} onClick={e=>e.stopPropagation()}>GitHub</a></span></div>
+          <div style={{fontSize:13,fontWeight:600,color:T.accent}}>Guide <span style={{fontSize:10,fontWeight:400,color:T.text3}}>— Open source · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent}} onClick={e=>e.stopPropagation()}>GitHub</a></span></div>
         </summary>
         <div style={{borderTop:`1px solid ${T.border}`}}>
           <div style={{display:"flex",gap:0,borderBottom:`1px solid ${T.border}`,padding:"0 20px",flexWrap:"wrap"}}>

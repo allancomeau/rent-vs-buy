@@ -209,6 +209,7 @@ Merges country defaults, metro overrides, personal inputs into flat parameter ob
 - Never serve without verification script
 - New React hooks must be added to destructuring on line ~87
 - The assembled `index.html` is the single source of truth
+- **Update CHANGELOG when a version is feature-complete, not when shipped.** Feature-complete = edits stopped and scope committed. Shipping is Allan's async step. Keeping the trigger at feature-complete prevents undocumented version stacking and survives session-handoff context loss.
 
 ---
 
@@ -241,6 +242,7 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.5 | Style/Structure/Language | Banner→Guide summary, Share→panel header, verdict split into two widgets, confidence gating, hints auto-dismiss, VerdictBox KPIs |
 | v3.9.99.6 | UI/UX Polish | Location merged into Your Situation, chart dropdown as title, Sim Length moved, tutorial toggle below themes |
 | v3.9.99.7 | SEO/Webdesign | theme-color, favicon, apple-touch-icon, LICENSE link fix, savings hint breakdown |
+| v3.9.99.8 | Math & Rigor | Input boundary hardening (`clampPersonal`), Felix 5% rule inline cross-check + Methodology note, "What is Felix?" scroll-and-highlight pattern, renters insurance removed from default engine calc |
 
 ---
 
@@ -254,6 +256,13 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 - [ ] **Input boundary hardening** — reject `mortgageTerm ≤ 0`, enforce `downPct ∈ [0,1]`, clamp extreme values that currently produce `Infinity` or `NaN`
 
 ### v3.9.99.9 — UX & Pre-v4 Polish
+- [ ] **Post-deploy validation checklist (before v4):**
+  - [ ] Confirm `inputMode="decimal"` / `"numeric"` show correct iOS keyboard (can't test in DevTools — requires actual device)
+  - [ ] Confirm `autoComplete="off"` suppresses browser autofill on all number inputs
+  - [ ] Confirm "Paid off" label renders visibly on Net Worth chart with high-advantage scenarios
+- [ ] **FX converter inline next to country dropdown** — Currently renders as a separate card between Confidence and Chart; proposed move into the LOCATION header flex row (conditional on `cur !== "USD"`) for conceptual co-location with country choice. Use `flexWrap:"wrap"` for mobile graceful-wrap, replace "Reset" text button with `↺` icon, move "Default: X.XX (Apr 2026)" footnote into input `title` attribute.
+- [ ] **Table header glossary pattern** — Replace the 15 in-place `<Tip>` tooltips in the data-table header row with a reusable `<GlossaryLink term=.../>` component that jumps to a new "Table Columns" subsection in the Methodology tab and flashes the definition via the `methodHighlight` pattern from v3.9.99.8. Fixes current visual overlap where tooltips span across narrow table cells. Single-source-of-truth for column definitions lives in Methodology.
+- [ ] **Collapse-indicator affordance on `<details>` sections** — The Guide section uses native HTML `<details>`/`<summary>` but renders the summary as plain centered text with no visible arrow, +/−, or chevron. Entire header is already clickable (good), but the affordance isn't discoverable. Add a visible minimize/expand icon alongside the existing full-header click target — don't replace the click target, just signal it's interactive. Apply the same pattern to any other `<details>` sections we add.
 - [ ] **`inputmode="decimal"` + `autocomplete="off"` pass** — mobile keyboard optimization across all number inputs
 - [ ] **Table math traceability** — `TABLE_TIPS` upgraded from one-sentence prose to formula + worked example ("Home value − Mortgage balance | e.g., $500K − $300K = $200K")
 - [ ] **"Show values / Show YoY change" toggle** above table — prominent, not subtle; flips every cell between absolute and year-over-year delta
@@ -262,13 +271,15 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 - [ ] **Print stylesheet** — `@media print` basics so dark themes don't burn ink
 - [ ] **Static mobile audit findings applied** — static code pass produces issue list, targeted screenshots validate anything uncertain
 
-### v4.0 — Budget-First Revisit & Modes
-- [ ] **Standard vs Expert mode toggle** — Standard mode keeps current UX (target audience: first-time buyer, ≤10 inputs). Expert mode unlocks SALT cap detail, AMT, NIIT, cost-basis line items (closing-cost capitalization per audit item #8), closing-cost breakdown, rental-income-if-moved-out, with a warning that increased customization doesn't necessarily increase accuracy.
-- [ ] **Budget-first input mode** — validated closed-form formula (`P&I = (B − D×m) / (1 + k×m)`) preserved in research. Needs a UX that makes "same budget → different home prices across locations" legible rather than confusing.
-- [ ] **HOA input** — currently a documented omission; users adjust budget to compensate.
-- [ ] **Lock/unlock discipline reverse-solve** — user enters a dollar amount, engine derives implied discipline %.
-- [ ] **`otherItemized` full engine removal** — UI already gone; engine param stays at 0 pending Expert mode decision.
+### v4.0 — Input Architecture Rework + Mode Toggle
+- [ ] **Budget-first architecture (beginner mode):** Three primary inputs — **Rent Budget** (standalone, no link), **Monthly Buy Budget** (all-in: P&I + tax + ins + maint + PMI), **Savings Budget** (all-in: down payment + closing costs). Engine derives home price via closed-form from (S, M, t, k, A): `homePrice = (M + S·A − PMI) / ((1+k)·A + t/12)`. Addresses "closing costs ambushed me" user feedback — current UI makes buyers feel costs are hidden.
+- [ ] **Mo.Investments as optional third-lane input** — Rendered next to Discipline slider as derived readout by default (`(Buy − Rent) × Discipline`). Unlock icon exposes direct $ input. When unlocked: Discipline auto-snaps to 100% but remains user-adjustable (covers "I invest $500 but miss a month a year = 92%"). Re-linking restores prior Discipline value. Inflation-adjusted by default (matches real household contribution behavior).
+- [ ] **Standard vs Expert mode toggle** — Beginner mode: ~6 inputs (rent, buy, savings, discipline, mortgage term, sell year). Expert mode unlocks: component overrides (P&I, tax, ins, maint individually); Rent/Buy link toggle returns for apples-to-apples; SALT cap, AMT, NIIT, `otherItemized`, rental-income-if-moved-out; Mo.Investments inflation adjustment toggle (nominal vs real); closing-cost capitalization to basis (audit item #8); **extra monthly mortgage payment input** (goes straight to principal, shortens effective term, adjusts payoff marker — poor man's refinance precursor to the v5+ refi feature). Along with extra-payments, surface a **teachable prepay-vs-invest callout** (Felix-style heuristic, not prescriptive): "Adding $X/mo extra pays off the mortgage Y years early, saves $Z in total interest. That same $X/mo invested at [engine's invest return] would grow to $W. Prepaying is a certain [mortgage rate]% return; investing is an expected [invest return]% with volatility." Transparent, non-prescriptive, mirrors Felix's design philosophy. Warning on toggle: "Adding detail doesn't always improve accuracy."
+- [ ] **Expert-mode clamp relaxation** — Hard clamps (from v3.9.99.8) stay on. In Expert mode, widen the *soft* amber-OOB ranges so expert users see fewer warnings for unusual-but-valid values (e.g., 50-year hold, 90% discipline).
 - [ ] **Full PMI engine integration** — currently display-only estimate.
+- [ ] **`otherItemized` full engine removal or Expert-mode surface** — UI already removed in v3.9.98; engine param still at 0. Either delete fully or wire into Expert mode.
+- [ ] **`renterIns` — decide fate** — zeroed in v3.9.99.8 with architecture preserved. Either delete fully or resurface as an Expert-mode optional add.
+- [ ] **Validation risk:** "Same budget → different home price per location" was the failure mode that killed the v3.9.99 budget-first attempt. New framing (total budget, not P&I) should defuse this because total housing cost naturally varies by location, but one fresh-tester walk-through is required before commit.
 
 ### v4.1+ — Enhanced Interactivity
 - [ ] FAQ accordion
@@ -276,6 +287,7 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 - [ ] Cross-link to brother's HPC tool
 
 ### Future (v5+)
+- [ ] **Cash flow / scenario-analysis tab** — Granular cash-flow breakdown beyond rent/buy/invest. Scenario modeling for life events: car purchases, long-term care, inheritance, job change, kids. Out of scope for the core rent-vs-buy decision but natural extension of the financial-planning shape.
 - [ ] Refinance toggle
 - [ ] HELOC toggle
 - [ ] RNG / Monte Carlo simulation

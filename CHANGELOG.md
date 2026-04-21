@@ -4,6 +4,105 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v3.9.99.7 — April 2026
+
+### SEO / Webdesign
+- **Theme-color meta + favicon:** `<meta name="theme-color" content="#2563eb"/>` colors the mobile browser URL bar. `favicon.png` + `apple-touch-icon` link tags added. PNG pushed to repo root.
+- **LICENSE link fixed:** `LICENSE.txt` → `LICENSE` across 3 references (matches GitHub's actual filename).
+- **Savings hint breakdown:** "19% down + $12K closing = $91K upfront · renter invests same" — explicit closing-cost component addresses feedback that the renter's starting investment felt like it appeared from nowhere.
+- **OG tags + JSON-LD confirmed:** WebApplication schema, canonical URL, Twitter card, OG image all in place.
+
+---
+
+## v3.9.99.6 — April 2026
+
+### UI/UX Polish
+- **Location merged into Your Situation card:** single unified widget, no separate panel. Country dropdown sits in a centered "LOCATION · [Country]" header row with `·` separator. Metro selects + verdict boxes below a 2px border-top separator from the financial snapshot above.
+- **Tutorial toggle on own line below themes:** no longer inside Guide summary. Themes solo centered row, tutorial toggle solo row below.
+- **Guide summary condensed:** two centered lines — "Guide, FAQ & Methodology" / "Open source · GitHub".
+- **Chart dropdown is the title:** 16px, centered, accent-bordered (`2px solid T.accent+44` with `T.accent+08` background). Dropdown itself serves as the chart title.
+- **Sim Length moved to chart widget:** no longer a personal input. Lives alongside the chart where users look for it when interpreting long-horizon results.
+- **Link buttons themed:** 1px accent border when linked, matches the Location link button style. Consistent clickable affordance.
+
+---
+
+## v3.9.99.5 — April 2026
+
+### Style, Structure, Language Polish
+- **Banner → Guide summary:** dismissible open-source banner removed. "Open source · nothing hidden · GitHub" absorbed into Guide summary. One less element above the fold.
+- **Share button → Your Assumptions panel header:** via `extraHeader` prop on `ScenarioPanel`. Themes solo centered in page header.
+- **Savings hint ordering fixed:** "Buyer puts X% down · renter invests $Y" now matches the "Savings / Down Payment" label ordering.
+- **All disclaimers link to Legal + MIT License:** header, verdict, and Sources tab disclaimers all link to `legal_disclaimers.md` + `LICENSE`.
+- **Verdict split into two widgets:**
+  - **Verdict card** — winner headline centered at top, winner/loser details, linked disclaimer.
+  - **Confidence & Warnings card** — separate widget with theme-aware colors (green when robust, amber when fragile or 1 warning, red when highly dependent or 2+ warnings). Tax notes, input warnings, large-advantage explainer all live here.
+- **Confidence gating:** strong verdict (≥15% of home value) caps at 🟢. Prevents the contradiction where "Strong Rent +$68K" paired with "🔴 Highly assumption-dependent."
+- **FX converter in own minimal card:** only renders for non-USD countries.
+- **VerdictBox clickable KPIs:** click expands to show Break-even · Appr · Tax · Spread (invest − mortgage). No auto-dismiss.
+- **Financial snapshot collapsible:** "Show details / Hide details" toggle. Home price + country median always visible; PMI threshold, income check, transaction costs hide by default.
+- **Hints auto-dismiss at 8s:** `setTimeout` on `Tip` `show` state. Verdict KPIs exempt.
+- **Consolidates .3 and .4 bulk bumps:** micro-iterations between .2 and .5 folded here for changelog clarity.
+
+---
+
+## v3.9.99.2 — April 2026
+
+### UI/UX Batch
+- **Header title:** "Should I Rent or Buy?" → **"Rent vs Buy"**. OG title updated to match. Shorter, more legible on mobile.
+- **Guide CTA retitled:** "Tap here for the Tutorial, FAQ, or Guide" with "Methodology & Sources" subtitle. Tutorial toggle moved into the Guide summary bar with `stopPropagation` so clicking it doesn't open/close the Guide.
+- **Verdict restructure:** winner headline centered at top — "Buying wins by 30.1% ROI (0.5%/yr)". Winner's details listed first, loser second. Color-coded by winner (accent for buyer, green for renter).
+- **Sensitivity legend simplified:** removed "All variables adjusted by the same scale" text. Legend: "◀ −% buying renting +% ▶".
+- **Your Assumptions preset tracking:** shows "Your Assumptions (Low Rate Era)" in purple when a preset is loaded. Clears immediately when any input changes. No continuous re-comparison against preset defaults.
+- **Location metro dropdown greyed when linked:** replaces the "🔗 National avg. Click 🔗 for two metros." text. Link button inline next to metro dropdown. Visually aligned with budget UI.
+- **Sub-callouts restored under budget inputs:** "Extra invested" under Rent Payment, "Buyer total" under Mortgage P&I.
+
+---
+
+## v3.9.99.1 — April 2026
+
+### Micro-polish
+- **`intro-glow` CSS animation:** 3s box-shadow pulse around tutorial/theme controls on load to aid discoverability.
+- **`og:image` meta:** pointing at `preview.png` for LinkedIn/Twitter card rendering.
+- **Rent vs P&I amber warning wording:** clarified to "Rent budget and mortgage P&I differ by more than 10% — comparison may not reflect equal affordability."
+
+---
+
+## v3.9.99 — April 2026
+
+### What-If Overhaul
+- **Scenario panel → What-If:** renamed and hidden by default. Dashed-border placeholder with "+ Add What-If" expands into the full panel. Two-panel default layout (Location + Your Assumptions) for first-time users.
+- **Custom panel → Your Assumptions:** rename reflects role — not a "custom override" of a reference, it IS the user's scenario.
+- **What-If narrow right column when expanded:** `flex: 1 1 200px`, capped at 200px when collapsed. Wraps below on mobile via `flexWrap: wrap`.
+- **Color logic flipped:** Location is now the neutral reference (muted gray), Your Assumptions is the primary interactive panel (accent blue, or purple when a preset is active), What-If keeps purple.
+- **Engine `startRent` pass-through:** `buildParams` now forwards `startRent` from `personal` rather than computing it inside `simulate`. Enables rent independent from P&I.
+- **Three-panel → two-panel default:** addresses UX report's progressive-disclosure principle. Cognitive load for first-time users reduced.
+
+---
+
+## v3.9.98 — April 2026
+
+### Your Situation Overhaul
+- **`Monthly Payment` split into `Rent Payment` + `Mortgage P&I`:** two inputs with 🔗 link toggle. Linked by default (apples-to-apples comparison). Unlinked triggers >10% amber warning if values diverge significantly.
+- **Savings / Down Payment label:** clarifies buyer uses this for down payment, renter invests the same total (down + closing). Hint renders "X% down · renter invests $Y".
+- **Investment Discipline default: 75% → 65%:** middle of Bernstein & Koudijs (QJE 2024) 50–80% realistic range. More honest starting point — users see realistic numbers on load rather than near-perfect. Slider 30–80%, tip standardized to "50–80% realistic".
+- **`Other Itemized` removed from UI:** irrelevant to target audience (first-time buyers on standard deduction). Engine param stays at 0 (no functional change). Full engine removal deferred to v4.0.
+- **Amber warnings on personal inputs:** mortgage term outside 15–30yr, sell year <3 or >30, discipline >80% or <40% all trigger amber border + "Outside typical range".
+- **Scope bug fix:** buyer-blurb IIFE was referencing `hp2`, `ln`, `pmt` from a sibling IIFE — would have white-screened on Babel compile. Each IIFE now defines its own variables.
+- **Backward-compatible shared URLs:** old `monthlyPayment` query param maps to both `rentBudget` and `buyBudget`.
+- **Budget-first closed-form formula explored, reverted:** `P&I = (B − D×m) / (1 + k×m)` validated but reverted — same total budget produced different derived home prices across locations, which confused testers. Preserved in research doc for future v4 consideration.
+
+---
+
+## v3.9.97 — April 2026
+
+### Bug Fixes, CSS Touch-Ups, Chart Confirmation
+- **Sensitivity chart bar color/label alignment fixed:** bars now colored by winner (blue = buying wins, green = renting wins) independently per side, not by direction of change. Previous logic let the "same" variable flip colors mid-chart depending on whether its ± delta favored buying or renting.
+- **PMI consistency across buyer callouts:** two separate places rendered buyer's true monthly cost — one included PMI, one didn't. Unified both to include PMI estimate.
+- **Chart consolidation from v3.9.96 validated:** 4-chart dropdown structure stable. No regressions from demoting the previous chart types.
+- **CSS minor touch-ups:** slider thumb glow, input border hover states, panel header borderRadius.
+
+---
+
 ## v3.9.96 — April 2026
 
 ### UX Updates & Chart Consolidation

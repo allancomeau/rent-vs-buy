@@ -855,10 +855,12 @@ const accordionToggle = (e) => {
   parent.querySelectorAll(":scope > details").forEach(d => { if (d !== e.target) d.open = false; });
 };
 
-// Reset behavior: when a <details> closes, force-close all nested <details> inside it.
-// Used on the outer Guide so reopening it returns Glossary subsections to their collapsed default state.
+// Reset behavior: when a <details> opens, force-close all nested <details> inside it.
+// Fires on open rather than close so the browser's freshly-laying-out-visible-content pass sees the collapsed state.
+// (Firing on close caused a WebKit layout-cache bug where the next reopen reserved stale expanded-height space.)
+// Used on the outer Guide so every reopen starts from a known collapsed state for the Glossary subsections.
 const resetNestedDetails = (e) => {
-  if (e.target.open) return;
+  if (!e.target.open) return;
   e.target.querySelectorAll("details").forEach(d => { d.open = false; });
 };
 

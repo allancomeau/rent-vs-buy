@@ -736,7 +736,7 @@ const buildS = (t) => ({
   card:{background:t.card,border:`1.5px solid ${t.text3}44`,borderRadius:12,padding:16,boxShadow:t.shadow,marginBottom:16},
   sTitle:{fontSize:11,fontWeight:600,textTransform:"uppercase",letterSpacing:"0.06em",color:t.text2,marginBottom:10,paddingBottom:6,borderBottom:`2px solid ${t.border}`,textAlign:"center"},
   inputRow:{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4,gap:6},
-  label:{fontSize:12,fontWeight:500,color:t.text1,flex:1},
+  label:{fontSize:12,fontWeight:500,color:t.text1,flex:1,minWidth:0,overflowWrap:"break-word"},
   input:{width:84,padding:"5px 8px",border:`1px solid ${t.border}`,borderRadius:6,fontSize:13,fontWeight:500,textAlign:"right",fontFamily:THEME_MONO,color:t.text1,background:t.card},
   inputLock:{width:84,padding:"5px 8px",border:`1px solid ${t.border}`,borderRadius:6,fontSize:13,fontWeight:500,textAlign:"right",fontFamily:THEME_MONO,color:t.text3,background:t.muted},
   hint:{fontSize:10,color:t.text3,marginTop:-2,marginBottom:4},
@@ -796,7 +796,7 @@ const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,
 const VerdictBox = ({advantage,homePrice,holdYr,sym,breakeven,params}) => {
   const v=verdictLabel(advantage,homePrice);
   const [showDet,setShowDet]=useState(false);
-  return <div style={{textAlign:"center",padding:"8px 0",background:advantage>=0?`${T.accent}0F`:`${T.green}0F`,borderRadius:8,border:`2px solid ${v.color}`,marginBottom:10,cursor:"pointer"}} onClick={()=>setShowDet(!showDet)} title="Click for details">
+  return <div style={{textAlign:"center",padding:"8px 0",background:advantage>=0?`${T.accent}0F`:`${T.green}0F`,borderRadius:8,border:`2px solid ${v.color}`,marginBottom:10,cursor:"pointer"}} onClick={()=>setShowDet(!showDet)} title="Tap for details">
     <div style={{fontSize:18,fontWeight:800,fontFamily:THEME_MONO,color:v.color,letterSpacing:"-0.02em"}}>{v.text.toUpperCase()}</div>
     <div style={{fontSize:10,color:T.text2,fontWeight:500}}>{advantage>=0?"Buy":"Rent"} +{fmtFullC(Math.abs(advantage),sym)} @ Yr {holdYr}</div>
     {showDet&&<div style={{fontSize:10,color:T.text3,marginTop:4,lineHeight:1.6,padding:"0 8px"}}>
@@ -823,6 +823,20 @@ const labelBox = (text, color) => ({viewBox}) => {
     <text x={x} y={y + 11} fontSize={10} fill={color} textAnchor="middle" fontWeight={600}>{text}</text>
   </g>;
 };
+
+// Shared style for link/unlink toggle buttons. Reads T at call time for theme-awareness.
+// Semantics: linked = accent tint (active), unlinked = muted/transparent (inactive).
+// flexShrink:0 is a no-op in non-flex contexts (Rent/Buy inline span) and prevents squish in flex rows (Location).
+const linkBtnStyle = (linked) => ({
+  cursor:"pointer",
+  color: linked ? T.accent : T.text3,
+  fontSize: 10,
+  background: linked ? `${T.accent}1A` : "transparent",
+  borderRadius: 4,
+  padding: "1px 4px",
+  border: `1px solid ${linked ? T.accent : T.border}`,
+  flexShrink: 0,
+});
 
 const ChartShell = ({data,sym,children}) => (
   <ResponsiveContainer width="100%" height={360}>
@@ -1110,7 +1124,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>The core premise:</strong> You set a monthly Rent Payment and Mortgage P&I (linked by default for an apples-to-apples comparison). The buyer's home price is derived from P&I + down payment. Total buyer cost includes tax, insurance, and maintenance on top. The renter invests the down payment and any monthly surplus.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Panels:</strong> <em>Location</em> = real locked market data for two locations. <em>Your Assumptions</em> = fully editable sandbox. <em>What-If</em> (optional) = preset market conditions (12 options). All use the same simulation engine.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Snapshots, not transitions:</strong> Each year is an independent "if I sold now" evaluation. Year 15 does NOT model selling then renting — it shows total wealth if you liquidated at that point.</p>
-              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Quick start:</strong> Set your "Rent Payment" and "Mortgage P&I" (linked by default), your savings as "Down Payment," and how long you'd stay. Click any <span style={{color:T.accent,fontWeight:700}}>?</span> for details.</p>
+              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Quick start:</strong> Set your "Rent Payment" and "Mortgage P&I" (linked by default), your savings as "Down Payment," and how long you'd stay. Tap any <span style={{color:T.accent,fontWeight:700}}>?</span> for details.</p>
             </>}
             {guideTab==="method"&&<>
               <p><strong style={{color:T.text1}}>Payment-First Architecture:</strong> Input monthly P&I + down payment. Engine backsolves: L = M × [(1+r)^n − 1] / [r × (1+r)^n]. Home price = L + down. Rent Payment can be set independently or linked to P&I for apples-to-apples comparison.</p>
@@ -1119,7 +1133,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Symmetric Surplus Investing:</strong> BOTH buyer and renter invest surplus cash. After mortgage payoff, the buyer's freed-up cash gets invested — not ignored like in most calculators.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Geometric Returns (10%, not 12%):</strong> Volatility drag: g ≈ a − σ²/2. With σ ≈ 20%, stocks lose ~2% to compounding friction. 10% CAGR is mathematically correct for deterministic models. 12% overstates by ~50% over 30 years. (Jacquier, Kane, Marcus FAJ 2003)</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Verdict Confidence:</strong> |advantage| / home price. &lt;2% too close, &lt;5% marginal, &lt;15% moderate, ≥15% strong.</p>
-              <p style={{marginTop:8}} className={methodHighlight==="felix"?"target-highlight":""}><strong style={{color:T.text1}}>Heuristic cross-check (Felix 5% rule):</strong> The Confidence card displays break-even rent ≈ 5% of home value per year. Ben Felix (PWL Capital) aggregates property tax, maintenance, cost of capital, and net appreciation into this single number — a quick directional check against more detailed models. It's a US-calibrated shorthand; non-US markets with different tax structures, rent controls, or appreciation rates may deviate. Felix is a second opinion, not a replacement for the full simulation.</p>
+              <p id="felix" style={{marginTop:8}} className={methodHighlight==="felix"?"target-highlight":""}><strong style={{color:T.text1}}>Heuristic cross-check (Felix 5% rule):</strong> The Confidence card displays break-even rent ≈ 5% of home value per year. Ben Felix (PWL Capital) aggregates property tax, maintenance, cost of capital, and net appreciation into this single number — a quick directional check against more detailed models. It's a US-calibrated shorthand; non-US markets with different tax structures, rent controls, or appreciation rates may deviate. Felix is a second opinion, not a replacement for the full simulation.</p>
             </>}
             {guideTab==="limits"&&<>
               <p style={{fontWeight:600,color:T.text1,fontSize:14,marginBottom:8}}>Full Research Reports</p>
@@ -1180,9 +1194,9 @@ function RentVsBuyV3() {
         <div style={S.sTitle}>Your Situation</div>
         <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
           <div>
-            <NumInput label={<span>Rent Payment <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,buyBudget:prev.rentBudget}));}setBudgetLinked(!budgetLinked);}} style={{cursor:"pointer",color:budgetLinked?T.accent:T.text3,fontSize:10,background:budgetLinked?`${T.accent}1A`:"transparent",borderRadius:4,padding:"1px 4px",border:`1px solid ${budgetLinked?T.accent:T.border}`}} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.rentBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("rentBudget")(v);}} step={100} prefix={sym} tip="Monthly rent you'd pay. When linked, equals mortgage P&I for apples-to-apples."/>
+            <NumInput label={<span>Rent Payment <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,buyBudget:prev.rentBudget}));}setBudgetLinked(!budgetLinked);}} style={linkBtnStyle(budgetLinked)} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.rentBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("rentBudget")(v);}} step={100} prefix={sym} tip="Monthly rent you'd pay. When linked, equals mortgage P&I for apples-to-apples."/>
             <div style={S.hint}>Extra invested: {ff(Math.round(Math.max(0,Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*(cusP.propTaxRate+cusP.insRate+cusP.maintRate)/12)-Math.round(personal.rentBudget))*personal.discipline))}/mo ({ff(Math.round(Math.max(0,Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*(cusP.propTaxRate+cusP.insRate+cusP.maintRate)/12)-Math.round(personal.rentBudget))))} surplus x {(personal.discipline*100).toFixed(0)}%)</div>
-            <NumInput label={<span>Mortgage P&I <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,rentBudget:prev.buyBudget}));}setBudgetLinked(!budgetLinked);}} style={{cursor:"pointer",color:budgetLinked?T.accent:T.text3,fontSize:10,background:budgetLinked?`${T.accent}1A`:"transparent",borderRadius:4,padding:"1px 4px",border:`1px solid ${budgetLinked?T.accent:T.border}`}} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.buyBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("buyBudget")(v);}} step={100} prefix={sym} tip="Your monthly mortgage principal and interest payment. Home price is derived from this + down payment."/>
+            <NumInput label={<span>Mortgage P&I <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,rentBudget:prev.buyBudget}));}setBudgetLinked(!budgetLinked);}} style={linkBtnStyle(budgetLinked)} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.buyBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("buyBudget")(v);}} step={100} prefix={sym} tip="Your monthly mortgage principal and interest payment. Home price is derived from this + down payment."/>
             <div style={S.hint}>Buyer total: {ff(Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*cusP.propTaxRate/12)+Math.round(cusR.homePrice*cusP.insRate/12)+Math.round(cusR.homePrice*cusP.maintRate/12))}/mo (+ {ff(Math.round(cusR.homePrice*cusP.propTaxRate/12))} tax + {ff(Math.round(cusR.homePrice*cusP.insRate/12))} ins + {ff(Math.round(cusR.homePrice*cusP.maintRate/12))} maint)</div>
           </div>
           <div><NumInput label="Savings / Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip="Your total savings. The buyer uses this as a down payment + pays closing costs. The renter invests the same total from day one." hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down + ${ff(Math.round(cusR.homePrice*cusP.closingPct))} closing = ${ff(Math.round(cusR.upfront))} upfront · renter invests same`}/><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40} hint="15 or 30yr most common"/></div>
@@ -1241,8 +1255,13 @@ function RentVsBuyV3() {
           </div>
           <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(260px, 100%), 1fr))",gap:16}}>
             <div>
-              {!linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select style={{...S.select,flex:1,border:`1px solid ${T.accent}66`,background:`${T.accent}08`}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select><button className="compact" style={{cursor:"pointer",background:`${T.accent}1A`,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:T.accent,flexShrink:0}} onClick={()=>setLinked(true)} title="Lock A to national">🔗</button></div>}
-              {linked&&<div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}><select disabled style={{...S.select,flex:1,opacity:0.5,cursor:"not-allowed"}}><option>National Average (linked)</option></select><button className="compact" style={{cursor:"pointer",background:T.accent,border:`1px solid ${T.accent}`,borderRadius:6,padding:"4px 8px",fontSize:10,fontWeight:700,color:"#fff",flexShrink:0}} onClick={()=>setLinked(false)} title="Unlock to select a metro">🔗</button></div>}
+              <div style={{display:"flex",gap:4,alignItems:"center",marginBottom:8}}>
+                {linked
+                  ? <select disabled style={{...S.select,flex:1,opacity:0.5,cursor:"not-allowed"}}><option>National Average (linked)</option></select>
+                  : <select style={{...S.select,flex:1,border:`1px solid ${T.accent}66`,background:`${T.accent}08`}} value={locAMetro||""} onChange={e=>setLocAMetro(e.target.value||null)}><option value="">National Average</option>{countryMetros.map(m=><option key={m.id} value={m.id}>{m.name}{m.state?` (${m.state})`:""}</option>)}</select>
+                }
+                <button className="compact" style={linkBtnStyle(linked)} onClick={()=>setLinked(!linked)} title={linked?"Unlock to select a metro":"Lock A to national"}>🔗</button>
+              </div>
               <VerdictBox advantage={locAH?.advantage} homePrice={locAR.homePrice} holdYr={hp} sym={sym} breakeven={locAR.breakeven} params={locAP}/>
             </div>
             <div>
@@ -1310,6 +1329,7 @@ function RentVsBuyV3() {
         const wBg=isRed?"#fef2f2":isYellow?"#fef3c7":`${T.green}0A`;
         const wBorder=isRed?"#fca5a5":isYellow?"#f59e0b":`${T.green}44`;
         return <div style={{...S.card,background:wBg,borderColor:wBorder,marginBottom:16,textAlign:"center"}}>
+          <div style={{fontSize:10,fontWeight:700,color:T.text2,textTransform:"uppercase",letterSpacing:"0.05em",marginBottom:8}}>Confidence &amp; Warnings</div>
           {insights.map((ins,i)=><div key={i} style={{fontSize:13,marginBottom:4,color:T.text1,lineHeight:1.6}}>
             {ins.icon} {ins.text}
             {ins.icon==="\uD83D\uDFE2"&&<div style={{fontSize:11,color:T.text3,marginTop:2}}>The sensitivity chart below confirms that no single variable swing exceeds your advantage.</div>}
@@ -1327,7 +1347,7 @@ function RentVsBuyV3() {
             else{verdictText=`${(diffPct*100).toFixed(0)}% above → buying favored`;verdictColor=T.accent;}
             return <div style={{marginTop:8,paddingTop:8,borderTop:`1px solid ${T.border}60`,fontSize:11,color:T.text2,lineHeight:1.5}}>
               <strong style={{color:T.text1}}>Felix 5% rule:</strong> break-even rent ~{ff(felixBE)}/mo · Yours {ff(userRent)}/mo <span style={{color:verdictColor,fontWeight:600}}>({verdictText})</span>
-              <div style={{fontSize:10,color:T.text3,marginTop:2}}>Heuristic only — simulation above accounts for appreciation, taxes, and your discipline. <span onClick={()=>{setGuideTab("method");if(guideRef.current){guideRef.current.open=true;setTimeout(()=>{guideRef.current.scrollIntoView({behavior:"smooth",block:"start"});setMethodHighlight("felix");setTimeout(()=>setMethodHighlight(null),3000);},50);}}} style={{color:T.accent,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>What is Felix?</span></div>
+              <div style={{fontSize:10,color:T.text3,marginTop:2}}>Heuristic only — simulation above accounts for appreciation, taxes, and your discipline. <span onClick={()=>{setGuideTab("method");if(guideRef.current){guideRef.current.open=true;setTimeout(()=>{const el=document.getElementById("felix");if(el)el.scrollIntoView({behavior:"smooth",block:"center"});setMethodHighlight("felix");setTimeout(()=>setMethodHighlight(null),3000);},50);}}} style={{color:T.accent,cursor:"pointer",textDecoration:"underline",fontWeight:600}}>What is Felix?</span></div>
             </div>;
           })()}
           {Math.abs(cusH?.advantage)>200000&&personal.discipline>=0.99&&<div style={{fontSize:12,color:T.text3,marginTop:6,padding:"6px 10px",background:T.muted,borderRadius:6,lineHeight:1.6}}>Why so large? At 100% discipline, the ~{((cusP.investReturn-cusP.mortgageRate)*100).toFixed(0)}% spread compounds over {hp} years. Try discipline at 70% for a reality check.</div>}
@@ -1339,7 +1359,7 @@ function RentVsBuyV3() {
       {/* FX CONVERTER — now inline in Location header (v3.9.99.12) */}
 
       {/* CHART */}
-      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net Worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Input Sensitivity"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
+      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net Worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Input Sensitivity"</strong> reveals which assumption matters most. Tap <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
       <div style={S.card}>
         <div style={{textAlign:"center",marginBottom:12}}>
           <select style={{...S.select,fontSize:16,fontWeight:700,border:`2px solid ${T.accent}44`,background:`${T.accent}08`,textAlign:"center",cursor:"pointer",color:T.text1,padding:"4px 8px"}} value={chartType} onChange={e=>setChartType(e.target.value)}>
@@ -1424,7 +1444,7 @@ function RentVsBuyV3() {
               <span style={{display:"inline-flex",alignItems:"center",gap:4}}><span style={{width:10,height:10,background:`${T.green}30`,border:`1px solid ${T.green}`,borderRadius:2,display:"inline-block"}}/>renting</span>
               <span>+% ▶</span>
             </div>
-            <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>Hover any bar for full details · % = ROI on {ff(Math.round(upf))} invested capital</div>
+            <div style={{textAlign:"center",fontSize:10,color:T.text3,marginTop:4}}>Hover any bar for full details (desktop only) · % = ROI on {ff(Math.round(upf))} invested capital</div>
           </div>;
         })()}
 
@@ -1434,7 +1454,7 @@ function RentVsBuyV3() {
             {showData?"▼ Hide":"▸ View"} Year-by-Year Data ({cusR.data.length} rows · all columns)
           </button>
           {showData && <div style={{maxHeight:400,overflowY:"auto",overflowX:"auto",marginTop:10,WebkitOverflowScrolling:"touch",contentVisibility:"auto",containIntrinsicSize:"auto 400px"}}>
-            <div style={{fontSize:11,color:T.text3,padding:"4px 4px 8px",fontStyle:"italic"}}>Hover a column header for a quick definition · click to jump to its full Glossary entry with formula and example.</div>
+            <div style={{fontSize:11,color:T.text3,padding:"4px 4px 8px",fontStyle:"italic"}}>Hover a column header for a quick definition (desktop only) · tap to jump to its full Glossary entry with formula and example.</div>
             <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><GlossaryLink term={h}>{h}</GlossaryLink></th>)}</tr></thead>
             <tbody>{cusR.data.map(d=>{const isH=d.year===hp,isBE=d.year===cusR.breakeven;return<tr key={d.year} style={{background:isH?"rgba(245,158,11,0.08)":isBE?"rgba(220,38,38,0.05)":d.year%2===0?T.muted:T.card}}>
               <td style={{...S.td,textAlign:"center",fontWeight:isH||isBE?700:500}}>{d.year}</td>
@@ -1451,7 +1471,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.12 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.13 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

@@ -764,7 +764,7 @@ const Tip = ({text, children}) => {
   if (!text) return children;
   return <div>
     <span onClick={e=>{e.preventDefault();setShow(!show);}} style={{cursor:"help"}}>
-      {children} <span style={{fontSize:10,color:T.accent,fontWeight:700}}>?</span>
+      {children}{'\u00A0'}<span style={{fontSize:10,color:T.accent,fontWeight:700}}>?</span>
     </span>
     {show&&<div style={{fontSize:11,lineHeight:1.6,color:T.bg,background:T.text1,padding:"8px 12px",borderRadius:8,marginTop:4,marginBottom:4,maxWidth:"100%",fontWeight:400}} onClick={()=>setShow(false)}>{text} <span style={{fontSize:9,color:T.text3}}>(tap to close)</span></div>}
   </div>;

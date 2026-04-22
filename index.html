@@ -662,8 +662,7 @@ const CURRENCIES = {
   SEK:{rate:0.095,name:"Swedish kronor"},CHF:{rate:1.12,name:"Swiss francs"},JPY:{rate:0.0067,name:"Japanese yen"},
   SGD:{rate:0.75,name:"Singapore dollars"},KRW:{rate:0.00073,name:"South Korean won"},
 };
-const TABLE_TIPS = {Yr:"Simulation year",Home:"Current home value (price × appreciation)",Equity:"Home value minus mortgage balance",Int:"Mortgage interest paid this year",Princ:"Principal paid this year (builds equity)",Cost:"Total buyer cost: mortgage + tax + ins + maint",TaxB:"Tax benefit from excess itemization",NetBuy:"Buyer cost after tax benefit",Rent:"Annual rent (starts = mortgage pmt, grows yearly)",RntCst:"Total renter cost: annual rent (renter's insurance assumed budgeted in rent input)",BInv:"Buyer's investment portfolio (surplus after payoff)",RInv:"Renter's portfolio (seeded with down + closing costs)",BuyW:"Buyer total: equity − sell costs − taxes + portfolio",RntW:"Renter total: portfolio − cap gains tax",Adv:"Buyer minus renter wealth. Positive = buying wins."};
-// Glossary entries for the Guide's Glossary tab. Each entry gets an anchor ID for iteration-3 jump-and-highlight.
+// Glossary entries. Each has an anchor ID used by GlossaryLink for scroll-and-flash from the data table.
 const GLOSSARY = [
   {id:"gl-yr",name:"Yr",def:"Simulation year, counted from the start of the mortgage or lease. Each row is a \"what if I stopped right now\" snapshot."},
   {id:"gl-home",name:"Home",def:"Current market value of the home in the given year.",formula:"Purchase price × (1 + appreciation)^year",ex:"$413K × 1.04^10 ≈ $611K at 4%/yr"},
@@ -1027,6 +1026,25 @@ function RentVsBuyV3() {
     navigator.clipboard?.writeText(window.location.href).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);});
   },[country,locAMetro,locBMetro,linked,scenOvr,cusOvr,personal,theme]);
 
+  // Glossary link: cursor:help + title hover = short reminder; click jumps to full entry in Guide › Glossary tab with flash highlight
+  const GlossaryLink = ({term, children}) => {
+    const entry = GLOSSARY.find(g => g.name === term);
+    if (!entry) return children;
+    const short = (entry.def.match(/^[^.]*\./) || [entry.def])[0];
+    return <span title={short} onClick={()=>{
+      setGuideTab("gl");
+      if(guideRef.current){
+        guideRef.current.open = true;
+        setTimeout(()=>{
+          const el = document.getElementById(entry.id);
+          if(el) el.scrollIntoView({behavior:"smooth",block:"center"});
+          setMethodHighlight(entry.id);
+          setTimeout(()=>setMethodHighlight(null), 3000);
+        }, 50);
+      }
+    }} style={{cursor:"help"}}>{children}</span>;
+  };
+
   const chgCountry=nc=>{
     setCountry(nc);setLocAMetro(null);setLocBMetro(DEFAULT_METROS[nc]||"");
     setScenOvr({});setCusOvr({});setPresetId("ref");setFxOverride(null);
@@ -1318,7 +1336,7 @@ function RentVsBuyV3() {
         </div>;
       })()}
 
-      {/* FX CONVERTER — now inline in Location header (v3.9.99.11) */}
+      {/* FX CONVERTER — now inline in Location header (v3.9.99.12) */}
 
       {/* CHART */}
       {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
@@ -1416,7 +1434,8 @@ function RentVsBuyV3() {
             {showData?"▼ Hide":"▸ View"} Year-by-Year Data ({cusR.data.length} rows · all columns)
           </button>
           {showData && <div style={{maxHeight:400,overflowY:"auto",overflowX:"auto",marginTop:10,WebkitOverflowScrolling:"touch",contentVisibility:"auto",containIntrinsicSize:"auto 400px"}}>
-            <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><Tip text={TABLE_TIPS[h]}>{h}</Tip></th>)}</tr></thead>
+            <div style={{fontSize:11,color:T.text3,padding:"4px 4px 8px",fontStyle:"italic"}}>Hover a column header for a quick definition · click to jump to its full Glossary entry with formula and example.</div>
+            <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><GlossaryLink term={h}>{h}</GlossaryLink></th>)}</tr></thead>
             <tbody>{cusR.data.map(d=>{const isH=d.year===hp,isBE=d.year===cusR.breakeven;return<tr key={d.year} style={{background:isH?"rgba(245,158,11,0.08)":isBE?"rgba(220,38,38,0.05)":d.year%2===0?T.muted:T.card}}>
               <td style={{...S.td,textAlign:"center",fontWeight:isH||isBE?700:500}}>{d.year}</td>
               <td style={S.td}>{f(d.homeVal)}</td><td style={S.td}>{f(d.equity)}</td><td style={S.td}>{f(d.yrInterest)}</td><td style={S.td}>{f(d.yrPrincipal)}</td>
@@ -1432,7 +1451,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.11 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.12 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

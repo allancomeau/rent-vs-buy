@@ -4,6 +4,19 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v3.9.99.14 — April 2026
+
+### Glossary Expansion (content)
+- **7 new `GLOSSARY` entries for assumption inputs** — Mortgage Rate, Invest Return, Appreciation, Rent Growth, Prop Tax, Insurance, Maintenance. Each entry carries the full entry structure (def, formula, example, interpretation note) with research-backed sourcing: Poterba depreciation rate for maintenance; Shiller / Case-Shiller for appreciation; Ibbotson/SBBI for S&P CAGR; BLS CPI for rent growth; Jacquier-Kane-Marcus FAJ 2003 for the arithmetic-vs-geometric mean warning under Invest Return. Content pulls from `TIPS` (one-line versions) and `defaults_rationale.md` (deeper reasoning) — no new research, just surfaces what was already documented internally into user-facing prose.
+- **`cat` field added to new entries; existing 15 untouched** — New entries carry `cat:"input"`; existing 15 entries stay implicit-table via render-time filter predicate `g=>!g.cat||g.cat==="table"`. Zero churn on existing entries. Backward-compatible: any future entry without `cat` defaults to the Data-Table section. Render uses two parallel `GLOSSARY.filter(...).map(entryP)` calls.
+- **`aliases` field preemptively supported** — Mortgage Rate carries `aliases:["Mtg Rate"]` so v3.9.99.15's MarketInputs label-wiring migration can pass the short label ("Mtg Rate") and still match the full-name Glossary entry ("Mortgage Rate"). Lookup is `g.name === term || g.aliases?.includes(term)` — optional-chain keeps existing entries with no `aliases` field working unchanged.
+- **Glossary tab restructured with two nested `<details>`** — New sections "Data-Table Columns" (15 entries) and "Assumption Input Definitions" (7 new), both open by default so content is visible on tab load (preserves the v3.9.99.12 "see content on open" UX). Reuses the v3.9.99.9 `.disclosure-icon` ▶ rotation pattern — each section rotates independently of the outer Guide `<details>`. Section summaries match the project's existing pattern (cursor:pointer, flex row with icon + bolded text). Short intro paragraph under each summary describes the section's contents.
+- **`GlossaryLink` click handler walks ancestor `<details>`** — After finding the target entry element, loops up via `parentElement` and sets `open=true` on any `<details>` ancestor between the entry and `guideRef.current`. This force-opens the inner section (Data-Table Columns or Assumption Input Definitions) if the user closed it, so jump-and-highlight always reveals the target. Stops at `guideRef.current` because that outer `<details>` is opened separately earlier in the handler. Six new lines of handler logic, zero new state.
+- **"Glossary scaling pattern" pending item resolved** — The deferred "Nested `<details>` subsections inside the Glossary tab" item (from v3.9.99.11) explicitly triggered when a second content category was added. Now implemented; removed from the pending list.
+- **Structural diff summary** — Net +24 lines JSX (two `<details>` wrappers × 12 lines each), +7 GLOSSARY array entries, +1 lookup condition (`g.aliases?.includes`), +6 handler lines (ancestor walk). Engine, `simulate`, `buildParams`, and all chart code untouched — this is content + UI wrapping, not behavior.
+
+---
+
 ## v3.9.99.13 — April 2026
 
 ### UX Polish (pre-Glossary Expansion)

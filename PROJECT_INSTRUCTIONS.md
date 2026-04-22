@@ -20,7 +20,7 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9.99.13 — UX Polish (pre-Glossary Expansion)
+## Current State: v3.9.99.14 — Glossary Expansion (content)
 
 ### Architecture
 
@@ -248,13 +248,11 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.11 | Glossary Tab | New "Glossary" tab (5th, right of FAQ), 15 rich data-table column entries via `GLOSSARY` const, anchor IDs ready for jump-and-highlight, `TABLE_TIPS` pruned 25→15 keys (redundancy cleanup) |
 | v3.9.99.12 | Glossary Link Migration | `GlossaryLink` component replaces 15 data-table header `<Tip>` calls · hover shows first-sentence reminder, click jumps to Glossary with flash · `TABLE_TIPS` deleted (GLOSSARY is sole source of truth) · interaction hint above open data table |
 | v3.9.99.13 | UX Polish (pre-Glossary Expansion) | Narrow-desktop label wrap (`minWidth:0` + `overflowWrap`) · Felix scroll centers on `#felix` anchor · Confidence card gained "CONFIDENCE & WARNINGS" header · `linkBtnStyle(linked)` helper unifies Rent/Buy + Location buttons (3 inline style blocks → 1 helper) · Location's two parallel renders consolidated to one · interaction-verb language normalized ("Tap" default, "Hover ... (desktop only)" when no touch equivalent) |
+| v3.9.99.14 | Glossary Expansion (content) | 7 new `GLOSSARY` entries for assumption inputs (Mortgage Rate, Invest Return, Appreciation, Rent Growth, Prop Tax, Insurance, Maintenance) · `cat` field on new entries only (existing 15 implicit-table via filter predicate) · Glossary tab restructured with two nested `<details>` sections open by default · `GlossaryLink` gains `aliases` lookup + ancestor-`<details>` force-open walk · scaling-pattern pending item resolved |
 
 ---
 
 ## Pending Items
-
-### Glossary scaling pattern (deferred, for future use)
-- [ ] **Nested `<details>` subsections inside the Glossary tab** — Apply when the Glossary grows beyond ~25-30 entries or when we add a second content category (e.g., input callouts, market concepts). Each subsection wrapped in a `<details>` with the v3.9.99.9 `.disclosure-icon` ▶ arrow pattern. Prevents tab bloat AND avoids nested-scroll UX (which would break touch swipe on mobile). Don't scaffold preemptively — wait for actual scale.
 
 ### v4.0 — Input Architecture Rework + Mode Toggle
 - [ ] **Budget-first architecture (beginner mode):** Three primary inputs — **Rent Budget** (standalone, no link), **Monthly Buy Budget** (all-in: P&I + tax + ins + maint + PMI), **Savings Budget** (all-in: down payment + closing costs). Engine derives home price via closed-form from (S, M, t, k, A): `homePrice = (M + S·A − PMI) / ((1+k)·A + t/12)`. Addresses "closing costs ambushed me" user feedback — current UI makes buyers feel costs are hidden.

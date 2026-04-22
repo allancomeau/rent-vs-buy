@@ -20,7 +20,7 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9.99.12 — Glossary Link Migration
+## Current State: v3.9.99.13 — UX Polish (pre-Glossary Expansion)
 
 ### Architecture
 
@@ -247,6 +247,7 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.10 | Small UI Polish | Pill colors use accent, Location/Your Assumptions/What-If titles centered on own lines, Guide summary renamed, sync-discipline rule codified |
 | v3.9.99.11 | Glossary Tab | New "Glossary" tab (5th, right of FAQ), 15 rich data-table column entries via `GLOSSARY` const, anchor IDs ready for jump-and-highlight, `TABLE_TIPS` pruned 25→15 keys (redundancy cleanup) |
 | v3.9.99.12 | Glossary Link Migration | `GlossaryLink` component replaces 15 data-table header `<Tip>` calls · hover shows first-sentence reminder, click jumps to Glossary with flash · `TABLE_TIPS` deleted (GLOSSARY is sole source of truth) · interaction hint above open data table |
+| v3.9.99.13 | UX Polish (pre-Glossary Expansion) | Narrow-desktop label wrap (`minWidth:0` + `overflowWrap`) · Felix scroll centers on `#felix` anchor · Confidence card gained "CONFIDENCE & WARNINGS" header · `linkBtnStyle(linked)` helper unifies Rent/Buy + Location buttons (3 inline style blocks → 1 helper) · Location's two parallel renders consolidated to one · interaction-verb language normalized ("Tap" default, "Hover ... (desktop only)" when no touch equivalent) |
 
 ---
 
@@ -289,3 +290,4 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 5. **Customizability as credibility.** Users control all assumptions and see how results change.
 6. **Open source as trust.** Every formula, default, and data source is documented and accessible.
 7. **Emojis must earn their place.** Decorative emojis (🔧, 📐, 🎉, etc.) that don't carry semantic or functional meaning are removed. Emojis that ARE functional — link toggles (🔗), theme selectors (✕ close), inline icons that replace words ("↺" reset, "▶" disclosure arrow) — stay. This was codified after a dedicated cleanup iteration; new emoji additions should be justified, not reflexive.
+8. **Interaction-verb language is consistent.** Default to **"Tap"** for any action that works on both desktop and mobile — it's universal, friendlier, and short. Use **"Hover ... (desktop only)"** only when the feature genuinely has no touch equivalent (sensitivity-chart bar details, data-table header preview). Avoid bare "Click" — it reads as desktop-first and misses mobile. Codified in v3.9.99.13 after a sweep of five user-visible strings.

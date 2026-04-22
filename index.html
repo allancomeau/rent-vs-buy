@@ -1054,10 +1054,10 @@ function RentVsBuyV3() {
 
   // Chart type configs
   const CHARTS = {
-    tornado:{label:"Sensitivity chart",title:"Sensitivity: Which Assumptions Matter?",sub:"Each bar shows how much the outcome swings when one variable changes · sorted by impact · ★ marks the single most impactful variable"},
-    networth:{label:"Net worth by strategy",title:"Net Worth: Buyer vs. Renter",sub:"Total wealth for each strategy · solid = your assumptions (★), dashed = location · add What-If for preset comparison"},
-    cost:{label:"Annual cost",title:"What You Pay Each Year",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
-    assets:{label:"Equity & investments",title:"Home Equity & Investment Portfolios",sub:"Home equity = home value minus mortgage balance · renter portfolio starts with down payment + closing costs invested · buyer portfolio grows after mortgage payoff"},
+    tornado:{title:"Input Sensitivity",sub:"Each bar shows how much the outcome swings when one variable changes · sorted by impact · ★ marks the single most impactful variable"},
+    networth:{title:"Net Worth",sub:"Total wealth for each strategy · solid = your assumptions (★), dashed = location · add What-If for preset comparison"},
+    cost:{title:"Cash Outflow",sub:"All housing expenses for each side · when lines cross, the cheaper option flips · mortgage payment is fixed; rent grows"},
+    assets:{title:"Balances",sub:"Home equity = home value minus mortgage balance · renter portfolio starts with down payment + closing costs invested · buyer portfolio grows after mortgage payoff"},
   };
 
   return (
@@ -1147,7 +1147,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:4}}>Two reasons. First, the default assumes 65% investment discipline — a realistic middle ground. Try 50% for a reality check or 75% for an optimistic case. Second, at current mortgage rates (~6%), there's a 4% spread between what stocks return (10% CAGR) and what the mortgage costs. That gap compounds. Change either rate and watch the verdict flip.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"I did my own math and got different numbers."</strong></p>
-              <p style={{marginTop:4}}>Great — check which variables differ. The sensitivity chart (chart dropdown → "Sensitivity chart") shows which single assumption drives your result. Usually it's investment return, appreciation, or discipline. If your algebra gives the same core equation (down payment compounded vs. home appreciation + monthly surplus compounded), you've independently validated the model. The simulation adds month-precise amortization, tax treatment, and transaction costs on top of that foundation.</p>
+              <p style={{marginTop:4}}>Great — check which variables differ. The sensitivity chart (chart dropdown → "Input Sensitivity") shows which single assumption drives your result. Usually it's investment return, appreciation, or discipline. If your algebra gives the same core equation (down payment compounded vs. home appreciation + monthly surplus compounded), you've independently validated the model. The simulation adds month-precise amortization, tax treatment, and transaction costs on top of that foundation.</p>
 
               <p style={{marginTop:12}}><strong style={{color:T.text1}}>"$3K/month in rent gets a nicer place than $3K/month on a mortgage."</strong></p>
               <p style={{marginTop:4}}>True in many markets, especially in 2024–2026 with rates above 6%. That's the "imputed rent" gap — the owner consumes housing services worth more than their payment buys. This model isolates the <em>financial</em> question only: which path builds more wealth? Quality-of-life differences (space, stability, customization, landlord risk) are real but not quantifiable. They're documented in "What the Model Doesn't Capture" on GitHub.</p>
@@ -1339,7 +1339,7 @@ function RentVsBuyV3() {
       {/* FX CONVERTER — now inline in Location header (v3.9.99.12) */}
 
       {/* CHART */}
-      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Sensitivity chart"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
+      {tutorial&&<div className="tut"><b>5</b><span>Visualize the math — the dropdown switches between 4 views. <strong>"Net Worth"</strong> shows all active scenarios side by side (★ = custom). <strong>"Input Sensitivity"</strong> reveals which assumption matters most. Click <strong>"▸ View Data"</strong> below any chart to see the raw numbers.</span></div>}
       <div style={S.card}>
         <div style={{textAlign:"center",marginBottom:12}}>
           <select style={{...S.select,fontSize:16,fontWeight:700,border:`2px solid ${T.accent}44`,background:`${T.accent}08`,textAlign:"center",cursor:"pointer",color:T.text1,padding:"4px 8px"}} value={chartType} onChange={e=>setChartType(e.target.value)}>

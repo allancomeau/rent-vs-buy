@@ -648,13 +648,6 @@ const TIPS = {
   holdingPeriod:"When you'd sell. Each year is a 'if I liquidated now' snapshot — NOT a sell-then-rent transition.",
   simYears:"How many years to simulate. Doesn't affect verdict — that uses your sell year.",
   discipline:"% of surplus cash actually invested — applies to both renter AND buyer. 100% theoretical, 50-80% realistic. Bernstein & Koudijs (QJE 2024).",
-  mortgageRate:"Mortgage interest rate. Most impactful cost variable. 1% = ~$70K in total interest on $320K loan.",
-  investReturn:"Annual portfolio return. 10% = S&P 500 CAGR (geometric). Using 12% overstates by ~50%.",
-  appreciation:"Annual home value increase. 4% on 20% down ≈ 20% return on equity (leverage).",
-  rentGrowth:"Annual rent increase. When rent crosses above fixed mortgage = inflection point.",
-  propTaxRate:"Annual property tax. Unrecoverable. HI 0.29% to NJ 2.23%.",
-  insRate:"Homeowner's insurance. Up 40% since 2019. FL/LA can exceed 1.5%.",
-  maintRate:"Annual maintenance. Industry standard 1% = Poterba depreciation rate.",
 };
 const CURRENCIES = {
   USD:{rate:1,name:"US dollars"},CAD:{rate:0.72,name:"Canadian dollars"},GBP:{rate:1.27,name:"British pounds"},
@@ -778,7 +771,36 @@ const Tip = ({text, children}) => {
   </div>;
 };
 
-const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,tip,sliderMin,sliderMax,noSlider}) => {
+// Glossary link — module-level so it can be used from components defined outside RentVsBuyV3 (MarketInputs, NumInput).
+// cursor:help + title hover = short reminder; click jumps to full entry in Guide › Glossary tab with flash highlight.
+// The setGuideTab / guideRef / setMethodHighlight deps come in as props from a thin alias (`gl`) inside RentVsBuyV3.
+const GlossaryLinkBase = ({term, children, setGuideTab, guideRef, setMethodHighlight}) => {
+  const entry = GLOSSARY.find(g => g.name === term || g.aliases?.includes(term));
+  if (!entry) return children;
+  const short = (entry.def.match(/^[^.]*\./) || [entry.def])[0];
+  return <span title={short} onClick={()=>{
+    setGuideTab("gl");
+    if(guideRef.current){
+      guideRef.current.open = true;
+      setTimeout(()=>{
+        const el = document.getElementById(entry.id);
+        if(el){
+          // Walk up and force-open any ancestor <details> (e.g., nested Glossary section wrappers)
+          let p = el.parentElement;
+          while(p && p !== guideRef.current){
+            if(p.tagName === "DETAILS") p.open = true;
+            p = p.parentElement;
+          }
+          el.scrollIntoView({behavior:"smooth",block:"center"});
+        }
+        setMethodHighlight(entry.id);
+        setTimeout(()=>setMethodHighlight(null), 3000);
+      }, 50);
+    }
+  }} style={{cursor:"help"}}>{children}</span>;
+};
+
+const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,tip,sliderMin,sliderMax,noSlider,gl:Gl}) => {
   const r=RANGES[rangeKey], tipText=tip||TIPS[rangeKey]||"";
   const sMin=sliderMin!=null?sliderMin:(r?r.lo*100:null), sMax=sliderMax!=null?sliderMax:(r?r.hi*100:null);
   const hasBounds=sMin!=null&&sMax!=null&&!locked;
@@ -787,7 +809,10 @@ const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,
   const iStyle=locked?S.inputLock:oob?{...S.input,borderColor:"#f59e0b",boxShadow:"0 0 0 2px rgba(245,158,11,0.15)"}:S.input;
   return <div>
     <div style={S.inputRow}>
-      <Tip text={tipText}><span style={S.label}>{label}{locked&&<span style={{color:T.text3,fontSize:9}}> 🔒</span>}</span></Tip>
+      {Gl
+        ? <Gl term={label}><span style={S.label}>{label}{locked&&<span style={{color:T.text3,fontSize:9}}> 🔒</span>}</span></Gl>
+        : <Tip text={tipText}><span style={S.label}>{label}{locked&&<span style={{color:T.text3,fontSize:9}}> 🔒</span>}</span></Tip>
+      }
       <div style={{display:"flex",alignItems:"center",gap:3}}>
         {prefix&&<span style={{fontSize:12,color:T.text3,fontWeight:500}}>{prefix}</span>}
         <input style={iStyle} type="number" inputMode="decimal" autoComplete="off" value={value} step={step||1} readOnly={locked} tabIndex={locked?-1:0}
@@ -877,18 +902,18 @@ const ChartShell = ({data,sym,children}) => (
   </ResponsiveContainer>
 );
 
-const MarketInputs = ({params,onChange}) => <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}}>
-  <NumInput label="Mtg Rate" value={(params.mortgageRate*100).toFixed(1)} onChange={v=>onChange("mortgageRate",v/100)} step={0.1} suffix="%" rangeKey="mortgageRate" noSlider/>
-  <NumInput label="Invest Return" value={(params.investReturn*100).toFixed(1)} onChange={v=>onChange("investReturn",v/100)} step={0.1} suffix="%" rangeKey="investReturn" hint="10% S&P CAGR, 7% conservative" noSlider/>
-  <NumInput label="Appreciation" value={(params.appreciation*100).toFixed(1)} onChange={v=>onChange("appreciation",v/100)} step={0.1} suffix="%" rangeKey="appreciation" hint="3-4% long-term US avg" noSlider/>
-  <NumInput label="Rent Growth" value={(params.rentGrowth*100).toFixed(1)} onChange={v=>onChange("rentGrowth",v/100)} step={0.1} suffix="%" rangeKey="rentGrowth" hint="3-4% typical US" noSlider/>
-  <NumInput label="Prop Tax" value={(params.propTaxRate*100).toFixed(2)} onChange={v=>onChange("propTaxRate",v/100)} step={0.01} suffix="%" rangeKey="propTaxRate" noSlider/>
-  <NumInput label="Insurance" value={(params.insRate*100).toFixed(2)} onChange={v=>onChange("insRate",v/100)} step={0.01} suffix="%" rangeKey="insRate" noSlider/>
-  <NumInput label="Maintenance" value={(params.maintRate*100).toFixed(1)} onChange={v=>onChange("maintRate",v/100)} step={0.1} suffix="%" rangeKey="maintRate" noSlider/>
+const MarketInputs = ({params,onChange,gl}) => <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"0 12px"}}>
+  <NumInput gl={gl} label="Mtg Rate" value={(params.mortgageRate*100).toFixed(1)} onChange={v=>onChange("mortgageRate",v/100)} step={0.1} suffix="%" rangeKey="mortgageRate" noSlider/>
+  <NumInput gl={gl} label="Invest Return" value={(params.investReturn*100).toFixed(1)} onChange={v=>onChange("investReturn",v/100)} step={0.1} suffix="%" rangeKey="investReturn" hint="10% S&P CAGR, 7% conservative" noSlider/>
+  <NumInput gl={gl} label="Appreciation" value={(params.appreciation*100).toFixed(1)} onChange={v=>onChange("appreciation",v/100)} step={0.1} suffix="%" rangeKey="appreciation" hint="3-4% long-term US avg" noSlider/>
+  <NumInput gl={gl} label="Rent Growth" value={(params.rentGrowth*100).toFixed(1)} onChange={v=>onChange("rentGrowth",v/100)} step={0.1} suffix="%" rangeKey="rentGrowth" hint="3-4% typical US" noSlider/>
+  <NumInput gl={gl} label="Prop Tax" value={(params.propTaxRate*100).toFixed(2)} onChange={v=>onChange("propTaxRate",v/100)} step={0.01} suffix="%" rangeKey="propTaxRate" noSlider/>
+  <NumInput gl={gl} label="Insurance" value={(params.insRate*100).toFixed(2)} onChange={v=>onChange("insRate",v/100)} step={0.01} suffix="%" rangeKey="insRate" noSlider/>
+  <NumInput gl={gl} label="Maintenance" value={(params.maintRate*100).toFixed(1)} onChange={v=>onChange("maintRate",v/100)} step={0.1} suffix="%" rangeKey="maintRate" noSlider/>
 </div>;
 
 // Shared panel for Scenario and Custom — one component, two instances
-const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params,holdYr,sym,beSens,presetMode,presetId,onPreset,onClose,extraHeader}) => {
+const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params,holdYr,sym,beSens,presetMode,presetId,onPreset,onClose,extraHeader,gl}) => {
   const active = Object.keys(overrides).length > 0;
   const hd = result.data[Math.min(holdYr,params.simYears)-1];
   const titleSpan = <span>{title}{!active&&<span style={{fontWeight:400,textTransform:"none"}}> — {presetMode==="select"?"select a preset":"adjust values"}</span>}</span>;
@@ -907,7 +932,7 @@ const ScenarioPanel = ({title,color,colorBg,overrides,setOverrides,result,params
     </div>
     <div style={S.pB}>
       <VerdictBox advantage={hd?.advantage} homePrice={result.homePrice} holdYr={holdYr} sym={sym} breakeven={result.breakeven} params={params}/>
-      <MarketInputs params={params} onChange={(k,v)=>setOverrides(prev=>({...prev,[k]:v}))}/>
+      <MarketInputs params={params} onChange={(k,v)=>setOverrides(prev=>({...prev,[k]:v}))} gl={gl}/>
     </div>
   </div>;
 };
@@ -1066,32 +1091,10 @@ function RentVsBuyV3() {
     navigator.clipboard?.writeText(window.location.href).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);});
   },[country,locAMetro,locBMetro,linked,scenOvr,cusOvr,personal,theme]);
 
-  // Glossary link: cursor:help + title hover = short reminder; click jumps to full entry in Guide › Glossary tab with flash highlight
-  const GlossaryLink = ({term, children}) => {
-    const entry = GLOSSARY.find(g => g.name === term || g.aliases?.includes(term));
-    if (!entry) return children;
-    const short = (entry.def.match(/^[^.]*\./) || [entry.def])[0];
-    return <span title={short} onClick={()=>{
-      setGuideTab("gl");
-      if(guideRef.current){
-        guideRef.current.open = true;
-        setTimeout(()=>{
-          const el = document.getElementById(entry.id);
-          if(el){
-            // Walk up and force-open any ancestor <details> (e.g., nested Glossary section wrappers)
-            let p = el.parentElement;
-            while(p && p !== guideRef.current){
-              if(p.tagName === "DETAILS") p.open = true;
-              p = p.parentElement;
-            }
-            el.scrollIntoView({behavior:"smooth",block:"center"});
-          }
-          setMethodHighlight(entry.id);
-          setTimeout(()=>setMethodHighlight(null), 3000);
-        }, 50);
-      }
-    }} style={{cursor:"help"}}>{children}</span>;
-  };
+  // Glossary link alias: pre-binds module-level GlossaryLinkBase with this component's tab/ref/highlight setters.
+  // Defined as a plain function (not useCallback) because it's a component factory, not a callback.
+  const gl = (props) => <GlossaryLinkBase {...props} setGuideTab={setGuideTab} guideRef={guideRef} setMethodHighlight={setMethodHighlight}/>;
+  const GlossaryLink = gl;  // alias for in-component data-table call site readability
 
   const chgCountry=nc=>{
     setCountry(nc);setLocAMetro(null);setLocBMetro(DEFAULT_METROS[nc]||"");
@@ -1329,10 +1332,10 @@ function RentVsBuyV3() {
       {/* YOUR ASSUMPTIONS + WHAT-IF */}
       <div style={{display:"flex",gap:16,marginBottom:16,flexWrap:"wrap"}}>
         <div style={{flex:"2 1 320px",minWidth:0}}>
-        {(()=>{const cusKeys=Object.keys(cusOvr);const isEdited=cusKeys.length>0&&!cusPresetId;const presetName=cusPresetId?PRESETS.find(p=>p.id===cusPresetId)?.name:null;const title=presetName?`Your Assumptions (${presetName})`:isEdited?"Your Assumptions (edited)":"Your Assumptions";return <ScenarioPanel title={title} color={presetName?T.purple:isEdited?T.accent:T.text2} colorBg={presetName?`${T.purple}0F`:`${T.accent}0F`} overrides={cusOvr} setOverrides={v=>{setCusPresetId(null);setCusOvr(v);}} result={cusR} params={cusP} holdYr={hp} sym={sym} beSens={beSens} presetMode="load" onPreset={id=>{setCusPresetId(id);setCusOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} extraHeader={<button onClick={share} className="compact" title="Share all inputs as URL" style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize:10,fontWeight:700}}>{copied?"Copied!":"Share"}</button>}/>;})()}
+        {(()=>{const cusKeys=Object.keys(cusOvr);const isEdited=cusKeys.length>0&&!cusPresetId;const presetName=cusPresetId?PRESETS.find(p=>p.id===cusPresetId)?.name:null;const title=presetName?`Your Assumptions (${presetName})`:isEdited?"Your Assumptions (edited)":"Your Assumptions";return <ScenarioPanel title={title} color={presetName?T.purple:isEdited?T.accent:T.text2} colorBg={presetName?`${T.purple}0F`:`${T.accent}0F`} overrides={cusOvr} setOverrides={v=>{setCusPresetId(null);setCusOvr(v);}} result={cusR} params={cusP} holdYr={hp} sym={sym} beSens={beSens} presetMode="load" onPreset={id=>{setCusPresetId(id);setCusOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} gl={gl} extraHeader={<button onClick={share} className="compact" title="Share all inputs as URL" style={{cursor:"pointer",background:T.accent,color:"#fff",border:"none",borderRadius:4,padding:"3px 10px",fontSize:10,fontWeight:700}}>{copied?"Copied!":"Share"}</button>}/>;})()}
         </div>
         <div style={{flex:"1 1 200px",minWidth:0,maxWidth:showWhatIf?undefined:200}}>
-        {showWhatIf?<ScenarioPanel title="What-If" color={T.purple} colorBg={`${T.purple}0F`} overrides={scenOvr} setOverrides={setScenOvr} result={scenR} params={scenP} holdYr={hp} sym={sym} presetMode="select" presetId={presetId} onPreset={id=>{setPresetId(id);setScenOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} onClose={()=>setShowWhatIf(false)}/>
+        {showWhatIf?<ScenarioPanel title="What-If" color={T.purple} colorBg={`${T.purple}0F`} overrides={scenOvr} setOverrides={setScenOvr} result={scenR} params={scenP} holdYr={hp} sym={sym} presetMode="select" presetId={presetId} onPreset={id=>{setPresetId(id);setScenOvr(PRESETS.find(x=>x.id===id)?.overrides||{});}} gl={gl} onClose={()=>setShowWhatIf(false)}/>
         :<div style={{...S.panel,display:"flex",alignItems:"center",justifyContent:"center",minHeight:120,cursor:"pointer",border:`2px dashed ${T.border}`,background:"transparent",height:"100%"}} onClick={()=>setShowWhatIf(true)}>
           <div style={{textAlign:"center",color:T.text3}}>
             <div style={{fontSize:20,marginBottom:4}}>+</div>
@@ -1525,7 +1528,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.14 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.15 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

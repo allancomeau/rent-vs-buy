@@ -50,7 +50,7 @@
     details summary { list-style: none; }
     details summary::-webkit-details-marker { display: none; }
     .disclosure-icon { display: inline-block; transition: transform 200ms ease; }
-    details[open] .disclosure-icon { transform: rotate(90deg); }
+    details[open] > summary .disclosure-icon { transform: rotate(90deg); }
     .tut { display: flex; align-items: flex-start; gap: 10px; padding: 10px 16px; background: var(--tut-bg, #EFF6FF); border: 1.5px solid var(--tut-border, #BFDBFE); border-radius: 10px; font-size: 13px; color: var(--tut-text, #1e40af); margin-bottom: 10px; line-height: 1.5; font-weight: 500; }
     @media (prefers-reduced-motion: no-preference) {
       .tut { animation: tutFade 0.4s ease-out; }
@@ -846,6 +846,22 @@ const linkBtnStyle = (linked) => ({
   flexShrink: 0,
 });
 
+// Accordion behavior: when a <details> opens, close all its siblings at the same DOM level.
+// Generalized — works for any number of sibling details inside the same parent.
+const accordionToggle = (e) => {
+  if (!e.target.open) return;
+  const parent = e.target.parentElement;
+  if (!parent) return;
+  parent.querySelectorAll(":scope > details").forEach(d => { if (d !== e.target) d.open = false; });
+};
+
+// Reset behavior: when a <details> closes, force-close all nested <details> inside it.
+// Used on the outer Guide so reopening it returns Glossary subsections to their collapsed default state.
+const resetNestedDetails = (e) => {
+  if (e.target.open) return;
+  e.target.querySelectorAll("details").forEach(d => { d.open = false; });
+};
+
 const ChartShell = ({data,sym,children}) => (
   <ResponsiveContainer width="100%" height={360}>
     <LineChart data={data} margin={{top:5,right:10,left:5,bottom:5}}>
@@ -1123,7 +1139,7 @@ function RentVsBuyV3() {
       {/* OPEN SOURCE BANNER — dismissible per session */}
       {/* GUIDE */}
       {tutorial&&<div className="tut"><b>1</b>Start with the Guide — it explains the model's logic and academic sources in about 2 minutes.</div>}
-      <details ref={guideRef} id="guide-section" style={{...S.card,padding:0}}>
+      <details ref={guideRef} id="guide-section" onToggle={resetNestedDetails} style={{...S.card,padding:0}}>
         <summary style={{padding:"12px 16px",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:10}}>
           <span className="disclosure-icon" style={{fontSize:13,color:T.text2,lineHeight:1}}>▶</span>
           <div style={{fontSize:13,fontWeight:600,color:T.accent}}>Guide <span style={{fontSize:10,fontWeight:400,color:T.text3}}>— Open source · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent}} onClick={e=>e.stopPropagation()}>GitHub</a></span></div>
@@ -1189,7 +1205,7 @@ function RentVsBuyV3() {
               <p style={{marginTop:4}}>Enter YOUR numbers (real rent, real savings, real timeline). Look at the verdict. Then break it: slide the discipline to 70%, try a different rate, change the sell year. The goal isn't to get one answer — it's to understand which assumptions your decision depends on and how sensitive it is to being wrong about them.</p>
             </>}
             {guideTab==="gl"&&<>
-              <details open id="gl-section-table" style={{marginBottom:12}}>
+              <details id="gl-section-table" onToggle={accordionToggle} style={{marginBottom:12}}>
                 <summary style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8,padding:"6px 0"}}>
                   <span className="disclosure-icon" style={{fontSize:11,color:T.text2,lineHeight:1}}>▶</span>
                   <span style={{fontWeight:600,color:T.text1,fontSize:14}}>Data-Table Columns</span>
@@ -1204,7 +1220,7 @@ function RentVsBuyV3() {
                   </p>
                 ))}
               </details>
-              <details open id="gl-section-input" style={{marginBottom:12}}>
+              <details id="gl-section-input" onToggle={accordionToggle} style={{marginBottom:12}}>
                 <summary style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8,padding:"6px 0"}}>
                   <span className="disclosure-icon" style={{fontSize:11,color:T.text2,lineHeight:1}}>▶</span>
                   <span style={{fontWeight:600,color:T.text1,fontSize:14}}>Assumption Input Definitions</span>

@@ -20,7 +20,7 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9.99.14 — Glossary Expansion (content)
+## Current State: v3.9.99.15 — Glossary Link Migration (MarketInputs)
 
 ### Architecture
 
@@ -249,6 +249,7 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.12 | Glossary Link Migration | `GlossaryLink` component replaces 15 data-table header `<Tip>` calls · hover shows first-sentence reminder, click jumps to Glossary with flash · `TABLE_TIPS` deleted (GLOSSARY is sole source of truth) · interaction hint above open data table |
 | v3.9.99.13 | UX Polish (pre-Glossary Expansion) | Narrow-desktop label wrap (`minWidth:0` + `overflowWrap`) · Felix scroll centers on `#felix` anchor · Confidence card gained "CONFIDENCE & WARNINGS" header · `linkBtnStyle(linked)` helper unifies Rent/Buy + Location buttons (3 inline style blocks → 1 helper) · Location's two parallel renders consolidated to one · interaction-verb language normalized ("Tap" default, "Hover ... (desktop only)" when no touch equivalent) |
 | v3.9.99.14 | Glossary Expansion (content) | 7 new `GLOSSARY` entries for assumption inputs (Mortgage Rate, Invest Return, Appreciation, Rent Growth, Prop Tax, Insurance, Maintenance) · `cat` field on new entries only (existing 15 implicit-table via filter predicate) · Glossary tab restructured with two nested `<details>` sections, default collapsed, accordion-style (one open at a time) · arrow rotation scoped per-details via `> summary` selector · `resetNestedDetails` on outer Guide returns subsections to collapsed on close/reopen · `GlossaryLink` gains `aliases` lookup + ancestor-`<details>` force-open walk · scaling-pattern pending item resolved |
+| v3.9.99.15 | Glossary Link Migration (MarketInputs) | 7 MarketInputs labels migrated from `<Tip>` to `<GlossaryLink>` in both Your Assumptions and What-If panels · `GlossaryLinkBase` lifted to module scope with deps-as-props, thin `gl` alias inside `RentVsBuyV3` pre-binds them · prop-drilled 3 levels (`RentVsBuyV3` → `ScenarioPanel` → `MarketInputs` → `NumInput`) · `NumInput` renders `<Gl>` when `gl` prop is passed, `<Tip>` otherwise (backward compat for Your Situation inputs) · 7 dead TIPS entries pruned |
 
 ---
 

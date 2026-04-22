@@ -20,7 +20,7 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9.99.11 — Glossary Tab
+## Current State: v3.9.99.12 — Glossary Link Migration
 
 ### Architecture
 
@@ -246,16 +246,11 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.9 | UX & Pre-v4 Polish | FX inline in Location, iOS/Android inputMode + autocomplete, disclosure ▶ arrow, labelBox rect+border chart labels, themes 8→6 (Citrus/Moss removed, light reordered), chart dropdown reorder (Sensitivity 1st), Paid off marker on all 3 line charts, print stylesheet |
 | v3.9.99.10 | Small UI Polish | Pill colors use accent, Location/Your Assumptions/What-If titles centered on own lines, Guide summary renamed, sync-discipline rule codified |
 | v3.9.99.11 | Glossary Tab | New "Glossary" tab (5th, right of FAQ), 15 rich data-table column entries via `GLOSSARY` const, anchor IDs ready for jump-and-highlight, `TABLE_TIPS` pruned 25→15 keys (redundancy cleanup) |
+| v3.9.99.12 | Glossary Link Migration | `GlossaryLink` component replaces 15 data-table header `<Tip>` calls · hover shows first-sentence reminder, click jumps to Glossary with flash · `TABLE_TIPS` deleted (GLOSSARY is sole source of truth) · interaction hint above open data table |
 
 ---
 
 ## Pending Items
-
-### v3.9.99.12 — Glossary Link Migration
-- [ ] **`<GlossaryLink term=.../>` component** — Reusable, follows the Felix `methodHighlight` pattern from v3.9.99.8. Click opens Guide `<details>`, switches to Glossary tab, scrolls to anchor, flashes definition for 2.5 seconds.
-- [ ] **Replace 15 `<Tip>` tooltips in data-table header** — Primary target. Fixes Allan's brother's "table numbers don't trace easily" feedback and the narrow-cell tooltip overlap.
-- [ ] **Shorten inline tooltip content where callouts migrate** — e.g., "Mortgage Interest Rate. Most Impactful Variable. 1%..." becomes just "Mortgage Interest Rate" inline; the rich "most impactful" note + examples live in the Glossary. Hover still works for quick recall; click jumps for full context.
-- [ ] **Leave input-field `<Tip>` tooltips alone for now** — hover-in-context works fine for short input definitions. Revisit in a future polish pass if needed.
 
 ### Glossary scaling pattern (deferred, for future use)
 - [ ] **Nested `<details>` subsections inside the Glossary tab** — Apply when the Glossary grows beyond ~25-30 entries or when we add a second content category (e.g., input callouts, market concepts). Each subsection wrapped in a `<details>` with the v3.9.99.9 `.disclosure-icon` ▶ arrow pattern. Prevents tab bloat AND avoids nested-scroll UX (which would break touch swipe on mobile). Don't scaffold preemptively — wait for actual scale.

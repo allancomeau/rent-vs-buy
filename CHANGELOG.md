@@ -4,6 +4,18 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v3.9.99.12 — April 2026
+
+### Glossary Link Migration
+- **`GlossaryLink` component** — Defined inside `RentVsBuyV3` (closure access to `setGuideTab`, `guideRef`, `setMethodHighlight`). ~13 lines. Renders children inside a `<span>` with `cursor: help`, `title={short}` for hover tooltip, and click handler that switches to the Glossary tab, force-opens the Guide `<details>`, scrolls the target anchor into view (`block: "center"`), and flashes via the existing `target-highlight` CSS animation for 3 seconds. Reuses all v3.9.99.8 Felix infrastructure — zero new state, zero new CSS.
+- **Derivation for hover tooltip** — Short definition derived from the first sentence of each `GLOSSARY[n].def` via regex `/^[^.]*\./`. No separate `short` field, no duplicate copy. Single source of truth for column definitions: the GLOSSARY array.
+- **15 data-table header `<Tip>` calls migrated** — Each `<Tip text={TABLE_TIPS[h]}>{h}</Tip>` became `<GlossaryLink term={h}>{h}</GlossaryLink>`. Visible change: no more `?` suffix on column headers, `cursor: help` on hover, browser `title` tooltip for quick recall on desktop, tap/click jumps to full Glossary entry on both desktop and mobile.
+- **`TABLE_TIPS` deleted** — 25-entry const pruned to 15 in v3.9.99.11, then fully deleted here. Dead code removed; GLOSSARY is the sole source of truth for column definitions. Closes a two-version redundancy cleanup.
+- **Interaction hint above data table** — Short italic muted note: "Hover a column header for a quick definition · click to jump to its full Glossary entry with formula and example." Renders only when the table is expanded, so it's contextual to where users see the new interaction and doesn't clutter the collapsed state.
+- **`<Tip>` component preserved** — 1 remaining caller (NumInput input-field labels), fine as-is. Input-field `<Tip>` migration deferred — hover-in-context works well for short input definitions, per the v3.9.99.11 scope decision.
+
+---
+
 ## v3.9.99.11 — April 2026
 
 ### Glossary Tab (content build)

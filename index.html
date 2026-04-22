@@ -679,6 +679,14 @@ const GLOSSARY = [
   {id:"gl-buyw",name:"BuyW",def:"Buyer's total wealth this year, assuming they sold the home.",formula:"Equity − Selling costs − Cap gains tax + BInv",note:"Selling costs typically 6-8% of home value. Cap gains tax applies only to appreciation above the $500K MFJ / $250K single exclusion in the US."},
   {id:"gl-rntw",name:"RntW",def:"Renter's total wealth this year, assuming they liquidated the portfolio.",formula:"RInv − Cap gains tax on gains portion",note:"Cap gains tax applies only to the gains, not the full balance."},
   {id:"gl-adv",name:"Adv",def:"Buyer minus renter wealth — the single headline number.",formula:"BuyW − RntW",ex:"$450K − $380K = +$70K advantage to buyer",note:"Positive = buying wins by that amount. This is what drives the verdict."},
+  // Assumption inputs (Your Assumptions panel)
+  {id:"gl-mortgage-rate",name:"Mortgage Rate",aliases:["Mtg Rate"],cat:"input",def:"Annual interest rate on the loan. The single most impactful cost variable in the buyer's total cost over 30 years.",formula:"Monthly payment = L × [(1+r/12)^n − 1] / [(r/12)(1+r/12)^n] · Engine backsolves loan amount from monthly P&I",ex:"US 30yr avg ~6.0% (Apr 2026). On a $320K loan at 6%, total lifetime interest ≈ $370K.",note:"A 1% rate change shifts lifetime interest by ~$70K on a $320K loan. Small rate differences compound enormously over 30 years."},
+  {id:"gl-invest-return",name:"Invest Return",cat:"input",def:"Expected annual portfolio return, compounded (CAGR / geometric mean). Applied to both buyer and renter surplus investments.",formula:"g ≈ a − σ²/2 (volatility drag: geometric ≈ arithmetic − variance/2)",ex:"Default 10% ≈ S&P 500 historical CAGR since 1926 (Ibbotson/SBBI). 7% is a conservative planning default.",note:"Using the arithmetic mean (~12%) overstates terminal wealth by ~50% over 30 years. Stocks with σ ≈ 20% lose ~2% to compounding friction. (Jacquier, Kane, Marcus FAJ 2003)"},
+  {id:"gl-appreciation",name:"Appreciation",cat:"input",def:"Annual home value growth rate, nominal terms.",formula:"Home value at year n = P × (1 + appreciation)^n",ex:"Default 4.2% US. Long-term US nominal ~3-4% (Shiller / Case-Shiller since 1890).",note:"On 20% down, 4% appreciation ≈ 20% return on equity — the leverage effect. Real (inflation-adjusted) US home appreciation is only ~1% long-term."},
+  {id:"gl-rent-growth",name:"Rent Growth",cat:"input",def:"Annual rate at which rent increases.",formula:"Rent at year n = start rent × (1 + rentGrowth)^n",ex:"Default 3.3% US (BLS CPI, rent of primary residence).",note:"When rent growth crosses above the fixed mortgage P&I, the buyer's annual-cost advantage inflects. Historically tracks inflation long-term — v4 may surface this tie explicitly."},
+  {id:"gl-prop-tax",name:"Prop Tax",cat:"input",def:"Annual property tax, as a percentage of home value. Unrecoverable ownership cost.",formula:"Annual property tax = home value × propTaxRate",ex:"US range: HI 0.29% to NJ 2.23%. Default 0.89% national average.",note:"In the US, itemizable up to the SALT cap ($10K federal). For most first-time buyers on the standard deduction, it's effectively unrecoverable."},
+  {id:"gl-insurance",name:"Insurance",cat:"input",def:"Homeowner's insurance as a percentage of home value. Unrecoverable ownership cost.",formula:"Annual insurance = home value × insRate",ex:"Default 0.63% US average. FL/LA wildfire and hurricane zones can exceed 1.5%.",note:"Up ~40% since 2019 driven by climate risk. Renters insurance is assumed budgeted within the rent input (see RntCst)."},
+  {id:"gl-maintenance",name:"Maintenance",cat:"input",def:"Annual maintenance cost, as a percentage of home value. Covers wear-and-tear replacement (roof, HVAC, plumbing) — not cosmetic renovation.",formula:"Annual maintenance = home value × maintRate",ex:"Default 1.0%, the Poterba depreciation rate.",note:"Industry standard 1% reflects wear-and-tear on a steady-state basis. Actual year-to-year spend is lumpy (a $15K roof every 20 years ≈ $750/yr averaged)."},
 ];
 const RESEARCH_BASE = "https://github.com/allancomeau/rent-vs-buy/blob/main/";
 const RESEARCH_FILES = [
@@ -1042,7 +1050,7 @@ function RentVsBuyV3() {
 
   // Glossary link: cursor:help + title hover = short reminder; click jumps to full entry in Guide › Glossary tab with flash highlight
   const GlossaryLink = ({term, children}) => {
-    const entry = GLOSSARY.find(g => g.name === term);
+    const entry = GLOSSARY.find(g => g.name === term || g.aliases?.includes(term));
     if (!entry) return children;
     const short = (entry.def.match(/^[^.]*\./) || [entry.def])[0];
     return <span title={short} onClick={()=>{
@@ -1051,7 +1059,15 @@ function RentVsBuyV3() {
         guideRef.current.open = true;
         setTimeout(()=>{
           const el = document.getElementById(entry.id);
-          if(el) el.scrollIntoView({behavior:"smooth",block:"center"});
+          if(el){
+            // Walk up and force-open any ancestor <details> (e.g., nested Glossary section wrappers)
+            let p = el.parentElement;
+            while(p && p !== guideRef.current){
+              if(p.tagName === "DETAILS") p.open = true;
+              p = p.parentElement;
+            }
+            el.scrollIntoView({behavior:"smooth",block:"center"});
+          }
           setMethodHighlight(entry.id);
           setTimeout(()=>setMethodHighlight(null), 3000);
         }, 50);
@@ -1173,16 +1189,36 @@ function RentVsBuyV3() {
               <p style={{marginTop:4}}>Enter YOUR numbers (real rent, real savings, real timeline). Look at the verdict. Then break it: slide the discipline to 70%, try a different rate, change the sell year. The goal isn't to get one answer — it's to understand which assumptions your decision depends on and how sensitive it is to being wrong about them.</p>
             </>}
             {guideTab==="gl"&&<>
-              <p style={{fontWeight:600,color:T.text1,fontSize:14,marginBottom:6}}>Data-table columns</p>
-              <p style={{fontSize:11,color:T.text3,marginBottom:16}}>Definitions for each column in the year-by-year data table below the chart. Each entry includes the formula where applicable, a worked example, and interpretation notes.</p>
-              {GLOSSARY.map(g=>(
-                <p key={g.id} id={g.id} className={methodHighlight===g.id?"target-highlight":""} style={{marginTop:12}}>
-                  <strong style={{color:T.text1,fontFamily:THEME_MONO}}>{g.name}</strong> — {g.def}
-                  {g.formula&&<><br/><span style={{fontFamily:THEME_MONO,fontSize:11,color:T.text2}}>{g.formula}</span></>}
-                  {g.ex&&<><br/><span style={{fontSize:11,color:T.text3}}>Example: {g.ex}</span></>}
-                  {g.note&&<><br/><span style={{fontSize:11,color:T.text3,fontStyle:"italic"}}>{g.note}</span></>}
-                </p>
-              ))}
+              <details open id="gl-section-table" style={{marginBottom:12}}>
+                <summary style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8,padding:"6px 0"}}>
+                  <span className="disclosure-icon" style={{fontSize:11,color:T.text2,lineHeight:1}}>▶</span>
+                  <span style={{fontWeight:600,color:T.text1,fontSize:14}}>Data-Table Columns</span>
+                </summary>
+                <p style={{fontSize:11,color:T.text3,marginTop:6,marginBottom:4}}>Definitions for each column in the year-by-year data table below the chart. Each entry includes the formula where applicable, a worked example, and interpretation notes.</p>
+                {GLOSSARY.filter(g=>!g.cat||g.cat==="table").map(g=>(
+                  <p key={g.id} id={g.id} className={methodHighlight===g.id?"target-highlight":""} style={{marginTop:12}}>
+                    <strong style={{color:T.text1,fontFamily:THEME_MONO}}>{g.name}</strong> — {g.def}
+                    {g.formula&&<><br/><span style={{fontFamily:THEME_MONO,fontSize:11,color:T.text2}}>{g.formula}</span></>}
+                    {g.ex&&<><br/><span style={{fontSize:11,color:T.text3}}>Example: {g.ex}</span></>}
+                    {g.note&&<><br/><span style={{fontSize:11,color:T.text3,fontStyle:"italic"}}>{g.note}</span></>}
+                  </p>
+                ))}
+              </details>
+              <details open id="gl-section-input" style={{marginBottom:12}}>
+                <summary style={{cursor:"pointer",display:"flex",alignItems:"center",gap:8,padding:"6px 0"}}>
+                  <span className="disclosure-icon" style={{fontSize:11,color:T.text2,lineHeight:1}}>▶</span>
+                  <span style={{fontWeight:600,color:T.text1,fontSize:14}}>Assumption Input Definitions</span>
+                </summary>
+                <p style={{fontSize:11,color:T.text3,marginTop:6,marginBottom:4}}>Definitions for each market assumption in the "Your Assumptions" panel. Each entry includes the formula, sourced defaults, and interpretation notes.</p>
+                {GLOSSARY.filter(g=>g.cat==="input").map(g=>(
+                  <p key={g.id} id={g.id} className={methodHighlight===g.id?"target-highlight":""} style={{marginTop:12}}>
+                    <strong style={{color:T.text1,fontFamily:THEME_MONO}}>{g.name}</strong> — {g.def}
+                    {g.formula&&<><br/><span style={{fontFamily:THEME_MONO,fontSize:11,color:T.text2}}>{g.formula}</span></>}
+                    {g.ex&&<><br/><span style={{fontSize:11,color:T.text3}}>Example: {g.ex}</span></>}
+                    {g.note&&<><br/><span style={{fontSize:11,color:T.text3,fontStyle:"italic"}}>{g.note}</span></>}
+                  </p>
+                ))}
+              </details>
             </>}
           </div>
         </div>
@@ -1471,7 +1507,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.13 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.14 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

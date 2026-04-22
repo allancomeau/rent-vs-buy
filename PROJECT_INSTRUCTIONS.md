@@ -256,9 +256,6 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 - [ ] **Nested `<details>` subsections inside the Glossary tab** — Apply when the Glossary grows beyond ~25-30 entries or when we add a second content category (e.g., input callouts, market concepts). Each subsection wrapped in a `<details>` with the v3.9.99.9 `.disclosure-icon` ▶ arrow pattern. Prevents tab bloat AND avoids nested-scroll UX (which would break touch swipe on mobile). Don't scaffold preemptively — wait for actual scale.
 
 ### Deferred / Low-priority observations
-- [ ] **Android inputMode verification** — iPhone 13 mini confirmed in v3.9.99.9; Android keyboards unverified. Will surface via user feedback if broken.
-- [ ] **`autoComplete="off"` autofill behavior** — suppressed in v3.9.99.9 code; confirm no false-positive autofills on actual browsers.
-- [ ] **Narrow-desktop MarketInputs layout wrap** — at roughly ~420-680px viewport widths (unusual desktop-with-narrow-window use case), `MarketInputs` labels can wrap and push the `?` tooltip trigger to a new line, producing visual oddities like "Appreciation\n?" or "Rent Growth\n?". Observed once in the wild during a session resize. Not a common use case; indirect improvement from v3.9.99.12 (shorter tooltip triggers → less horizontal pressure), full fix would require stacking labels above inputs at narrow widths or using a min-width media query. Deferred unless it surfaces in real use.
 - [ ] **"Show values / Show YoY change" toggle** above table — prominent, not subtle; flips every cell between absolute and year-over-year delta
 - [ ] **Inflation ↔ rent-growth default-tie** with unlink affordance
 

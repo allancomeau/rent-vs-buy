@@ -286,15 +286,6 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 
 ---
 
-## Known Issues / Feedback
-
-1. **Home price identical across locations within country** — correct behavior (same P&I + same rate = same derived home price), but counterintuitive for first-time users. VerdictBox KPIs explain what differs per location (appreciation, tax, spread).
-2. **Old shared URLs** — `monthlyPayment` query param maps to both `rentBudget` and `buyBudget` for backward compatibility.
-3. **Brother feedback:** year-by-year data table numbers don't trace easily back to formulas — addressed in v3.9.99.9 plan via `TABLE_TIPS` upgrade and YoY toggle.
-4. **`mortgageTerm = 0` divides by zero** — audit-flagged; addressed in v3.9.99.8 input hardening.
-
----
-
 ## Design Philosophy
 
 1. **Quality over features.** A correct model with 10 inputs beats a buggy model with 30.

@@ -123,10 +123,12 @@ Exactly one case is self-consistent for any valid input — the four tiers parti
 
 ### Engine deltas summary
 
-The closed-form solve is new. Everything downstream is unchanged:
-- `simulate()` — unchanged. Takes a params object with `homePrice`, `loanAmount`, etc. The new solve just produces those values differently.
-- `backsolveLoan()` — retained for backward compatibility during URL migration (legacy `buyBudget` value treated as P&I, backsolveLoan used to estimate loan, derive home price, then re-solve the v4 way with the estimate as starting point).
-- Amortization, tax-benefit, sale-proceeds, discipline application, investment compounding — all unchanged.
+The closed-form solve is new. `simulate()` gains **one** new term — a declining-balance PMI line in the monthly buyer-cost loop — and is otherwise unchanged:
+- New closed-form solve — produces `homePrice`, `loanAmount`, `pmiMo`, `pmiRate`, passed into params
+- `simulate()` — gains a PMI term in the monthly buyer-cost accumulation: `pmiThisMonth = (loanBalance × pmiRate / 12) if loanBalance/homePrice > 0.8 else 0`. PMI flows into `totalBuyerCost`, `netBuyerCost`, the verdict, the charts, and sensitivity. Everything else (amortization, tax-benefit, sale-proceeds, discipline application, investment compounding) is unchanged.
+- `backsolveLoan()` — retained for URL migration only (legacy `buyBudget` → v4 `buyAllIn` conversion). Not called from the main engine path.
+
+**Why simulate() must gain PMI in v4.0:** the v4.0 reframe promises "Buy Budget is your monthly all-in." If the solve includes PMI in the solve (required, or the derived home price is wrong for low-down scenarios) but simulate() ignores PMI in the monthly loop, three different numbers emerge for "what the buyer spends monthly" — the user's input, the callout's breakdown, and the engine's internal accounting. That contradicts v4.0's own coherence promise. The PMI-engine-integration is coupled to the input-model rework by the coherence requirement; they're not two independent changes riding along.
 
 **Engine bug fixes from v3.0 preserved** (final P&I uses `mi + mp` not full `monthlyPmt`; selling costs reduce capital gain per IRS Pub 523).
 
@@ -209,7 +211,7 @@ Type 2 is the priority case. Driven by real user feedback: users want to underst
 
 ## What does NOT change in v4.0
 
-- **The engine core.** `simulate()`, amortization, tax-benefit calc, sale-proceeds, discipline application — untouched.
+- **The engine core.** `simulate()` gains exactly one new term (declining-balance PMI in the monthly buyer-cost loop — see Engine Deltas section); amortization, tax-benefit calc, sale-proceeds, discipline application, investment compounding — all untouched.
 - **Location / metro / country data.** 16 countries, 54 metros — unchanged.
 - **Charts.** All four (Input Sensitivity, Net Worth, Cash Outflow, Balances) — unchanged.
 - **Your Assumptions + What-If panels.** Unchanged.
@@ -250,9 +252,10 @@ The v3.9.99 budget-first attempt failed on one specific tester reaction: "same b
 4. **URL migration:** Open a v3.x shared link → migration notice shows, inputs populated with estimated values, can be dismissed, old-vs-new home-price delta is disclosed inline in the notice.
 5. **Discipline slider + Mo.Investments readout:** Slide discipline 0% → 100%, Mo.Investments readout updates live. At discipline = 0, readout shows $0. At 100%, shows full `|Buy − Rent|`.
 6. **Mortgage term / holding period:** Changing mortgage term changes `A`, changes home price. Changing holding period doesn't change home price (it only affects simulate() projections).
-7. **Fresh-tester walk-through** (the one that killed v3.9.99): Give someone unfamiliar the tool at default. Does the mental model "tell me what I can afford monthly + how much I've saved, and you tell me what house that is" land without confusion? Does the "different home price per metro with same budgets" phenomenon register as intuitive (because tax/ins/maint are different) rather than confusing?
+7. **PMI amortization dropoff** (new for v4.0 engine change): In a low-down scenario (e.g. 10% down, forcing 0.3% PMI), year-by-year buyer cost in the data table should show PMI contributing until the year amortization brings LTV below 80%, then drop to zero. Cash Outflow chart should reflect the step-down. Sensitivity chart for mortgage rate should show a PMI-amplified range for low-down scenarios (higher rate → slower amortization → PMI persists longer → wider mortgage-rate sensitivity band).
+8. **Fresh-tester walk-through** (the one that killed v3.9.99): Give someone unfamiliar the tool at default. Does the mental model "tell me what I can afford monthly + how much I've saved, and you tell me what house that is" land without confusion? Does the "different home price per metro with same budgets" phenomenon register as intuitive (because tax/ins/maint are different) rather than confusing?
 
-Test 7 is the one that actually failed last time. Don't skip it.
+Test 8 is the one that actually failed last time. Don't skip it.
 
 ---
 
@@ -271,7 +274,7 @@ Test 7 is the one that actually failed last time. Don't skip it.
 ### What doesn't happen
 
 - **No URL-param forced migration.** Legacy v3 links continue to work via the migration notice. Migration is display-layer, not state-model — no forced redirect, no server-side anything.
-- **No engine version gate.** `simulate()` is unchanged; there's no "v3 engine vs v4 engine" branching inside the core math.
+- **No engine version gate.** `simulate()` is a single version — no "v3 engine vs v4 engine" branching inside the core math. The new PMI term is present unconditionally; PMI rate is 0 when LTV ≤ 80%, so the term is a no-op for scenarios that behaved that way in v3.
 - **No feature-flag for v3 layout.** We commit to v4 on ship. No "revert to v3 layout" toggle. If v4 lands badly, we roll back the whole version — consistent with the trust contract.
 
 ---
@@ -281,7 +284,7 @@ Test 7 is the one that actually failed last time. Don't skip it.
 Suggested execution sequence — each step independently verifiable before the next:
 
 1. **Closed-form solve function** in isolation. Pure function, testable without UI. Confirm test cases (PMI 4-tier boundaries, cross-metro, default-load sanity) return sane numbers. Building this as a pure function first decouples math correctness from UI correctness — when a number looks wrong after full wire-up, we know instantly whether the solve is wrong or the wire-up is wrong. The v3.9.99 budget-first attempt coupled math + UI + wiring in one pass and debugging became a three-way attribution problem; this sequencing is specifically designed to avoid that.
-2. **Engine integration.** Replace `buildParams` with v4 semantics — not branch to `buildParamsV4`. Major-version bump means v3 input state never exists in memory post-migration. `backsolveLoan` is preserved but its only remaining caller is the URL-migration handler (step 7), not the main engine path. simulate() unchanged.
+2. **Engine integration.** Replace `buildParams` with v4 semantics — not branch to `buildParamsV4`. Major-version bump means v3 input state never exists in memory post-migration. `backsolveLoan` is preserved but its only remaining caller is the URL-migration handler (step 7), not the main engine path. **Also:** add a declining-balance PMI term to `simulate()`'s monthly buyer-cost accumulation. PMI applies while `loanBalance / homePrice > 0.8`, drops to zero once amortization brings LTV below that threshold. Flows into `totalBuyerCost`, `netBuyerCost`, verdict, charts, sensitivity. Required for v4.0 coherence — see Engine Deltas section for why this is coupled to the input-model rework rather than a separate concern.
 3. **Input UI.** Rename fields, remove link toggle, remove P&I input. Do NOT wire new engine yet — UI just sets state.
 4. **Engine wire-up.** Connect v4 inputs → v4 solve → simulate(). Verify default-load renders correctly.
 5. **Financial-snapshot callout rewrite.** Repoint to derived home price + day-0 breakdown + monthly breakdown.

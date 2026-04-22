@@ -38,7 +38,11 @@ A .99.N patch with these properties would violate the trust contract the rest of
 
 **Sim Length** (how many simulation years to render) stays where it lives today — in the chart card, not in Your Situation. Not counted in the visible-inputs total.
 
-**Mo.Investments** is a NEW **derived readout**, not an input in v4.0. Displays live next to Investment Discipline, showing `max(0, |Buy − Rent|) × Discipline`. Whichever side has the lower monthly housing cost has the surplus; the readout shows what gets invested monthly after Discipline is applied. Read-only in v4.0; unlock-to-direct-input lands in v4.1.
+**Mo.Investments** is a NEW **derived readout**, not an input in v4.0. Renders as a full input-field-shaped control beside Investment Discipline, showing `max(0, |Buy − Rent|) × Discipline`. Whichever side has the lower monthly housing cost has the surplus; the field shows what gets invested monthly after Discipline is applied.
+
+**v4.0 rendering:** input-shaped control, **disabled state** (greyed, matching the existing 🔒-locked field styling used elsewhere), auto-populated with the derived value, updates live as Buy/Rent/Discipline change. A lock icon (🔒) indicates the field will become editable in a future version. Hover/tap on the lock shows "Direct input coming in v4.1" or equivalent.
+
+**Rendering this as a disabled input (not a slider annotation or separate card) is a deliberate choice** — it makes the v4.1 "unlock" transition a state flip (disabled → enabled, 🔒 → 🔓), not a layout reshuffle. The user sees the intended shape of the control from day one; v4.1 just lets them override it.
 
 **Deleted from UI** (vs. v3.9.99.15):
 - Mortgage P&I (folded into Buy Budget)
@@ -87,34 +91,35 @@ H = (B − PMI_mo + S·A) / [(1 + c)·A + (t + i + m)/12]
 
 ### PMI as a piecewise solve
 
-PMI is conditional on LTV > 80%. Using the day-0 constraint:
-```
-LTV = loan / H = (1+c) − S/H
-LTV > 0.8  ⟺  S/H < 0.2 + c
-```
+PMI is a **4-tier schedule** based on LTV (loan-to-value), preserved from v3.x:
 
-So the LTV test collapses to a check on `S/H` against a known constant (~0.23 at `c = 0.03`).
+| Down payment % | LTV | PMI rate (annual, % of loan) |
+|---|---|---|
+| ≥ 20% | ≤ 80% | 0% (no PMI) |
+| 15–20% | 80–85% | 0.2% |
+| 10–15% | 85–90% | 0.3% |
+| 5–10% | 90–95% | 0.5% |
+| < 5% | > 95% | (engine handles; minimum down enforced upstream) |
 
-Two cases, solve each, pick the self-consistent one:
+Using the day-0 constraint `LTV = (1+c) − S/H`, the tier thresholds collapse to checks on `S/H` against known constants (adjusted by `c`, the closing-cost fraction). E.g., at `c = 0.03`:
 
-**Case 1 — no PMI:**
-```
-PMI_mo = 0
-H = (B + S·A) / [(1 + c)·A + (t + i + m)/12]
-Accept if: S/H ≥ 0.2 + c
-```
+| PMI rate | `S/H` threshold |
+|---|---|
+| 0% | ≥ 0.23 |
+| 0.2% | 0.18–0.23 |
+| 0.3% | 0.13–0.18 |
+| 0.5% | 0.08–0.13 |
 
-**Case 2 — PMI applies:**
-```
-PMI_mo = loan·p/12 = (H·(1+c) − S)·p/12
-H = (B + S·A − S·p/12·... ) / [ ... ]
-```
+**Four cases, solve each, pick the self-consistent one:**
 
-Specifically, substituting PMI_mo into the numerator gives a linear equation in H (the `H·(1+c)·p/12` term moves to the denominator side). Solvable in closed form. Accept if `S/H < 0.2 + c`.
+For each PMI rate `p ∈ {0, 0.002, 0.003, 0.005}`:
+1. Substitute `PMI_mo = loan·p/12 = (H·(1+c) − S)·p/12` into the monthly constraint
+2. Solve resulting linear equation for H (the `H·(1+c)·p/12` term moves to denominator side)
+3. Accept the solution if the resulting `S/H` falls inside that tier's band
 
-Exactly one case is self-consistent for any valid input. No iteration needed.
+Exactly one case is self-consistent for any valid input — the four tiers partition the `S/H` space, and the solve's internal consistency requirement picks the matching tier. No iteration needed.
 
-**Open detail for implementation:** PMI is conventionally quoted as annual % of outstanding loan balance (declining over amortization) vs. original loan (flat until natural 80% LTV dropoff). At t=0 both expressions equal `original_loan · p / 12`, so the solve is identical. The declining-vs-flat choice only matters inside the year-by-year `simulate()` loop. Per v3.9.99.8 defaults, use declining-balance for simulate() accuracy. Decide during implementation, flag in inline comment.
+**Open detail for implementation:** PMI is conventionally quoted as annual % of outstanding loan balance (declining over amortization) vs. original loan (flat until natural 80% LTV dropoff). At t=0 both expressions equal `original_loan · p / 12`, so the solve is identical. The declining-vs-flat choice only matters inside the year-by-year `simulate()` loop. **Use declining-balance per v3.9.99.8 precedent.**
 
 ### Engine deltas summary
 
@@ -275,8 +280,8 @@ Test 7 is the one that actually failed last time. Don't skip it.
 
 Suggested execution sequence — each step independently verifiable before the next:
 
-1. **Closed-form solve function** in isolation. Pure function, testable without UI. Confirm test cases (PMI boundaries, cross-metro) return sane numbers.
-2. **Engine integration.** Wire the new solve into `buildParams` (or a new `buildParamsV4`). Keep `backsolveLoan` available for migration. simulate() unchanged.
+1. **Closed-form solve function** in isolation. Pure function, testable without UI. Confirm test cases (PMI 4-tier boundaries, cross-metro, default-load sanity) return sane numbers. Building this as a pure function first decouples math correctness from UI correctness — when a number looks wrong after full wire-up, we know instantly whether the solve is wrong or the wire-up is wrong. The v3.9.99 budget-first attempt coupled math + UI + wiring in one pass and debugging became a three-way attribution problem; this sequencing is specifically designed to avoid that.
+2. **Engine integration.** Replace `buildParams` with v4 semantics — not branch to `buildParamsV4`. Major-version bump means v3 input state never exists in memory post-migration. `backsolveLoan` is preserved but its only remaining caller is the URL-migration handler (step 7), not the main engine path. simulate() unchanged.
 3. **Input UI.** Rename fields, remove link toggle, remove P&I input. Do NOT wire new engine yet — UI just sets state.
 4. **Engine wire-up.** Connect v4 inputs → v4 solve → simulate(). Verify default-load renders correctly.
 5. **Financial-snapshot callout rewrite.** Repoint to derived home price + day-0 breakdown + monthly breakdown.
@@ -293,11 +298,12 @@ Expect this to span multiple sessions. Each numbered step is a clean stopping po
 
 ## Open items for v4.0 implementation (decide during build)
 
-Not blocking for scoping; flagged for the implementer (likely future-me, possibly you at the keyboard):
+Not blocking for scoping; flagged for the implementer:
 
-1. **PMI annual-vs-declining-balance choice** inside simulate(). Boundary irrelevant for solve; matters for year-by-year rendering. Use declining-balance per v3.9.99.8 precedent unless reason otherwise.
-2. **Amber Type 1 vs Type 2 trigger thresholds** — the "meaningful magnitude" benchmark for firing the Mo.Investments distortion amber. Suggested >10% of total wealth at sell year; refine after observing real usage.
-3. **Default metro on fresh load** — Boston, USA (per Allan). Confirm metro data supports this cleanly (rent, tax/ins/maint rates, mortgage rate all sourced). No fabricated defaults.
+1. **Amber Type 1 vs Type 2 trigger thresholds** — the "meaningful magnitude" benchmark for firing the Mo.Investments distortion amber. Suggested >10% of total wealth at sell year; refine after observing real usage.
+2. **Boston metro default values** — confirm during implementation that Boston's metro data produces plausible Rent Budget / Buy Budget / Savings Budget defaults via reverse-compute. No fabricated numbers.
+3. **Lock icon copy** — exact wording for the hover/tap on the v4.0 disabled Mo.Investments lock: "Direct input coming in v4.1" or equivalent. Minor.
+4. **Migration notice timing** — dismisses on ✕ click or first interaction with any Your Situation input, whichever comes first. Implementation detail.
 
 ---
 

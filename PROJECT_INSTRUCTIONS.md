@@ -20,7 +20,7 @@ An interactive single-file HTML application that compares renting vs. buying a h
 
 ---
 
-## Current State: v3.9.99.15 — Glossary Link Migration (MarketInputs)
+## Current State: v4.0 — Three-Budget Architecture
 
 ### Architecture
 
@@ -55,26 +55,27 @@ Any new hook must be added here or Babel will white-screen.
 - No `</script>` inside the Babel script block
 - COUNTRIES defined exactly once (no duplication)
 - `let T = THEMES.light` and `let S = buildS(T)` present between theme definitions and shared components (currently ~lines 689-690)
-- All key functions present: backsolveLoan, simulate, buildParams, RentVsBuyV3, runSensitivity
+- All key functions present: `solveHomePrice`, `simulate`, `buildParams`, `backsolveLoan`, `migratePersonalFromV3`, `clampPersonal`, `MORTGAGE_TERM_OPTIONS`, `GlossaryLinkBase`, `RentVsBuyV3`, `runSensitivity`
 
-### Monthly-Payment-First Architecture
+### Three-Budget Architecture (v4.0)
 
-Primary inputs: Monthly P&I + Down Payment. Home price is DERIVED:
+Primary inputs: **Mo. Rent Cost**, **Mo. Buy Cost** (monthly all-in — P&I + tax + ins + maint + PMI), **Savings Budget** (day-0 total — down + closing). Home price is DERIVED via closed-form solve:
 ```
-L = M × [(1+r)^n − 1] / [r × (1+r)^n]
-homePrice = L + downPayment
+H = (B + S·(A + p/12)) / ((1+c)(A + p/12) + (t+i+m)/12)
 ```
-Same payment at different mortgage rates → different derived home prices.
+Where `A` is the amortization factor, `p` is the PMI rate (piecewise across 4 tiers), `c` is closing fraction, and `t + i + m` are metro tax + insurance + maintenance rates.
 
-**Budget split:** Rent Payment and Mortgage P&I are separate inputs with a 🔗 link toggle. Linked by default (apples-to-apples comparison); when unlinked, a >10% delta triggers an amber warning. The engine's `startRent` parameter now passes through from `personal` rather than being computed inside `simulate()`, allowing rent to be set independently from P&I.
+The solve is piecewise-linear across the PMI schedule (0% / 0.2% / 0.3% / 0.5% at dp thresholds 20% / 15% / 10% / <10%). For each tier, compute H, then check whether the resulting down% is self-consistent with the tier's range. First self-consistent tier is the solution. Epsilon tolerance on band lower-bound for float safety.
+
+**Mo. Advantage** (derived readout): `|Mo. Buy Cost − Mo. Rent Cost| × Discipline` — the monthly cash-flow differential invested by the lower-cost side at simulation start. Displayed as "at the start" because the engine recomputes the differential year-by-year (rent grows ~3.5%/yr, mortgage P&I is fixed nominal, advantage typically shifts toward buyer and jumps at mortgage payoff).
 
 ### Page Layout (top to bottom)
 
 1. **Header** — Centered. Fluid h1 (`clamp(24px, 5vw, 32px)`) reads "Rent vs Buy". Themes on their own centered row, tutorial toggle on a separate row below.
 2. **Guide** — Two-line centered summary ("Guide, FAQ & Methodology" / "Open source · GitHub"). Closed by default. 4 tabs: How It Works, Methodology, Sources & Limitations, FAQ. `ref={guideRef}` for scroll targeting.
 3. **Your Situation** — Personal inputs + financial snapshot + Location all inside one unified widget:
-   - **Personal inputs:** Rent Payment + Mortgage P&I (linked by default), Savings / Down Payment, Mortgage Term, Holding Period, Investment Discipline
-   - **Financial snapshot callout:** derived home price + country median, plus collapsible details (PMI threshold, income check at 28% front-end ratio, round-trip transaction costs)
+   - **Personal inputs (7 in a responsive grid):** Mo. Rent Cost, Mo. Buy Cost, Savings Budget, Mortgage Term (dropdown: 15/20/25/30/35), Sell in Year, Investment Discipline, Mo. Advantage (locked derived readout). All 7 use `<GlossaryLink>` (dotted-underline affordance; tap for Glossary entry).
+   - **Financial snapshot callout:** derived home price + country median, plus collapsible details (PMI threshold, income check at 28% front-end ratio on all-in cost, round-trip transaction costs)
    - **Location section** (below a 2px border-top): centered "LOCATION · [Country]" header with `·` separator, two metro dropdowns with inline link toggle (greyed-when-linked), per-location verdict boxes
 4. **Your Assumptions + What-If panels** (two-column flex layout below Your Situation):
    - **Your Assumptions** — wide primary interactive panel (`flex: 2 1 320px`). Accent blue by default; purple with preset name in title ("Your Assumptions (Low Rate Era)") when a preset is loaded. Share button embedded in panel header.
@@ -250,27 +251,27 @@ Format: `vX.Y` or `vX.Y.Z`. Version in footer.
 | v3.9.99.13 | UX Polish (pre-Glossary Expansion) | Narrow-desktop label wrap (`minWidth:0` + `overflowWrap`) · Felix scroll centers on `#felix` anchor · Confidence card gained "CONFIDENCE & WARNINGS" header · `linkBtnStyle(linked)` helper unifies Rent/Buy + Location buttons (3 inline style blocks → 1 helper) · Location's two parallel renders consolidated to one · interaction-verb language normalized ("Tap" default, "Hover ... (desktop only)" when no touch equivalent) |
 | v3.9.99.14 | Glossary Expansion (content) | 7 new `GLOSSARY` entries for assumption inputs (Mortgage Rate, Invest Return, Appreciation, Rent Growth, Prop Tax, Insurance, Maintenance) · `cat` field on new entries only (existing 15 implicit-table via filter predicate) · Glossary tab restructured with two nested `<details>` sections, default collapsed, accordion-style (one open at a time) · arrow rotation scoped per-details via `> summary` selector · `resetNestedDetails` on outer Guide returns subsections to collapsed on close/reopen · `GlossaryLink` gains `aliases` lookup + ancestor-`<details>` force-open walk · scaling-pattern pending item resolved |
 | v3.9.99.15 | Glossary Link Migration (MarketInputs) | 7 MarketInputs labels migrated from `<Tip>` to `<GlossaryLink>` in both Your Assumptions and What-If panels · `GlossaryLinkBase` lifted to module scope with deps-as-props, thin `gl` alias inside `RentVsBuyV3` pre-binds them · prop-drilled 3 levels (`RentVsBuyV3` → `ScenarioPanel` → `MarketInputs` → `NumInput`) · `NumInput` renders `<Gl>` when `gl` prop is passed, `<Tip>` otherwise (backward compat for Your Situation inputs) · 7 dead TIPS entries pruned |
+| **v4.0** | **Three-Budget Architecture** | **Major version bump.** Three-budget closed-form solve replaces payment-first (Mo. Rent Cost + Mo. Buy Cost + Savings Budget) · PMI piecewise across 4 tiers in both solve and simulate · maint timing fix in simulate (beginning-of-year alignment) · label rename (Budget → Cost, Investments → Advantage) · Mortgage Term slider → dropdown with snap-to-enum · live computed hints on Mo. Rent/Buy Cost · 7 new Glossary entries + full GlossaryLink migration for Your Situation · TIPS pruned to `{}` · URL migration v3 → v4 with inline amber banner · Type 1/Type 2 Mo. Advantage distortion ambers · low-savings fallback amber · dotted-underline affordance on clickable labels · tutorial signpost for Glossary discovery · pass-through framing in tooltips and Glossary (Löffler, McDonald, Grainger citations) · v4.1 lock-button collision comment inlined |
 
 ---
 
 ## Pending Items
 
-### v4.0 — Beginner-Mode Three-Budget Architecture
-Working spec: **`v4_0_scoping.md`** in project files. Covers three-budget input model, closed-form solve with piecewise PMI, URL migration, amber distortion-detection logic, Glossary additions, implementation sequence, and pre-ship validation. Scope is strictly the three-budget rework + Mo.Investments derived readout — nothing else. Everything below this line is v4.1+ or later.
-
-### v4.1 — Mo.Investments Unlock + Expert-Mode Foundation
-- [ ] **Mo.Investments unlock + direct input** — Unlock icon exposes direct $ input. When unlocked, Discipline auto-snaps to 100% but remains user-adjustable (covers "I invest $500 but miss a month a year = 92%"). Re-linking restores prior Discipline value. Inflation-adjustment toggle (nominal vs real) for the direct-input case.
-- [ ] **Standard vs Expert mode toggle** — Beginner mode stays at the six v4.0 visible inputs. Expert mode unlocks: component overrides (P&I, tax, ins, maint individually); Rent/Buy link toggle returns for apples-to-apples comparisons; SALT cap, AMT, NIIT, rental-income-if-moved-out; closing-cost capitalization to basis (audit item #8). Warning on toggle: "Adding detail doesn't always improve accuracy."
-- [ ] **Expert-mode clamp relaxation** — Hard clamps (from v3.9.99.8) stay on. In Expert mode, widen the *soft* amber-OOB ranges so expert users see fewer warnings for unusual-but-valid values (e.g., 50-year hold, 90% discipline).
+### v4.1 — Mo. Advantage Unlock + Expert Mode Foundation
+- [ ] **Mo. Advantage unlock + direct input** — Unlock icon on the locked Mo. Advantage NumInput exposes direct `$` input. When unlocked, Discipline auto-snaps to 100% but remains user-adjustable (covers "I invest $500/mo but miss some months = 92%"). Re-linking restores prior Discipline value. Inflation-adjustment toggle (nominal vs real) for the direct-input case. **Implementation constraint (inlined as comment in NumInput source):** the unlock icon must sit OUTSIDE the `<Gl>` wrapper — otherwise clicking the unlock triggers Glossary navigation. Either move the lock/unlock icon from inside the label span to a separate element, or add `e.stopPropagation()` on the unlock onClick.
+- [ ] **Standard vs Expert mode toggle** — Beginner mode stays at the six v4.0 visible inputs (plus Mo. Advantage derived). Expert mode unlocks: component overrides (P&I, tax, ins, maint individually); Rent/Buy link toggle returns for strict apples-to-apples comparisons; SALT cap, AMT, NIIT, rental-income-if-moved-out; closing-cost capitalization to basis (audit item #8). Warning on toggle: "Adding detail doesn't always improve accuracy."
+- [ ] **Expert-mode clamp relaxation** — Hard clamps (from v3.9.99.8) stay on. In Expert mode, widen the *soft* amber-OOB ranges so expert users see fewer warnings for unusual-but-valid values (e.g., 50-year hold, 90% discipline, non-standard mortgage terms outside [15, 35]).
 
 ### v4.2 — Extra Payments + Prepay Callout
 - [ ] **Extra monthly mortgage payment input** (Expert mode only) — goes straight to principal, shortens effective term, adjusts payoff marker. Poor man's refinance precursor to the v5+ refi feature.
 - [ ] **Prepay-vs-invest teachable callout** (Felix-style heuristic, not prescriptive): "Adding $X/mo extra pays off the mortgage Y years early, saves $Z in total interest. That same $X/mo invested at [engine's invest return] would grow to $W. Prepaying is a certain [mortgage rate]% return; investing is an expected [invest return]% with volatility." Transparent, non-prescriptive, mirrors Felix's design philosophy.
 
 ### v4.3 — Engine Cleanup
+- [ ] **Low-savings fallback refinement** — v4.0 added the amber warning. Further improvement: make the fallback values reflect reality better (0% down, max PMI tier, home ≈ savings/closingPct) rather than the current $100K/20% flat defaults. Would give users a somewhat-meaningful preview even at broken input states.
 - [ ] **`otherItemized` full engine removal or Expert-mode surface** — UI already removed in v3.9.98; engine param still at 0. Either delete fully or wire into Expert mode.
 - [ ] **`renterIns` — decide fate** — zeroed in v3.9.99.8 with architecture preserved. Either delete fully or resurface as an Expert-mode optional add.
 - [ ] **Inflation ↔ rent-growth default-tie** with unlink affordance — if not resolved by Expert mode's general approach to linked inputs, decide here. Historically rent growth ≈ inflation; a linked default with explicit unlink (same pattern as v3's Rent/P&I toggle) could reduce scenario-input burden for beginners while preserving Expert flexibility. Deferred from v4.0 because resolution depends on how Expert mode handles input linking generally.
+- [ ] **Default Rent recalibration toward partial pass-through** — v4.0 ships with Rent default = Buy default across all metros (implying 100% landlord pass-through, which v4.0's pass-through framing acknowledges is one extreme of the empirical range). Recalibrating defaults to Rent ≈ 75-85% of Buy would embed a research-backed partial-pass-through assumption (~50-70% middle-ground per Löffler-Siegloch, McDonald, Grainger). Deferred because it requires per-country research and because v4.0's pass-through-dial framing already gives users the explicit control. Revisit if sibling testers flag the "v4 feels pro-buyer" perception.
 
 ### v4.1+ — Enhanced Interactivity
 - [ ] FAQ accordion

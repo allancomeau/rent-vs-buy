@@ -119,7 +119,7 @@ const { LineChart, Line, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, Car
 const COUNTRIES = {
   US: {
     name: "United States", currency: "USD", sym: "$",
-    personalDefaults: { monthlyPayment: 2000, downPayment: 80000 },
+    personalDefaults: { buyBudget: 2000, savings: 80000 },
     taxNote: "Mortgage interest is tax-deductible (excess itemization method). SALT cap $40,400 (2026). Home sale gains excluded up to $500K (MFJ §121).",
     defaults: {
       mortgageRate: 0.060, mortgageTerm: 30, marginalTax: 0.22,
@@ -136,7 +136,7 @@ const COUNTRIES = {
   },
   CA: {
     name: "Canada", currency: "CAD", sym: "C$",
-    personalDefaults: { monthlyPayment: 2500, downPayment: 120000 },
+    personalDefaults: { buyBudget: 2500, savings: 120000 },
     taxNote: "No mortgage interest deduction on primary residences. Full capital gains exemption on principal residence (PRE). First-time buyers may access FHSA and HBP (RRSP withdrawal) — not modeled.",
     defaults: {
       mortgageRate: 0.045, mortgageTerm: 25, marginalTax: 0,  // No mortgage interest deduction in Canada
@@ -153,7 +153,7 @@ const COUNTRIES = {
   },
   UK: {
     name: "United Kingdom", currency: "GBP", sym: "£",
-    personalDefaults: { monthlyPayment: 1500, downPayment: 50000 },
+    personalDefaults: { buyBudget: 1500, savings: 50000 },
     taxNote: "No mortgage interest deduction on primary residences (restricted even for buy-to-let since 2020). Full Private Residence Relief (PRR) exempts primary home from CGT. Stamp duty applies at purchase — captured in closing costs.",
     defaults: {
       mortgageRate: 0.045, mortgageTerm: 25, marginalTax: 0,  // No mortgage interest deduction in UK
@@ -170,7 +170,7 @@ const COUNTRIES = {
   },
   AU: {
     name: "Australia", currency: "AUD", sym: "A$",
-    personalDefaults: { monthlyPayment: 3000, downPayment: 150000 },
+    personalDefaults: { buyBudget: 3000, savings: 150000 },
     taxNote: "No mortgage interest deduction on primary residences (negative gearing applies to investment properties only). Full main residence CGT exemption. Stamp duty varies by state — captured in closing costs.",
     defaults: {
       mortgageRate: 0.055, mortgageTerm: 30, marginalTax: 0,  // No mortgage interest deduction on primary residence
@@ -187,7 +187,7 @@ const COUNTRIES = {
   },
   DE: {
     name: "Germany", currency: "EUR", sym: "€",
-    personalDefaults: { monthlyPayment: 1500, downPayment: 60000 },
+    personalDefaults: { buyBudget: 1500, savings: 60000 },
     taxNote: "No mortgage interest deduction on owner-occupied housing. No capital gains tax after 10-year holding period. Grunderwerbsteuer (transfer tax, 3.5–6.5% by state) captured in closing costs (set to 10%).",
     defaults: {
       mortgageRate: 0.035, mortgageTerm: 20, marginalTax: 0,  // No mortgage interest deduction on owner-occupied
@@ -204,7 +204,7 @@ const COUNTRIES = {
   },
   IE: {
     name: "Ireland", currency: "EUR", sym: "€",
-    personalDefaults: { monthlyPayment: 1800, downPayment: 60000 },
+    personalDefaults: { buyBudget: 1800, savings: 60000 },
     taxNote: "No mortgage interest deduction on primary residences (abolished 2021). Primary residence fully exempt from CGT. Stamp duty 1% on homes up to €1M, 2% above. Local Property Tax (LPT) is very low (~0.09%).",
     defaults: {
       mortgageRate: 0.039, mortgageTerm: 30, marginalTax: 0,
@@ -221,7 +221,7 @@ const COUNTRIES = {
   },
   NZ: {
     name: "New Zealand", currency: "NZD", sym: "NZ$",
-    personalDefaults: { monthlyPayment: 2800, downPayment: 150000 },
+    personalDefaults: { buyBudget: 2800, savings: 150000 },
     taxNote: "No mortgage interest deduction on owner-occupied homes. No capital gains tax on primary residence (bright-line test applies only to investment properties). KiwiSaver HomeStart grant available for first-home buyers — not modeled.",
     defaults: {
       mortgageRate: 0.055, mortgageTerm: 30, marginalTax: 0,
@@ -238,7 +238,7 @@ const COUNTRIES = {
   },
   FR: {
     name: "France", currency: "EUR", sym: "€",
-    personalDefaults: { monthlyPayment: 1500, downPayment: 60000 },
+    personalDefaults: { buyBudget: 1500, savings: 60000 },
     taxNote: "No mortgage interest deduction on primary residences. Primary residence fully exempt from CGT. Taxe foncière (property tax) varies by commune. Notaire fees (7–9% on existing properties) are captured in closing costs.",
     defaults: {
       mortgageRate: 0.033, mortgageTerm: 20, marginalTax: 0,
@@ -255,7 +255,7 @@ const COUNTRIES = {
   },
   ES: {
     name: "Spain", currency: "EUR", sym: "€",
-    personalDefaults: { monthlyPayment: 1200, downPayment: 50000 },
+    personalDefaults: { buyBudget: 1200, savings: 50000 },
     taxNote: "No mortgage interest deduction (abolished 2013). Primary residence exempt from CGT if proceeds reinvested in new primary residence within 2 years. ITP transfer tax (6–10% by region) captured in closing costs.",
     defaults: {
       mortgageRate: 0.030, mortgageTerm: 25, marginalTax: 0,
@@ -272,7 +272,7 @@ const COUNTRIES = {
   },
   NL: {
     name: "Netherlands", currency: "EUR", sym: "€",
-    personalDefaults: { monthlyPayment: 2000, downPayment: 80000 },
+    personalDefaults: { buyBudget: 2000, savings: 80000 },
     taxNote: "⚠️ BUCKET B: Mortgage interest IS tax-deductible (hypotheekrenteaftrek), but being phased down to base rate (~37%). This model applies the deduction at the base rate. The Netherlands also taxes imputed rental income (eigenwoningforfait, ~0.35% of home value) — not modeled, which slightly overstates buyer advantage.",
     defaults: {
       mortgageRate: 0.037, mortgageTerm: 30, marginalTax: 0.37,
@@ -289,7 +289,7 @@ const COUNTRIES = {
   },
   IT: {
     name: "Italy", currency: "EUR", sym: "€",
-    personalDefaults: { monthlyPayment: 1200, downPayment: 50000 },
+    personalDefaults: { buyBudget: 1200, savings: 50000 },
     taxNote: "A small mortgage interest deduction exists (19% of interest up to €4,000 = max ~€760/yr benefit), but it is too small to materially affect outcomes and is not modeled. Primary residence exempt from CGT after 5 years. IMU property tax waived on primary residence.",
     defaults: {
       mortgageRate: 0.032, mortgageTerm: 25, marginalTax: 0,
@@ -306,7 +306,7 @@ const COUNTRIES = {
   },
   SE: {
     name: "Sweden", currency: "SEK", sym: "kr",
-    personalDefaults: { monthlyPayment: 15000, downPayment: 500000 },
+    personalDefaults: { buyBudget: 15000, savings: 500000 },
     taxNote: "⚠️ BUCKET B: Mortgage interest IS tax-deductible at 30% of interest paid. This model applies the deduction. Sweden also taxes imputed rental income on high-value properties — not modeled. No CGT on primary residence.",
     defaults: {
       mortgageRate: 0.035, mortgageTerm: 30, marginalTax: 0.30,
@@ -323,7 +323,7 @@ const COUNTRIES = {
   },
   CH: {
     name: "Switzerland", currency: "CHF", sym: "CHF ",
-    personalDefaults: { monthlyPayment: 3000, downPayment: 200000 },
+    personalDefaults: { buyBudget: 3000, savings: 200000 },
     taxNote: "⚠️ BUCKET B: Complex system — imputed rental income (Eigenmietwert) is taxed as income, but mortgage interest and maintenance costs are deductible against it. Net effect is roughly neutral to slightly favorable for buyers. This model sets marginalTax to 0 as a simplification; actual benefit depends heavily on canton and income. No CGT on primary residence in most cantons.",
     defaults: {
       mortgageRate: 0.025, mortgageTerm: 25, marginalTax: 0,
@@ -340,7 +340,7 @@ const COUNTRIES = {
   },
   JP: {
     name: "Japan", currency: "JPY", sym: "¥",
-    personalDefaults: { monthlyPayment: 150000, downPayment: 5000000 },
+    personalDefaults: { buyBudget: 150000, savings: 5000000 },
     taxNote: "⚠️ STRUCTURAL DISCLAIMER: Japanese buildings depreciate by law (22yr wooden, 47yr reinforced concrete). Land retains/gains value but structures go to zero. This model assumes total property appreciation, which is ONLY valid for Tokyo/Osaka condos where land value dominates. For detached houses, especially outside major cities, the model significantly overstates buyer wealth. A housing loan deduction (tax credit) exists but is capped and temporary — not modeled.",
     defaults: {
       mortgageRate: 0.015, mortgageTerm: 35, marginalTax: 0,
@@ -357,7 +357,7 @@ const COUNTRIES = {
   },
   SG: {
     name: "Singapore", currency: "SGD", sym: "S$",
-    personalDefaults: { monthlyPayment: 3500, downPayment: 200000 },
+    personalDefaults: { buyBudget: 3500, savings: 200000 },
     taxNote: "⚠️ STRUCTURAL DISCLAIMER: Singapore's housing market is dominated by HDB public housing (~80% of residents). HDB has its own pricing rules, resale restrictions, and mandatory CPF (pension fund) usage that this model cannot capture. Results shown are for PRIVATE CONDOMINIUMS only. Foreign buyers face 60% Additional Buyer's Stamp Duty (ABSD) — not modeled. Use results directionally only.",
     defaults: {
       mortgageRate: 0.035, mortgageTerm: 25, marginalTax: 0,
@@ -374,7 +374,7 @@ const COUNTRIES = {
   },
   KR: {
     name: "South Korea", currency: "KRW", sym: "₩",
-    personalDefaults: { monthlyPayment: 1500000, downPayment: 100000000 },
+    personalDefaults: { buyBudget: 1500000, savings: 100000000 },
     taxNote: "⚠️ STRUCTURAL DISCLAIMER: South Korea's jeonse deposit system (large lump-sum deposit instead of monthly rent) is unique globally and fundamentally changes the rent-vs-buy calculus. This model assumes standard monthly rent, which does not capture jeonse dynamics. Heavy government intervention (DTI limits, multiple-home taxes) also affects outcomes. Use results directionally only.",
     defaults: {
       mortgageRate: 0.04, mortgageTerm: 30, marginalTax: 0,
@@ -473,13 +473,14 @@ const METROS = [
 const PERSONAL_CLAMPS = {
   rentBudget: [0, 100000],
   buyBudget: [0, 100000],
-  downPayment: [0, 10000000],
-  mortgageTerm: [1, 50],
+  savings: [0, 10000000],
+  mortgageTerm: [15, 35],
   holdingPeriod: [1, 100],
   simYears: [5, 100],
   discipline: [0, 1],
   otherItemized: [0, 1000000],
 };
+const MORTGAGE_TERM_OPTIONS = [15, 20, 25, 30, 35];
 const clampPersonal = (p) => {
   const out = {...p};
   for (const k in PERSONAL_CLAMPS) {
@@ -489,6 +490,13 @@ const clampPersonal = (p) => {
       out[k] = Math.max(lo, Math.min(hi, v));
     }
   }
+  // v4.0: mortgageTerm is a discrete enum (dropdown). Snap any off-enum values (legacy URLs,
+  // manual JSON edits) to the nearest valid option so the <select> renders consistently.
+  if (out.mortgageTerm != null && !MORTGAGE_TERM_OPTIONS.includes(out.mortgageTerm)) {
+    out.mortgageTerm = MORTGAGE_TERM_OPTIONS.reduce(
+      (best, opt) => Math.abs(opt - out.mortgageTerm) < Math.abs(best - out.mortgageTerm) ? opt : best
+    );
+  }
   // holdingPeriod cannot exceed simYears (dependent bound)
   if (out.simYears != null && out.holdingPeriod != null) {
     out.holdingPeriod = Math.min(out.holdingPeriod, out.simYears);
@@ -496,12 +504,158 @@ const clampPersonal = (p) => {
   return out;
 };
 
+// v4.0: retained for URL-migration path only (legacy v3 `buyBudget` value
+// treated as P&I to estimate a starting home price before re-solving the v4 way).
+// NOT called from the main engine path — see solveHomePrice below.
 function backsolveLoan(monthlyPayment, annualRate, termYears) {
   const r = annualRate / 12;
   const n = termYears * 12;
   if (r <= 0) return monthlyPayment * n;
   const rn = Math.pow(1 + r, n);
   return monthlyPayment * (rn - 1) / (r * rn);
+}
+
+// v4.0: amortization factor A such that monthly P&I = loan * A.
+function amortFactor(annualRate, termYears) {
+  const r = annualRate / 12;
+  const n = termYears * 12;
+  if (r === 0) return 1 / n;
+  const x = Math.pow(1 + r, n);
+  return (r * x) / (x - 1);
+}
+
+// v4.0: PMI 4-tier schedule preserved from v3.x shipped engine (line 1266 pre-v4).
+// Each tier: `rate` (annual PMI % of loan), `minDp` (lower bound of dp band).
+// Upper bound of each band = previous tier's minDp (Infinity for tier 0).
+const PMI_TIERS = [
+  { rate: 0.000, minDp: 0.20 },
+  { rate: 0.002, minDp: 0.15 },
+  { rate: 0.003, minDp: 0.10 },
+  { rate: 0.005, minDp: 0.00 },
+];
+
+// v4.0: closed-form home-price solve. Given three-budget inputs and metro rates,
+// returns the self-consistent (homePrice, loan, dp, pmiRate, pmiMo, piMo, breakdown).
+// Derivation: solve simultaneously for
+//   day-0:   S = (H - loan) + c*H
+//   monthly: B = loan*A + H*(t+i+m)/12 + PMI_mo
+// with PMI_mo = loan * p/12 depending on the dp band, iterating tiers for
+// self-consistency. Exactly one tier matches for any valid input.
+// See /home/claude/v4_solve.js (dev scratchpad) for isolated test harness.
+function solveHomePrice({ B, S, c, t, i, m, annualRate, termYears }) {
+  if (B <= 0 || !isFinite(B)) throw new Error("solveHomePrice: invalid Mo. Buy Cost");
+  if (S < 0 || !isFinite(S)) throw new Error("solveHomePrice: invalid Savings");
+  if (c < 0 || c >= 1) throw new Error("solveHomePrice: invalid closing fraction");
+  if (t < 0 || i < 0 || m < 0) throw new Error("solveHomePrice: negative rate");
+  if (annualRate <= 0 || termYears <= 0) throw new Error("solveHomePrice: invalid mortgage params");
+
+  const A = amortFactor(annualRate, termYears);
+  const monthlyCarryRate = (t + i + m) / 12;
+  const EPS = 1e-9;
+
+  for (let k = 0; k < PMI_TIERS.length; k++) {
+    const tier = PMI_TIERS[k];
+    const p = tier.rate;
+    const factor = A + p / 12;
+    const numer = B + S * factor;
+    const denom = (1 + c) * factor + monthlyCarryRate;
+    if (denom <= 0) continue;
+    const H = numer / denom;
+    if (!isFinite(H) || H <= 0) continue;
+    const loan = H * (1 + c) - S;
+    if (loan < 0) {
+      throw new Error(
+        "solveHomePrice: Savings exceed full purchase cost. Increase Mo. Buy Cost or reduce Savings."
+      );
+    }
+    const dp = (H - loan) / H;
+    if (dp < 0 && k === PMI_TIERS.length - 1) {
+      throw new Error(
+        "solveHomePrice: Savings below closing costs on implied home price. Increase Savings or decrease Mo. Buy Cost."
+      );
+    }
+    const tierMinDp = tier.minDp;
+    const tierMaxDp = k === 0 ? Infinity : PMI_TIERS[k - 1].minDp;
+    if (dp >= tierMinDp - EPS && dp < tierMaxDp) {
+      const pmiMo = (loan * p) / 12;
+      const piMo = loan * A;
+      return {
+        homePrice: H,
+        loan,
+        downPayment: H - loan,
+        closingCost: c * H,
+        dpPct: dp,
+        ltv: loan / H,
+        pmiRate: p,
+        pmiMo,
+        piMo,
+        taxMo: (H * t) / 12,
+        insMo: (H * i) / 12,
+        maintMo: (H * m) / 12,
+        monthlyTotal: piMo + (H * (t + i + m)) / 12 + pmiMo,
+        tier: k,
+        A,
+      };
+    }
+  }
+  throw new Error("solveHomePrice: no tier self-consistent — check inputs");
+}
+
+// v4.0 URL migration helper. Converts legacy v3 personal state from URL-decoded object into v4 semantics:
+//   v3 `buyBudget` (P&I only)    → v4 `buyBudget` state key (all-in, derived from metro rates + PMI estimate)
+//   v3 `downPayment` (cash down) → v4 `savings` state key (down + closing estimate)
+//   v3 URL key preserved on encode as `buyAllIn` to make legacy detection unambiguous on decode.
+// Native v4 URLs (buyAllIn and/or savings present) pass through unchanged.
+// Returns {migrated, isLegacy, oldHome, newHome}. oldHome/newHome are rough national-rate
+// home-price estimates for the migration notice's old-vs-new delta disclosure.
+function migratePersonalFromV3(raw, country) {
+  if (!raw) return { migrated: null, isLegacy: false, oldHome: null, newHome: null };
+  const c = COUNTRIES[country] || COUNTRIES.US;
+  const d = c.defaults, nat = c.national;
+  const out = { ...raw };
+
+  // Native v4: buyAllIn in URL → buyBudget in state
+  if (raw.buyAllIn != null) { out.buyBudget = raw.buyAllIn; delete out.buyAllIn; }
+
+  const hasLegacyBuy = raw.buyAllIn == null && raw.buyBudget != null;
+  const hasLegacySavings = raw.savings == null && raw.downPayment != null;
+  const isLegacy = hasLegacyBuy || hasLegacySavings;
+
+  let oldHome = null, newHome = null;
+
+  if (isLegacy) {
+    const legacyPI = raw.buyBudget ?? c.personalDefaults.buyBudget;
+    const legacyDown = raw.downPayment ?? c.personalDefaults.savings;
+    const rate = d.mortgageRate;
+    const term = raw.mortgageTerm ?? d.mortgageTerm;
+    const loan = backsolveLoan(legacyPI, rate, term);
+    oldHome = Math.round(loan + legacyDown);
+
+    if (hasLegacyBuy) {
+      // Estimate all-in: P&I + tax + ins + maint + PMI (national rates on the reconstructed v3 home)
+      const carryMo = oldHome * (nat.propTaxRate + nat.insRate + nat.maintRate) / 12;
+      const dpPct = oldHome > 0 ? legacyDown / oldHome : 0;
+      const pmiAnn = dpPct >= 0.20 ? 0 : dpPct >= 0.15 ? 0.002 : dpPct >= 0.10 ? 0.003 : 0.005;
+      const pmiMo = pmiAnn > 0 ? loan * pmiAnn / 12 : 0;
+      out.buyBudget = Math.round(legacyPI + carryMo + pmiMo);
+    }
+    if (hasLegacySavings) {
+      out.savings = legacyDown + Math.round(oldHome * d.closingPct);
+      delete out.downPayment;
+    }
+
+    // Rough v4 home for the delta notice (national rates; metro-specific numbers will render once loaded)
+    try {
+      const solved = solveHomePrice({
+        B: out.buyBudget, S: out.savings ?? raw.savings ?? legacyDown,
+        c: d.closingPct, t: nat.propTaxRate, i: nat.insRate, m: nat.maintRate,
+        annualRate: rate, termYears: term,
+      });
+      newHome = Math.round(solved.homePrice);
+    } catch (_) { newHome = null; }
+  }
+
+  return { migrated: out, isLegacy, oldHome, newHome };
 }
 
 function simulate(p) {
@@ -528,9 +682,14 @@ function simulate(p) {
   for (let yr = 1; yr <= p.simYears; yr++) {
     const homeVal = p.homePrice * Math.pow(1 + p.appreciation, yr);
     const prevHomeVal = yr === 1 ? p.homePrice : p.homePrice * Math.pow(1 + p.appreciation, yr - 1);
-    let yrInterest = 0, yrPrincipal = 0, yrMtgPmt = 0;
+    let yrInterest = 0, yrPrincipal = 0, yrMtgPmt = 0, yrPMI = 0;
     for (let m = 0; m < 12; m++) {
       if (balance <= 0.01) { balance = 0; break; }
+      // v4.0: declining-balance PMI charged on beginning-of-month balance,
+      // auto-drops when natural LTV reaches 80% of original home price.
+      if ((p.pmiRate || 0) > 0 && balance / p.homePrice > 0.8) {
+        yrPMI += balance * p.pmiRate / 12;
+      }
       const mi = balance * mr;
       const mp = Math.min(monthlyPmt - mi, balance);
       yrInterest += mi;
@@ -540,15 +699,18 @@ function simulate(p) {
     }
     const propTax = prevHomeVal * p.propTaxRate;
     const hoIns = p.homePrice * p.insRate * Math.pow(1 + p.inflation, yr - 1);
-    const maint = homeVal * p.maintRate;
-    const totalBuyerCost = yrMtgPmt + propTax + hoIns + maint;
+    // v4.0: maint aligned to propTax convention — beginning-of-year value, not
+    // end-of-year appreciated. Pre-existing v3.x inconsistency surfaced during
+    // v4.0 step-2 integration testing. See scoping doc Engine Deltas.
+    const maint = prevHomeVal * p.maintRate;
+    const totalBuyerCost = yrMtgPmt + propTax + hoIns + maint + yrPMI;
     const itemized = yrInterest + Math.min(propTax, p.saltCap) + p.otherItemized;
     const taxBenefit = Math.max(0, itemized - p.stdDeduction) * p.marginalTax;
     const netBuyerCost = totalBuyerCost - taxBenefit;
     const annualRent = startRent * 12 * Math.pow(1 + p.rentGrowth, yr - 1);
     const rIns = p.renterIns * Math.pow(1 + p.inflation, yr - 1);
     const totalRenterCost = annualRent + rIns;
-    totalBuyerUnrecoverable += yrInterest + propTax + hoIns + maint - taxBenefit;
+    totalBuyerUnrecoverable += yrInterest + propTax + hoIns + maint + yrPMI - taxBenefit;
     totalRenterUnrecoverable += totalRenterCost;
     const diff = netBuyerCost - totalRenterCost;
     renterPortfolio *= (1 + p.investReturn);
@@ -565,7 +727,7 @@ function simulate(p) {
     const renterWealth = renterPortfolio - renterGain * p.capGainsRate;
     data.push({
       year: yr, homeVal, balance: Math.max(0, balance), equity,
-      yrInterest, yrPrincipal, propTax, hoIns, maint,
+      yrInterest, yrPrincipal, propTax, hoIns, maint, pmi: yrPMI,
       totalBuyerCost, taxBenefit, netBuyerCost,
       annualRent, totalRenterCost,
       renterPortfolio, buyerPortfolio,
@@ -592,28 +754,74 @@ const fmtFullC = (v, s = "$") => v == null ? "—" : (v < 0 ? "-" : "") + s + Ma
 const fmtPct = v => (v * 100).toFixed(1) + "%";
 
 function buildParams(country, metro, personal, rateOverride) {
+  // v4.0: three-budget semantics.
+  //   buyBudget  = monthly all-in (P&I + tax + ins + maint + PMI)  [v3 was P&I only]
+  //   savings    = day-0 total deployment (down + closing)          [v3: downPayment was just down]
+  //   rentBudget = monthly rent                                      [unchanged from v3]
+  // Legacy field fallbacks (monthlyPayment, downPayment) retained for one reason only:
+  // to let this engine-wire-through step land before the UI rename (step 3). Once
+  // step 3 ships the state keys as (buyBudget, savings, rentBudget), those fallbacks
+  // become dead code and get removed.
   const c = COUNTRIES[country];
   const d = c.defaults;
   const nat = c.national;
   const rate = rateOverride ?? d.mortgageRate;
   const term = personal.mortgageTerm ?? d.mortgageTerm;
-  const mp = personal.buyBudget ?? personal.monthlyPayment ?? 2000;
-  const loan = backsolveLoan(mp, rate, term);
-  const homePrice = loan + personal.downPayment;
-  const downPct = homePrice > 0 ? personal.downPayment / homePrice : 0;
-  const rentBudget = personal.rentBudget ?? mp;
+  const B = personal.buyBudget ?? personal.monthlyPayment ?? 2000;
+  const S = personal.savings ?? personal.downPayment ?? 0;
+  const rentBudget = personal.rentBudget ?? B;
+  const t = metro?.propTaxRate ?? nat.propTaxRate;
+  const i = metro?.insRate ?? nat.insRate;
+  const m = nat.maintRate;
+  const closingFrac = d.closingPct;
+
+  // v4.0 closed-form solve: three budgets + metro rates → home price + PMI tier.
+  let solved;
+  try {
+    solved = solveHomePrice({ B, S, c: closingFrac, t, i, m, annualRate: rate, termYears: term });
+  } catch (e) {
+    // Degenerate input (S > full cost, or S < closing). Fall back to a sane
+    // baseline so the app doesn't white-screen. The `fallback:true` marker is
+    // surfaced via warnings (v4.0 step 10 fix) so users know the displayed
+    // numbers don't reflect their actual inputs.
+    const fallbackH = Math.max(S * 4, 100000);
+    const fallbackLoan = fallbackH * 0.8;
+    solved = {
+      homePrice: fallbackH,
+      loan: fallbackLoan,
+      downPayment: fallbackH - fallbackLoan,
+      closingCost: fallbackH * closingFrac,
+      dpPct: 0.2,
+      ltv: 0.8,
+      pmiRate: 0,
+      pmiMo: 0,
+      piMo: 0,
+      taxMo: fallbackH * t / 12,
+      insMo: fallbackH * i / 12,
+      maintMo: fallbackH * m / 12,
+      monthlyTotal: B,
+      tier: 0,
+      A: amortFactor(rate, term),
+      fallback: true,
+    };
+  }
+
   return {
-    homePrice, downPct, mortgageRate: rate, mortgageTerm: term,
+    homePrice: solved.homePrice,
+    downPct: solved.dpPct,
+    pmiRate: solved.pmiRate,
+    // Diagnostic fields — surfaced to the financial-snapshot callout (step 5).
+    // simulate() doesn't read these; they're for the UI layer.
+    _solve: solved,
+    mortgageRate: rate, mortgageTerm: term,
     appreciation: metro?.appreciation5yr ?? nat.appreciation5yr,
     rentGrowth: metro?.rentGrowth ?? nat.rentGrowth,
     inflation: d.inflation, investReturn: d.investReturn,
-    propTaxRate: metro?.propTaxRate ?? nat.propTaxRate,
-    maintRate: nat.maintRate,
-    insRate: metro?.insRate ?? nat.insRate,
+    propTaxRate: t, maintRate: m, insRate: i,
     marginalTax: d.marginalTax, stdDeduction: d.stdDeduction,
     saltCap: d.saltCap, otherItemized: personal.otherItemized ?? 0,
     capGainsRate: d.capGainsRate, capGainsExclusion: d.capGainsExclusion,
-    sellingPct: d.sellingPct, closingPct: d.closingPct,
+    sellingPct: d.sellingPct, closingPct: closingFrac,
     renterIns: d.renterIns, discipline: personal.discipline ?? 1.0,
     simYears: personal.simYears ?? 30,
     holdingPeriod: personal.holdingPeriod ?? 15,
@@ -638,17 +846,12 @@ const PRESETS = [
   { id: "bestbuy", name: "Best case for buying", overrides: { mortgageRate:0.04, appreciation:0.05, investReturn:0.07, rentGrowth:0.04 } },
   { id: "bestrent", name: "Best case for renting", overrides: { mortgageRate:0.07, appreciation:0.02, investReturn:0.11 } },
 ];
-const DEFAULT_METROS = { US:"us-nyc",CA:"ca-tor",UK:"uk-lon",AU:"au-syd",DE:"de-ber",IE:"ie-dub",NZ:"nz-akl",FR:"fr-par",ES:"es-mad",NL:"nl-ams",IT:"it-mil",SE:"se-sto",CH:"ch-zur",JP:"jp-tok",SG:"sg-sg",KR:"kr-sel" };
+const DEFAULT_METROS = { US:"us-boston",CA:"ca-tor",UK:"uk-lon",AU:"au-syd",DE:"de-ber",IE:"ie-dub",NZ:"nz-akl",FR:"fr-par",ES:"es-mad",NL:"nl-ams",IT:"it-mil",SE:"se-sto",CH:"ch-zur",JP:"jp-tok",SG:"sg-sg",KR:"kr-sel" };
 const RANGES = { investReturn:{lo:0.05,hi:0.12}, appreciation:{lo:-0.02,hi:0.08}, rentGrowth:{lo:0.01,hi:0.06}, propTaxRate:{lo:0.001,hi:0.025}, insRate:{lo:0.001,hi:0.02}, mortgageRate:{lo:0.025,hi:0.09}, maintRate:{lo:0.005,hi:0.025} };
-const TIPS = {
-  rentBudget:"Monthly rent you'd pay. When linked to mortgage P&I, ensures an apples-to-apples comparison.",
-  buyBudget:"Your monthly mortgage principal & interest payment. The tool derives home price from this + down payment, then adds tax, insurance, and maintenance to show total buyer cost.",
-  downPayment:"Cash toward purchase. The renter invests this + closing costs instead.",
-  mortgageTerm:"Length of the mortgage. 30yr US, 25yr CA/UK, 20yr DE.",
-  holdingPeriod:"When you'd sell. Each year is a 'if I liquidated now' snapshot — NOT a sell-then-rent transition.",
-  simYears:"How many years to simulate. Doesn't affect verdict — that uses your sell year.",
-  discipline:"% of surplus cash actually invested — applies to both renter AND buyer. 100% theoretical, 50-80% realistic. Bernstein & Koudijs (QJE 2024).",
-};
+// v4.0: TIPS is empty — all Your Situation inputs use GlossaryLink (Glossary is sole source
+// of truth per project quality principle #3). Preserved as empty object so NumInput's
+// `TIPS[rangeKey]` fallback expression doesn't throw on market-assumption inputs.
+const TIPS = {};
 const CURRENCIES = {
   USD:{rate:1,name:"US dollars"},CAD:{rate:0.72,name:"Canadian dollars"},GBP:{rate:1.27,name:"British pounds"},
   AUD:{rate:0.65,name:"Australian dollars"},EUR:{rate:1.08,name:"euros"},NZD:{rate:0.58,name:"NZ dollars"},
@@ -662,6 +865,7 @@ const GLOSSARY = [
   {id:"gl-equity",name:"Equity",def:"Your ownership stake — what you'd walk away with if you sold, before transaction costs.",formula:"Home value − Mortgage balance",ex:"$500K − $300K = $200K",note:"This is paper equity. Selling costs (~6-8%) reduce your actual take-home."},
   {id:"gl-int",name:"Int",def:"Mortgage interest paid this year (sum of 12 monthly interest charges).",ex:"$333K loan @ 6%, year 1 ≈ $19,838",note:"Interest is front-loaded. Early years are mostly interest; later years are mostly principal."},
   {id:"gl-princ",name:"Princ",def:"Principal paid this year — the portion of your P&I that reduces the mortgage balance.",formula:"(P&I × 12) − Int",ex:"$24K P&I − $20K int = $4K principal (year 1)"},
+  {id:"gl-pmi",name:"PMI",def:"Private Mortgage Insurance — annual cost when loan-to-value exceeds 80%. Drops to zero automatically once amortization brings LTV to 80% (no borrower action needed).",formula:"Monthly PMI = outstanding balance × pmiRate / 12 (declining-balance)",ex:"4-tier schedule at purchase: 20%+ down = 0%, 15-20% = 0.2%, 10-15% = 0.3%, <10% = 0.5%",note:"v4.0: PMI is now engine-level and included in the Cost column. Previously display-only in v3.x."},
   {id:"gl-cost",name:"Cost",def:"Buyer's total annual housing cost before any tax benefit.",formula:"P&I + Property tax + Insurance + Maintenance + PMI",note:"Opportunity cost of the down payment is tracked separately in the investment-portfolio columns."},
   {id:"gl-taxb",name:"TaxB",def:"Tax benefit from the mortgage interest deduction, using the post-TCJA excess-itemization method.",formula:"max(0, (Int + SALT-capped Prop Tax) − Std Deduction) × Marginal Tax Rate",ex:"$23K itemizable < $30K standard → $0 benefit (US default)",note:"Most US filers post-TCJA get $0 here because the $30K standard deduction dominates. Non-US countries correctly produce $0 (marginalTax set to 0)."},
   {id:"gl-netbuy",name:"NetBuy",def:"Buyer's net annual cost after the tax benefit.",formula:"Cost − TaxB",ex:"For most US defaults, NetBuy = Cost."},
@@ -673,6 +877,13 @@ const GLOSSARY = [
   {id:"gl-rntw",name:"RntW",def:"Renter's total wealth this year, assuming they liquidated the portfolio.",formula:"RInv − Cap gains tax on gains portion",note:"Cap gains tax applies only to the gains, not the full balance."},
   {id:"gl-adv",name:"Adv",def:"Buyer minus renter wealth — the single headline number.",formula:"BuyW − RntW",ex:"$450K − $380K = +$70K advantage to buyer",note:"Positive = buying wins by that amount. This is what drives the verdict."},
   // Assumption inputs (Your Assumptions panel)
+  {id:"gl-mo-rent-cost",name:"Mo. Rent Cost",cat:"input",def:"Your monthly rent outflow — actual if you're renting now, or a plausible alternative if hypothetical. In v4.0, standalone and conceptually independent of Mo. Buy Cost (no link toggle in beginner mode).",formula:"Year n rent = Mo. Rent Cost × 12 × (1 + rentGrowth)^(n−1)",ex:"At Boston default $2,000/mo and 3.5% rent growth: year 1 = $24,000, year 10 ≈ $32,700.",note:"The ratio of Mo. Rent Cost to Mo. Buy Cost implicitly expresses your assumption about landlord cost pass-through (see Mo. Advantage). Expert mode (v4.1+) will restore an optional Rent-Buy link for users who want strict apples-to-apples comparison."},
+  {id:"gl-mo-buy-cost",name:"Mo. Buy Cost",cat:"input",def:"Your monthly all-in housing cost: P&I + property tax + insurance + maintenance + PMI. v4.0 reframe — in v3, this field meant P&I only; v4 folds carry costs into one number so it reflects what you actually pay each month.",formula:"B = loan × A + home × (propTax + ins + maint)/12 + loan × pmiRate/12 (engine solves home price from B + savings + metro rates)",ex:"Boston default $2,000/mo all-in at $297K home: $1,352 P&I + $277 tax + $124 ins + $247 maint + $0 PMI.",note:"The 'all-in' framing surfaces the ~30-40% of monthly carry cost that v3's P&I-only field hid by adding silently on top. Compare to Mo. Rent Cost to see the monthly housing-cost differential that drives Mo. Advantage."},
+  {id:"gl-savings-budget",name:"Savings Budget",cat:"input",def:"Your total day-0 cash deployment: down payment + closing costs. v4.0 reframe — in v3, this was labeled 'down payment' and closing was added silently on top; v4 makes the total explicit.",formula:"Savings = downPayment + (homePrice × closingPct). Engine derives the split from the solve.",ex:"Boston default $80K savings at $297K home: ~$71K down + ~$9K closing. Buyer spends it upfront; renter invests the same amount — same starting capital, different deployment.",note:"The buyer's total upfront bill and the renter's starting portfolio are equal by construction — both start from the same capital, allocated differently."},
+  {id:"gl-mo-advantage",name:"Mo. Advantage",cat:"input",def:"The monthly cash-flow gap between the two paths, invested by whichever side has lower housing cost. When Mo. Buy Cost > Mo. Rent Cost the renter invests the gap; when Mo. Rent Cost > Mo. Buy Cost the buyer invests it. v4.0 renders this as a derived starting-state readout (locked); v4.1 will unlock direct input.",formula:"Mo. Advantage (at the start) = max(0, |Mo. Buy Cost − Mo. Rent Cost|) × Discipline",ex:"At $2,200 Buy + $1,800 Rent + 65% Discipline: differential $400, invested = $400 × 0.65 = $260/mo on the lower-cost side.",note:"At equal Mo. Rent Cost and Mo. Buy Cost, Mo. Advantage is $0 — which implicitly assumes landlords fully pass ownership costs (tax, insurance, maintenance) through to rent. Empirical research (Löffler & Siegloch on German municipal reforms; McDonald on Chicago commercial real estate; Grainger on U.S. residential rents post-Clean Air Act) finds pass-through is partial in most markets, approaching full only in elastic long-run conditions. Setting Mo. Rent Cost below Mo. Buy Cost reflects your view of local pass-through — the wider the gap, the lower the assumed pass-through. This gap evolves over the holding period: rent grows ~3.5%/yr while mortgage P&I is fixed nominal, so the differential typically shifts toward the buyer over time, and jumps hard once the mortgage is paid off. The displayed value is a starting-state snapshot — the Annual Cost chart shows year-by-year dynamics. When the resulting investing stream is large relative to housing math, the verdict becomes sensitive to investment-return assumptions."},
+  {id:"gl-mortgage-term",name:"Mortgage Term",cat:"input",def:"Length of the mortgage in years. Choices: 15, 20, 25, 30, 35. Most countries have a dominant standard — shorter terms mean higher monthly P&I but much less total interest.",formula:"Total lifetime interest = (monthlyPmt × 12 × term) − loan",ex:"On a $320K loan at 6%: 30yr term → $370K lifetime interest; 15yr term → $160K lifetime interest (but P&I is ~60% higher monthly).",note:"Typical defaults: 30yr US/IE/NZ/NL/KR; 25yr CA/UK/AU/ES/IT/CH/SG; 20yr DE/FR; 35yr JP. 15yr is common for US refinance or aggressive paydown. Longer terms shift more wealth toward the buyer late in the holding period (post-payoff jump)."},
+  {id:"gl-sell-in-year",name:"Sell in Year",aliases:["Holding Period"],cat:"input",def:"Year at which you'd sell the home — anchor for the wealth comparison. Each simulated year is an 'if I liquidated right now' snapshot, not a sell-then-rent transition.",formula:"Break-even year = first year where buyerWealth ≥ renterWealth, accounting for selling costs and capital-gains tax.",ex:"Global median owner tenure: 8-13 years (varies by country). Short holds (<5yr) often lose to renting due to transaction costs; long holds (>15yr) typically favor buying as appreciation compounds and mortgage pays down.",note:"Changing the sell year doesn't just slide a cursor — it changes the final verdict because home appreciation, mortgage amortization, and investment compounding all progress non-linearly. Short holds amplify transaction costs; long holds amplify the post-payoff jump in buyer's cash flow."},
+  {id:"gl-investment-discipline",name:"Investment Discipline",cat:"input",def:"Fraction of monthly cash-flow surplus actually invested rather than spent. Applies symmetrically to both buyer and renter — whichever side has lower monthly cost invests their gap × Discipline.",formula:"Actually invested per month = |Mo. Buy Cost − Mo. Rent Cost| × Discipline",ex:"65% default: at a $400/mo gap, $260/mo gets invested and $140/mo is assumed consumed. 100% (theoretical): every surplus dollar invested. 50-80% (realistic per Bernstein-Koudijs).",note:"Bernstein & Koudijs (QJE 2024) find most households invest 50-80% of housing-related cash flow differentials, not 100%. The default 65% is the middle of this empirical range. Setting higher values makes the sensitivity-to-investment-return assumption stronger; setting lower values reduces the compounding stream and tilts verdicts toward whichever side has the wealth-anchor (equity or seed capital)."},
   {id:"gl-mortgage-rate",name:"Mortgage Rate",aliases:["Mtg Rate"],cat:"input",def:"Annual interest rate on the loan. The single most impactful cost variable in the buyer's total cost over 30 years.",formula:"Monthly payment = L × [(1+r/12)^n − 1] / [(r/12)(1+r/12)^n] · Engine backsolves loan amount from monthly P&I",ex:"US 30yr avg ~6.0% (Apr 2026). On a $320K loan at 6%, total lifetime interest ≈ $370K.",note:"A 1% rate change shifts lifetime interest by ~$70K on a $320K loan. Small rate differences compound enormously over 30 years."},
   {id:"gl-invest-return",name:"Invest Return",cat:"input",def:"Expected annual portfolio return, compounded (CAGR / geometric mean). Applied to both buyer and renter surplus investments.",formula:"g ≈ a − σ²/2 (volatility drag: geometric ≈ arithmetic − variance/2)",ex:"Default 10% ≈ S&P 500 historical CAGR since 1926 (Ibbotson/SBBI). 7% is a conservative planning default.",note:"Using the arithmetic mean (~12%) overstates terminal wealth by ~50% over 30 years. Stocks with σ ≈ 20% lose ~2% to compounding friction. (Jacquier, Kane, Marcus FAJ 2003)"},
   {id:"gl-appreciation",name:"Appreciation",cat:"input",def:"Annual home value growth rate, nominal terms.",formula:"Home value at year n = P × (1 + appreciation)^n",ex:"Default 4.2% US. Long-term US nominal ~3-4% (Shiller / Case-Shiller since 1890).",note:"On 20% down, 4% appreciation ≈ 20% return on equity — the leverage effect. Real (inflation-adjusted) US home appreciation is only ~1% long-term."},
@@ -797,16 +1008,20 @@ const GlossaryLinkBase = ({term, children, setGuideTab, guideRef, setMethodHighl
         setTimeout(()=>setMethodHighlight(null), 3000);
       }, 50);
     }
-  }} style={{cursor:"help"}}>{children}</span>;
+  }} style={{cursor:"help",borderBottom:`1px dotted ${T.text3}`}}>{children}</span>;
 };
 
-const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,tip,sliderMin,sliderMax,noSlider,gl:Gl}) => {
+const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,tip,sliderMin,sliderMax,noSlider,options,gl:Gl}) => {
   const r=RANGES[rangeKey], tipText=tip||TIPS[rangeKey]||"";
   const sMin=sliderMin!=null?sliderMin:(r?r.lo*100:null), sMax=sliderMax!=null?sliderMax:(r?r.hi*100:null);
   const hasBounds=sMin!=null&&sMax!=null&&!locked;
-  const hasSlider=hasBounds&&!noSlider;
-  const v=parseFloat(value), oob=hasBounds&&!isNaN(v)&&(v<sMin||v>sMax);
+  const hasSlider=hasBounds&&!noSlider&&!options;
+  const v=parseFloat(value), oob=hasBounds&&!options&&!isNaN(v)&&(v<sMin||v>sMax);
   const iStyle=locked?S.inputLock:oob?{...S.input,borderColor:"#f59e0b",boxShadow:"0 0 0 2px rgba(245,158,11,0.15)"}:S.input;
+  // v4.1 scope: when the 🔒 becomes an unlock button (Mo. Advantage direct-input), it must
+  // sit OUTSIDE the <Gl> wrapper — otherwise clicking the unlock triggers Glossary navigation.
+  // Easiest fix: move the lock/unlock icon from inside the label span to a separate element
+  // after the <Gl> closing tag, or add e.stopPropagation() on the unlock onClick.
   return <div>
     <div style={S.inputRow}>
       {Gl
@@ -815,8 +1030,14 @@ const NumInput = ({label,hint,value,onChange,step,prefix,suffix,locked,rangeKey,
       }
       <div style={{display:"flex",alignItems:"center",gap:3}}>
         {prefix&&<span style={{fontSize:12,color:T.text3,fontWeight:500}}>{prefix}</span>}
-        <input style={iStyle} type="number" inputMode="decimal" autoComplete="off" value={value} step={step||1} readOnly={locked} tabIndex={locked?-1:0}
-          onChange={e=>{if(!locked){const val=parseFloat(e.target.value);if(!isNaN(val))onChange(val);}}} />
+        {options
+          ? <select style={iStyle} value={value} disabled={locked} tabIndex={locked?-1:0}
+              onChange={e=>{if(!locked)onChange(parseFloat(e.target.value));}}>
+              {options.map(opt=><option key={opt} value={opt}>{opt}</option>)}
+            </select>
+          : <input style={iStyle} type="number" inputMode="decimal" autoComplete="off" value={value} step={step||1} readOnly={locked} tabIndex={locked?-1:0}
+              onChange={e=>{if(!locked){const val=parseFloat(e.target.value);if(!isNaN(val))onChange(val);}}} />
+        }
         {suffix&&<span style={{fontSize:12,color:T.text3,fontWeight:500}}>{suffix}</span>}
       </div>
     </div>
@@ -990,14 +1211,17 @@ function RentVsBuyV3() {
   const countryMetros=METROS.filter(m=>m.country===country);
   const findM=id=>METROS.find(m=>m.id===id)||null;
 
+  // v4.0: migrate legacy v3 URL personal-state keys. `migration.isLegacy` drives the banner.
+  const migration = useMemo(()=>migratePersonalFromV3(saved?.p, saved?.c||"US"),[saved]);
+
   const [personal,setPersonal]=useState(()=>{
-    const s=saved?.p||{};
-    // Backward compat: old URLs have monthlyPayment → map to both budgets
+    const s=migration.migrated||{};
+    // v2-era compat: old URLs may carry `monthlyPayment` — map to both budgets.
     const mp=s.monthlyPayment;
     return clampPersonal({
-      rentBudget:s.rentBudget??mp??c.personalDefaults.monthlyPayment,
-      buyBudget:s.buyBudget??mp??c.personalDefaults.monthlyPayment,
-      downPayment:s.downPayment??c.personalDefaults.downPayment,
+      rentBudget:s.rentBudget??mp??c.personalDefaults.buyBudget,
+      buyBudget:s.buyBudget??mp??c.personalDefaults.buyBudget,
+      savings:s.savings??c.personalDefaults.savings,
       mortgageTerm:s.mortgageTerm??c.defaults.mortgageTerm,
       holdingPeriod:s.holdingPeriod??15,
       simYears:s.simYears??(c.defaults.mortgageTerm+5),
@@ -1005,8 +1229,10 @@ function RentVsBuyV3() {
       otherItemized:s.otherItemized??0,
     });
   });
-  const [budgetLinked,setBudgetLinked]=useState(()=>!saved?.p||saved.p.rentBudget==null||saved.p.rentBudget===saved.p.buyBudget);
-  const up=key=>val=>setPersonal(prev=>clampPersonal({...prev,[key]:val}));
+  const [migrationDismissed,setMigrationDismissed]=useState(false);
+  const showMigrationNotice=migration.isLegacy&&!migrationDismissed;
+  // Any input change dismisses the migration banner. No-op if already dismissed.
+  const up=key=>val=>{setPersonal(prev=>clampPersonal({...prev,[key]:val}));if(showMigrationNotice)setMigrationDismissed(true);};
   const hp=personal.holdingPeriod;
   const eLocA=linked?null:findM(locAMetro), eLocB=findM(locBMetro);
 
@@ -1071,23 +1297,64 @@ function RentVsBuyV3() {
   },[cusH,sensitivity,topSens,cusR,cusP,personal,hp,f,ff]);
 
   const warnings=useMemo(()=>{
-    const w=[],cp=cusP,dp=cp.homePrice>0?personal.downPayment/cp.homePrice:0;
+    const w=[],cp=cusP;
+    // v4.0: low-savings fallback. When Savings < closing cost on any solvable home, the
+    // engine returns fallback values ($100K home, 20% dp, 0% PMI) that don't reflect the
+    // user's actual inputs. This warning surfaces the fallback so users know to adjust.
+    if(cp._solve?.fallback)w.push("Savings too low to cover closing costs — displayed values are fallback defaults, not based on your Mo. Buy Cost. Increase Savings to get a real solve.");
     if(cp.investReturn>0.12)w.push("Investment return exceeds S&P arithmetic mean.");
     if(cp.mortgageRate>0.09)w.push("Rate unseen since early 1990s.");
     if(hp<3)w.push(hp+"yr hold: transaction costs overwhelm appreciation.");
-    if(dp>0&&dp<0.05)w.push("Implied "+(dp*100).toFixed(0)+"% down — PMI (not modeled).");
+    // v4.0: PMI IS modeled (declining-balance, 4-tier schedule). The v3 "PMI (not modeled)"
+    // warning was removed. Very-low-down scenarios still surface PMI's impact in the
+    // engine; a dedicated "high PMI" warning can be added in a later version if needed.
     if(personal.mortgageTerm<15||personal.mortgageTerm>30)w.push("Mortgage term "+personal.mortgageTerm+"yr is outside typical 15-30yr range.");
     if(personal.discipline>0.80)w.push((personal.discipline*100).toFixed(0)+"% discipline exceeds research-backed range (50-80%).");
     if(personal.discipline<0.40)w.push((personal.discipline*100).toFixed(0)+"% discipline — below 40%, most surplus is consumed.");
-    if(!budgetLinked&&Math.abs(personal.rentBudget-personal.buyBudget)/(personal.buyBudget||1)>0.10)w.push("Rent and mortgage P&I differ by >10%.");
+    // v4.0: Rent ≠ Buy "apples-to-apples" warning deleted per scoping doc. In v4
+    // beginner mode, Mo. Rent Cost and Mo. Buy Cost are conceptually independent;
+    // there's no baseline to warn against. Returns in Expert mode (v4.1+).
+
+    // v4.0: Mo. Advantage distortion detection.
+    // Type 2 (priority) — setup's investing stream points one way, verdict goes the other.
+    //   Fires when projected investing impact > 10% of sell-year wealth scale. Signals the
+    //   housing math (appreciation, tax, leverage) is decisive despite the investing pull.
+    // Type 1 — investing stream is dominant driver in the same direction as the verdict.
+    //   Fires when projected impact > 50% of actual advantage (and above a 5% wealth floor
+    //   to suppress trivial cases). Signals the verdict hinges on invest-return assumptions
+    //   more than on housing math.
+    // Types are mutually exclusive by direction (same vs opposite); at most one can fire.
+    const moGap=Math.abs(personal.buyBudget-personal.rentBudget);
+    if(moGap>0&&hp>0&&cusR?.data?.length>=hp){
+      const moMonthly=moGap*personal.discipline;
+      const r=cusP.investReturn;
+      // FV of annual deposits compounded annually over hp years. r=0 fallback for safety.
+      const moFV=r>0?12*moMonthly*((Math.pow(1+r,hp)-1)/r):12*moMonthly*hp;
+      const sellYear=cusR.data[hp-1];
+      const advantage=sellYear.advantage||0;
+      const wealthScale=Math.max(Math.abs(sellYear.buyerWealth||0),Math.abs(sellYear.renterWealth||0));
+      const investingSide=personal.buyBudget>personal.rentBudget?"renter":"buyer";
+      const verdictSide=advantage>0?"buyer":advantage<0?"renter":null;
+
+      if(verdictSide&&investingSide!==verdictSide&&moFV>0.10*wealthScale){
+        w.push(`Setup has the ${investingSide} investing ${f(moMonthly)}/mo extra (~${f(moFV)} by yr ${hp}), but the verdict favors ${verdictSide}. Housing math (appreciation / tax / leverage) outweighs the investing stream.`);
+      } else if(verdictSide&&investingSide===verdictSide&&moFV>0.5*Math.abs(advantage)&&moFV>0.05*wealthScale){
+        w.push(`Mo. Advantage dominates: ${f(moMonthly)}/mo differential compounds to ~${f(moFV)} over ${hp}yr — verdict hinges more on investment-return assumptions than on housing math.`);
+      }
+    }
     return w;
-  },[cusP,personal,hp,budgetLinked]);
+  },[cusP,cusR,personal,hp,f]);
 
   const locALabel=linked?`${c.name} National`:(eLocA?eLocA.name:`${c.name} National`);
   const locBLabel=eLocB?eLocB.name:`${c.name} National`;
 
   const share=useCallback(()=>{
-    history.replaceState(null,"",encodeURL({c:country,la:locAMetro,lb:locBMetro,lk:linked,so:scenOvr,co:cusOvr,p:personal,th:theme}));
+    // v4.0: state key `buyBudget` (all-in semantics) encodes as URL key `buyAllIn`.
+    // Legacy v3 URLs have `buyBudget` meaning P&I-only; the rename is what lets the
+    // decode-time migration detect v3 vs v4 unambiguously (see migratePersonalFromV3).
+    const {buyBudget,...rest}=personal;
+    const pForUrl={...rest,buyAllIn:buyBudget};
+    history.replaceState(null,"",encodeURL({c:country,la:locAMetro,lb:locBMetro,lk:linked,so:scenOvr,co:cusOvr,p:pForUrl,th:theme}));
     navigator.clipboard?.writeText(window.location.href).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2500);});
   },[country,locAMetro,locBMetro,linked,scenOvr,cusOvr,personal,theme]);
 
@@ -1100,7 +1367,10 @@ function RentVsBuyV3() {
     setCountry(nc);setLocAMetro(null);setLocBMetro(DEFAULT_METROS[nc]||"");
     setScenOvr({});setCusOvr({});setPresetId("ref");setFxOverride(null);
     const nd=COUNTRIES[nc];
-    setPersonal(prev=>clampPersonal({...prev,rentBudget:nd.personalDefaults.monthlyPayment,buyBudget:nd.personalDefaults.monthlyPayment,downPayment:nd.personalDefaults.downPayment,mortgageTerm:nd.defaults.mortgageTerm}));
+    // v4.0: rent defaults to same value as buyBudget per country. Future data improvement
+    // would be per-metro rent index for a proper "rent from rent index" default
+    // (scoping doc §Input model line 37). For now the user-familiar "both start equal" is fine.
+    setPersonal(prev=>clampPersonal({...prev,rentBudget:nd.personalDefaults.buyBudget,buyBudget:nd.personalDefaults.buyBudget,savings:nd.personalDefaults.savings,mortgageTerm:nd.defaults.mortgageTerm}));
   };
 
   // Chart type configs
@@ -1158,13 +1428,13 @@ function RentVsBuyV3() {
           <div style={{padding:"16px 20px",fontSize:13,lineHeight:1.8,color:T.text2}}>
             {guideTab==="overview"&&<>
               <p><strong style={{color:T.text1}}>What this model does:</strong> Compares two parallel wealth paths — buying a home vs. renting and investing the difference. At your chosen time horizon, it calculates total net wealth after taxes, transaction costs, and capital gains.</p>
-              <p style={{marginTop:8}}><strong style={{color:T.text1}}>The core premise:</strong> You set a monthly Rent Payment and Mortgage P&I (linked by default for an apples-to-apples comparison). The buyer's home price is derived from P&I + down payment. Total buyer cost includes tax, insurance, and maintenance on top. The renter invests the down payment and any monthly surplus.</p>
+              <p style={{marginTop:8}}><strong style={{color:T.text1}}>The core premise:</strong> You set three monthly/day-0 figures: Mo. Rent Cost, Mo. Buy Cost (monthly all-in — P&I + tax + insurance + maintenance + PMI), and Savings Budget (day-0 total — down payment + closing costs). The engine back-solves the home price those three numbers support at your metro's tax/insurance/maintenance rates and your mortgage rate. The renter invests Savings Budget on day 0 plus any monthly cash-flow surplus.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Panels:</strong> <em>Location</em> = real locked market data for two locations. <em>Your Assumptions</em> = fully editable sandbox. <em>What-If</em> (optional) = preset market conditions (12 options). All use the same simulation engine.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Snapshots, not transitions:</strong> Each year is an independent "if I sold now" evaluation. Year 15 does NOT model selling then renting — it shows total wealth if you liquidated at that point.</p>
-              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Quick start:</strong> Set your "Rent Payment" and "Mortgage P&I" (linked by default), your savings as "Down Payment," and how long you'd stay. Tap any <span style={{color:T.accent,fontWeight:700}}>?</span> for details.</p>
+              <p style={{marginTop:8}}><strong style={{color:T.text1}}>Quick start:</strong> Set your Mo. Rent Cost, Mo. Buy Cost, Savings Budget, and how long you'd stay. Tap any <span style={{color:T.accent,fontWeight:700}}>?</span> for details.</p>
             </>}
             {guideTab==="method"&&<>
-              <p><strong style={{color:T.text1}}>Payment-First Architecture:</strong> Input monthly P&I + down payment. Engine backsolves: L = M × [(1+r)^n − 1] / [r × (1+r)^n]. Home price = L + down. Rent Payment can be set independently or linked to P&I for apples-to-apples comparison.</p>
+              <p><strong style={{color:T.text1}}>Three-Budget Architecture (v4.0):</strong> Input monthly Mo. Buy Cost (all-in: P&I + tax + insurance + maintenance + PMI), day-0 Savings Budget (down + closing), and monthly Mo. Rent Cost (independent). A closed-form solve derives home price from all three constraints simultaneously at your metro's rates. Piecewise-linear across the 4-tier PMI schedule (0% / 0.2% / 0.3% / 0.5%); the tier self-consistent with the resulting down-payment fraction is the solution. No iteration.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Month-Precise Amortization:</strong> Interest = Balance × (Rate/12), Principal = Payment − Interest. Matches bank schedules exactly.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Tax Benefit — Excess Itemization (post-TCJA):</strong> max(0, Itemized − Std Deduction) × Rate. The $30K MFJ standard deduction means most homeowners get $0 incremental benefit. This is the #1 error in online calculators. Non-US countries correctly produce $0 (marginalTax = 0). NL/SE have partial deductions.</p>
               <p style={{marginTop:8}}><strong style={{color:T.text1}}>Symmetric Surplus Investing:</strong> BOTH buyer and renter invest surplus cash. After mortgage payoff, the buyer's freed-up cash gets invested — not ignored like in most calculators.</p>
@@ -1230,7 +1500,7 @@ function RentVsBuyV3() {
                   <span className="disclosure-icon" style={{fontSize:11,color:T.text2,lineHeight:1}}>▶</span>
                   <span style={{fontWeight:600,color:T.text1,fontSize:14}}>Assumption Input Definitions</span>
                 </summary>
-                <p style={{fontSize:11,color:T.text3,marginTop:6,marginBottom:4}}>Definitions for each market assumption in the "Your Assumptions" panel. Each entry includes the formula, sourced defaults, and interpretation notes.</p>
+                <p style={{fontSize:11,color:T.text3,marginTop:6,marginBottom:4}}>Definitions for each user-controlled input in the model. Your Situation inputs (Rent/Buy/Savings Budget, Mo. Advantage, and personal parameters) come first; Your Assumptions market parameters follow. Each entry includes the formula, sourced defaults, and interpretation notes.</p>
                 {GLOSSARY.filter(g=>g.cat==="input").map(g=>(
                   <p key={g.id} id={g.id} className={methodHighlight===g.id?"target-highlight":""} style={{marginTop:12}}>
                     <strong style={{color:T.text1,fontFamily:THEME_MONO}}>{g.name}</strong> — {g.def}
@@ -1246,48 +1516,71 @@ function RentVsBuyV3() {
       </details>
 
       {/* PERSONAL */}
-      {tutorial&&<div className="tut"><b>2</b>Set your budgets — what you'd spend monthly on rent vs. buying, how much you've saved for a down payment, and how long you'd stay. These are shared across all scenarios below.</div>}
+      {tutorial&&<div className="tut"><b>2</b>Set three figures: Mo. Rent Cost, Mo. Buy Cost (all-in), and day-0 Savings Budget. The engine back-solves what home price those three numbers support. Tap any input label to see its definition and formula.</div>}
+      {showMigrationNotice&&<div style={{padding:"8px 12px",marginTop:8,background:"#fef3c7",border:"1px solid #f59e0b",borderRadius:6,fontSize:12,color:"#78350f",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,flexWrap:"wrap"}}>
+        <span style={{flex:"1 1 260px",lineHeight:1.5}}>
+          <strong>Shared link from v3 — migrated.</strong> Mo. Buy Cost is now monthly all-in (P&I + tax + ins + maint + PMI); Savings Budget is day-0 total (down + closing). We estimated both from your v3 values.
+          {migration.oldHome!=null&&migration.newHome!=null&&<> Implied home price: <strong>~${migration.oldHome.toLocaleString()}</strong> (v3) → <strong>~${migration.newHome.toLocaleString()}</strong> (v4). Adjust as needed.</>}
+        </span>
+        <button onClick={()=>setMigrationDismissed(true)} style={{background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#78350f",padding:"0 4px",lineHeight:1}} title="Dismiss">✕</button>
+      </div>}
       <div style={S.card}>
         <div style={S.sTitle}>Your Situation</div>
-        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(min(200px, 100%), 1fr))",gap:"12px 20px"}}>
-          <div>
-            <NumInput label={<span>Rent Payment <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,buyBudget:prev.rentBudget}));}setBudgetLinked(!budgetLinked);}} style={linkBtnStyle(budgetLinked)} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.rentBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("rentBudget")(v);}} step={100} prefix={sym} tip="Monthly rent you'd pay. When linked, equals mortgage P&I for apples-to-apples."/>
-            <div style={S.hint}>Extra invested: {ff(Math.round(Math.max(0,Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*(cusP.propTaxRate+cusP.insRate+cusP.maintRate)/12)-Math.round(personal.rentBudget))*personal.discipline))}/mo ({ff(Math.round(Math.max(0,Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*(cusP.propTaxRate+cusP.insRate+cusP.maintRate)/12)-Math.round(personal.rentBudget))))} surplus x {(personal.discipline*100).toFixed(0)}%)</div>
-            <NumInput label={<span>Mortgage P&I <span onClick={e=>{e.stopPropagation();if(!budgetLinked){setPersonal(prev=>clampPersonal({...prev,rentBudget:prev.buyBudget}));}setBudgetLinked(!budgetLinked);}} style={linkBtnStyle(budgetLinked)} title={budgetLinked?"Unlink budgets":"Link budgets"}>🔗</span></span>} value={personal.buyBudget} onChange={v=>{if(budgetLinked)setPersonal(prev=>clampPersonal({...prev,rentBudget:v,buyBudget:v}));else up("buyBudget")(v);}} step={100} prefix={sym} tip="Your monthly mortgage principal and interest payment. Home price is derived from this + down payment."/>
-            <div style={S.hint}>Buyer total: {ff(Math.round(cusR.monthlyPmt)+Math.round(cusR.homePrice*cusP.propTaxRate/12)+Math.round(cusR.homePrice*cusP.insRate/12)+Math.round(cusR.homePrice*cusP.maintRate/12))}/mo (+ {ff(Math.round(cusR.homePrice*cusP.propTaxRate/12))} tax + {ff(Math.round(cusR.homePrice*cusP.insRate/12))} ins + {ff(Math.round(cusR.homePrice*cusP.maintRate/12))} maint)</div>
-          </div>
-          <div><NumInput label="Savings / Down Payment" value={personal.downPayment} onChange={up("downPayment")} step={5000} prefix={sym} tip="Your total savings. The buyer uses this as a down payment + pays closing costs. The renter invests the same total from day one." hint={`${(personal.downPayment/cusR.homePrice*100).toFixed(0)}% down + ${ff(Math.round(cusR.homePrice*cusP.closingPct))} closing = ${ff(Math.round(cusR.upfront))} upfront · renter invests same`}/><NumInput label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} step={1} suffix="yr" tip={TIPS.mortgageTerm} sliderMin={10} sliderMax={40} hint="15 or 30yr most common"/></div>
-          <div><NumInput label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" tip={TIPS.holdingPeriod} sliderMin={1} sliderMax={personal.simYears} hint="Global median tenure: 8-13 yr"/><NumInput label="Investment Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" tip={TIPS.discipline} sliderMin={30} sliderMax={80} hint="50-80% realistic"/></div>
+        {/* v4.0 input grid: cell-by-cell wrapping capped at 3 columns.
+            minmax(max(200px, calc((100% - 40px)/3)), 1fr) means each column is at least
+            max(200px, ~33% of container after gaps). At narrow widths the 200px floor kicks
+            in and cells stack; at wide widths the 33% floor holds the column count at 3.
+            Each NumInput is its own direct child so wrapping is cell-by-cell, not group-by-group. */}
+        <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(max(200px, calc((100% - 40px) / 3)), 1fr))",gap:"12px 20px"}}>
+          <NumInput gl={gl} label="Mo. Rent Cost" value={personal.rentBudget} onChange={up("rentBudget")} step={100} prefix={sym} hint={`${ff(personal.rentBudget*12)}/yr · ${personal.buyBudget>0?Math.round((personal.rentBudget/personal.buyBudget)*100):'—'}% of Mo. Buy Cost`}/>
+          <NumInput gl={gl} label="Mo. Buy Cost" value={personal.buyBudget} onChange={up("buyBudget")} step={100} prefix={sym} hint={(()=>{const pi=Math.round(cusR.monthlyPmt),tx=Math.round(cusR.homePrice*cusP.propTaxRate/12),ins=Math.round(cusR.homePrice*cusP.insRate/12),mn=Math.round(cusR.homePrice*cusP.maintRate/12),pmi=cusP.pmiRate>0?Math.round(cusR.loan*cusP.pmiRate/12):0;return `${ff(pi)} P&I + ${ff(tx)} tax + ${ff(ins)} ins + ${ff(mn)} maint${pmi>0?' + '+ff(pmi)+' PMI':''}`;})()}/>
+          <NumInput gl={gl} label="Savings Budget" value={personal.savings} onChange={up("savings")} step={5000} prefix={sym} hint={`${(cusR.homePrice>0?((cusR.homePrice-cusR.loan)/cusR.homePrice*100).toFixed(0):0)}% down + ${ff(Math.round(cusR.homePrice*cusP.closingPct))} closing = ${ff(Math.round(cusR.upfront))} upfront · renter invests same`}/>
+          <NumInput gl={gl} label="Mortgage Term" value={personal.mortgageTerm} onChange={up("mortgageTerm")} suffix="yr" options={[15,20,25,30,35]} hint="30yr US · 25yr CA/UK/AU · 20yr DE/FR · 35yr JP"/>
+          <NumInput gl={gl} label="Sell in Year" value={hp} onChange={v=>up("holdingPeriod")(Math.min(v,personal.simYears))} step={1} suffix="yr" sliderMin={1} sliderMax={personal.simYears} hint="Global median tenure: 8-13 yr"/>
+          <NumInput gl={gl} label="Investment Discipline" value={(personal.discipline*100).toFixed(0)} onChange={v=>up("discipline")(v/100)} step={5} suffix="%" sliderMin={30} sliderMax={80} hint="50-80% realistic"/>
+          <NumInput gl={gl} label="Mo. Advantage" value={Math.round(Math.abs(personal.buyBudget-personal.rentBudget)*personal.discipline)} onChange={()=>{}} locked={true} prefix={sym} hint={personal.buyBudget===personal.rentBudget?"No gap — assumes rent absorbs ownership costs":personal.buyBudget>personal.rentBudget?"→ Renter's monthly advantage at the start":"→ Buyer's monthly advantage at the start"}/>
         </div>
         <div style={{padding:"10px 14px",marginTop:12,background:T.muted,borderRadius:8,border:`1px solid ${T.border}`,fontSize:12}}>
           {(()=>{
             const hp2=cusR.homePrice, ln=cusR.loan, pmt=Math.round(cusR.monthlyPmt);
-            const dpPct=(personal.downPayment/hp2*100).toFixed(1);
+            // v4.0: derived down payment comes from the solve (homePrice - loan), not
+            // from the raw savings input (which is down + closing in v4 semantics).
+            const downAmt=Math.max(0,hp2-ln);
+            const dpPct=(hp2>0?(downAmt/hp2*100):0).toFixed(1);
             const pmiRate=dpPct>=20?0:dpPct>=15?0.002:dpPct>=10?0.003:0.005;
             const pmiMo=pmiRate>0?Math.round(ln*pmiRate/12):0;
             const propTaxMo=Math.round(hp2*cusP.propTaxRate/12);
             const insMo=Math.round(hp2*cusP.insRate/12);
             const maintMo=Math.round(hp2*cusP.maintRate/12);
+            const closingAmt=Math.round(hp2*cusP.closingPct);
+            const dayZeroTotal=downAmt+closingAmt;
             const totalBuyerMo=pmt+propTaxMo+insMo+maintMo+pmiMo;
-            const recIncome=Math.round(pmt*12/0.28);
-            const buyCost=Math.round(hp2*cusP.closingPct), sellCost=Math.round(hp2*cusP.sellingPct);
+            // v4.0: income check uses Mo. Buy Cost (all-in) rather than P&I only. Classic
+            // 28% front-end rule is PITI (excludes maint); v4's "Mo. Buy Cost = all-in"
+            // framing makes Mo. Buy Cost the natural input. Slightly more conservative.
+            const recIncome=Math.round(totalBuyerMo*12/0.28);
+            const buyCost=closingAmt, sellCost=Math.round(hp2*cusP.sellingPct);
             const medRatio=hp2/c.national.medianPrice;
+            const medLabel=medRatio<0.85?"below median":medRatio<1.15?"near median":"above median";
             return <>
-              <div style={{textAlign:"center",marginBottom:4}}>
-                <span style={{fontSize:15,fontWeight:700,color:T.text1}}>{ff(hp2)} home</span>
-                <span style={{fontSize:11,color:T.text2}}> — {ff(ln)} loan ({dpPct}% down) · {ff(pmt)}/mo P&I at {fmtPct(cusP.mortgageRate)}</span>
-                {toUSD(hp2)&&<span style={{fontSize:10,color:T.text3}}> {toUSD(hp2)}</span>}
-                <div style={{fontSize:11,marginTop:3,color:T.text3}}>
-                  {c.name} median: {ff(c.national.medianPrice)}
-                  {medRatio<0.85?" — well below median":medRatio<1.15?" — near median":" — above median"}
-                  <span style={{cursor:"pointer",color:T.accent,marginLeft:8,fontSize:10,fontWeight:600}} onClick={()=>setShowCardDetails(!showCardDetails)}>{showCardDetails?"Hide details":"Show details"}</span>
+              {/* Headline: supported home price. Always-visible context is headline + secondary line
+                  (loan, rate, down%, median). Breakdowns and checks are behind Show details to
+                  keep first-load cognitive load modest. */}
+              <div style={{textAlign:"center",marginBottom:6}}>
+                <div style={{fontSize:11,color:T.text3,textTransform:"uppercase",letterSpacing:"0.05em",fontWeight:600,marginBottom:2}}>Supported home price</div>
+                <div style={{fontSize:17,fontWeight:700,color:T.text1}}>{ff(hp2)}{toUSD(hp2)&&<span style={{fontSize:11,fontWeight:400,color:T.text3,marginLeft:6}}>{toUSD(hp2)}</span>}</div>
+                <div style={{fontSize:11,color:T.text3,marginTop:2}}>
+                  {ff(ln)} loan at {fmtPct(cusP.mortgageRate)} · {dpPct}% down · {c.name} median {ff(c.national.medianPrice)} — {medLabel}
                 </div>
               </div>
-              {showCardDetails&&<div style={{fontSize:11,color:T.text2,textAlign:"center",lineHeight:1.8}}>
-                {dpPct<20&&<div><span style={{fontWeight:600,color:T.text1}}>20% threshold:</span> {ff(Math.round(hp2*0.2-personal.downPayment))} more to avoid PMI</div>}
-                {pmiMo>0&&<div><span style={{fontWeight:600,color:T.text1}}>PMI est:</span> ~{ff(pmiMo)}/mo ({(pmiRate*100).toFixed(1)}%) until 20% equity</div>}
-                <div><span style={{fontWeight:600,color:T.text1}}>Income check:</span> {ff(pmt)}/mo P&I -> ~{ff(recIncome)}/yr recommended (28%)</div>
-                <div><span style={{fontWeight:600,color:T.text1}}>Transaction costs:</span> Buy-in {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip</div>
+              <div style={{textAlign:"center",marginTop:4}}>
+                <span style={{cursor:"pointer",color:T.accent,fontSize:10,fontWeight:600}} onClick={()=>setShowCardDetails(!showCardDetails)}>{showCardDetails?"Hide details":"Show details"}</span>
+              </div>
+              {showCardDetails&&<div style={{fontSize:12,color:T.text2,textAlign:"center",lineHeight:1.7,marginTop:6,paddingTop:6,borderTop:`1px dashed ${T.border}`}}>
+                <div><span style={{fontWeight:600,color:T.text1}}>Day-0:</span> {ff(downAmt)} down + {ff(closingAmt)} closing = {ff(dayZeroTotal)}</div>
+                <div><span style={{fontWeight:600,color:T.text1}}>Monthly:</span> {ff(pmt)} P&I + {ff(propTaxMo)} tax + {ff(insMo)} ins + {ff(maintMo)} maint + {ff(pmiMo)} PMI = {ff(totalBuyerMo)}</div>
+                <div style={{fontSize:11,marginTop:4,color:T.text2}}><span style={{fontWeight:600,color:T.text1}}>Income check (28% on all-in):</span> {ff(totalBuyerMo)}/mo → ~{ff(recIncome)}/yr recommended</div>
+                <div style={{fontSize:11,color:T.text2}}><span style={{fontWeight:600,color:T.text1}}>Transaction costs:</span> Buy-in {ff(buyCost)} ({(cusP.closingPct*100).toFixed(0)}%) + Sell {ff(sellCost)} ({(cusP.sellingPct*100).toFixed(0)}%) = {ff(buyCost+sellCost)} round-trip</div>
               </div>}
             </>;
           })()}
@@ -1512,10 +1805,10 @@ function RentVsBuyV3() {
           </button>
           {showData && <div style={{maxHeight:400,overflowY:"auto",overflowX:"auto",marginTop:10,WebkitOverflowScrolling:"touch",contentVisibility:"auto",containIntrinsicSize:"auto 400px"}}>
             <div style={{fontSize:11,color:T.text3,padding:"4px 4px 8px",fontStyle:"italic"}}>Hover a column header for a quick definition (desktop only) · tap to jump to its full Glossary entry with formula and example.</div>
-            <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><GlossaryLink term={h}>{h}</GlossaryLink></th>)}</tr></thead>
+            <table style={S.table}><thead><tr>{["Yr","Home","Equity","Int","Princ","PMI","Cost","TaxB","NetBuy","Rent","RntCst","BInv","RInv","BuyW","RntW","Adv"].map(h=><th key={h} style={{...S.th,...(h==="Yr"?{textAlign:"center"}:{})}}><GlossaryLink term={h}>{h}</GlossaryLink></th>)}</tr></thead>
             <tbody>{cusR.data.map(d=>{const isH=d.year===hp,isBE=d.year===cusR.breakeven;return<tr key={d.year} style={{background:isH?"rgba(245,158,11,0.08)":isBE?"rgba(220,38,38,0.05)":d.year%2===0?T.muted:T.card}}>
               <td style={{...S.td,textAlign:"center",fontWeight:isH||isBE?700:500}}>{d.year}</td>
-              <td style={S.td}>{f(d.homeVal)}</td><td style={S.td}>{f(d.equity)}</td><td style={S.td}>{f(d.yrInterest)}</td><td style={S.td}>{f(d.yrPrincipal)}</td>
+              <td style={S.td}>{f(d.homeVal)}</td><td style={S.td}>{f(d.equity)}</td><td style={S.td}>{f(d.yrInterest)}</td><td style={S.td}>{f(d.yrPrincipal)}</td><td style={S.td}>{f(d.pmi)}</td>
               <td style={S.td}>{f(d.totalBuyerCost)}</td><td style={S.td}>{f(d.taxBenefit)}</td><td style={{...S.td,fontWeight:700}}>{f(d.netBuyerCost)}</td>
               <td style={S.td}>{f(d.annualRent)}</td><td style={{...S.td,fontWeight:700}}>{f(d.totalRenterCost)}</td>
               <td style={S.td}>{f(d.buyerPortfolio)}</td><td style={S.td}>{f(d.renterPortfolio)}</td>
@@ -1528,7 +1821,7 @@ function RentVsBuyV3() {
 
       {/* FOOTER */}
       <div style={{textAlign:"center",padding:"24px 16px 32px",fontSize:11,color:T.text3,lineHeight:1.6}}>
-        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v3.9.99.15 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
+        <div style={{marginBottom:4}}>Rent vs. Buy Financial Simulation Engine · v4.0 · Built by <a href="https://www.linkedin.com/in/allan-comeau/" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Allan Comeau</a> · <a href="https://github.com/allancomeau/rent-vs-buy" target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none"}}>Source on GitHub</a></div>
         <div style={{fontWeight:600,color:T.text2}}>This is an independent personal project for educational purposes only. It does not constitute financial, investment, tax, or legal advice.</div>
         <div style={{marginTop:2,color:T.text2}}>Views are the creator's own and do not represent those of any employer. Consult a qualified professional before making financial decisions.</div>
         <div style={{marginTop:4}}><a href={RESEARCH_BASE+"legal_disclaimers.md"} target="_blank" rel="noopener" style={{color:T.accent,textDecoration:"none",fontWeight:600}}>Full Legal Disclaimers & Privacy</a></div>

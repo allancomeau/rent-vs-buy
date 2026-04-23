@@ -4,6 +4,83 @@ All notable changes to the Rent vs. Buy Financial Simulation Engine.
 
 ---
 
+## v4.0 — April 2026
+
+### Three-Budget Architecture (major version)
+
+First non-.99 release in the v3 arc. Represents a foundational rework of how users interact with the model: three independent budget inputs (Mo. Rent Cost, Mo. Buy Cost, Savings Budget) with a closed-form home-price solve, replacing v3's payment-first model where one monthly P&I field drove everything and carry costs were silently added on top.
+
+**Why the major bump:** v3's P&I-only monthly field hid ~30-40% of the buyer's actual monthly cost (tax, ins, maint, PMI stacked on top). v4 makes the all-in cost the primary input, so the number the user commits to IS what they actually pay each month. This required redesigning the solve, migrating the engine, rewriting the input UI, rebuilding migration paths for v3 URLs, and revising every surface that touched the old budget semantics.
+
+### Engine — closed-form three-budget solve
+
+- **`solveHomePrice({B, S, c, t, i, m, annualRate, termYears})` pure function** — Given three budgets plus metro rates, derives the supported home price in closed form. Algebraic solve: `H = (B + S·(A + p/12)) / ((1+c)(A + p/12) + (t+i+m)/12)`. No iteration, no fallback numerical methods. Built and verified as a standalone pure function before UI integration (per project priority #5: testability).
+- **Piecewise PMI across 4 tiers** — Solve is piecewise-linear across the PMI schedule (0% / 0.2% / 0.3% / 0.5% at ≥20%, ≥15%, ≥10%, <10% down). For each tier, compute H, then check whether the resulting down% falls in that tier's range. First self-consistent tier is the solution. Epsilon tolerance on band lower-bound for float safety. Preserved from v3's shipped PMI schedule (line 1266 pre-v4); now embedded in the solve rather than only in simulate().
+- **`simulate()` PMI integration** — Declining-balance PMI charged on beginning-of-month balance when balance/homePrice > 0.80. Auto-drops as natural LTV reaches the threshold. `yrPMI` accumulator flows to totalBuyerCost, totalBuyerUnrecoverable, and the data row's `pmi` field (surfaced in the data table and annual cost chart).
+- **Maintenance carry-cost timing fix** — `simulate()`'s monthly loop changed `maint = homeVal * p.maintRate` (end-of-year appreciated) → `maint = prevHomeVal * p.maintRate` (beginning-of-year). Aligns maintenance with the property-tax convention already used in the same loop and with the display layer's breakdown convention. Pre-existing v3 inconsistency surfaced during v4 integration testing: the end-of-year convention caused a ~0.6% drift between the solve's coherent monthly breakdown ("$2,000 all-in") and simulate's year-1 actual ($2,012). Tolerable in v3 where no audit surface existed; v4's coherence promise made it visible and required the fix. One-line engine change, no downstream math affected.
+- **Low-savings fallback marker** — When Savings < closing cost on any solvable home, `solveHomePrice` throws; `buildParams` catches and returns fallback values (home=$100K, dp=20%, pmi=0) so the app stays functional. v4.0 adds `fallback:true` on the solved object and a priority amber warning ("Savings too low to cover closing costs — displayed values are fallback defaults, not based on your Mo. Buy Cost") so users know the displayed numbers don't reflect their inputs. Scoping doc anticipated this warning; shipping v4.0 delivers it.
+
+### UI — three-budget input model
+
+- **Input rename (user-visible labels)** — "Rent Budget" → "Mo. Rent Cost", "Buy Budget" → "Mo. Buy Cost", "Savings Budget" unchanged. The "Cost" framing is less ambiguous than "Budget" (which can read as subjective commitment or descriptive cost); "Mo." prefix disambiguates from lifetime or annual. "Mo. Investments" → "Mo. Advantage" so the starting-state differential reads as a directional flow, not a portfolio allocation. State keys in personal remain `rentBudget` / `buyBudget` / `savings` for code clarity (label ≠ internal key).
+- **Mortgage Term: slider → dropdown** — Options [15, 20, 25, 30, 35] cover all country defaults. Clamp narrowed from [1, 50] to [15, 35]. Snap-to-enum logic in `clampPersonal` handles legacy URLs with off-enum values (e.g., a v3 URL with mortgageTerm=22 maps to nearest valid option). Removes "23-year mortgage" silliness from the slider.
+- **Live computed hints on Mo. Rent Cost and Mo. Buy Cost** — Replaces static tooltip-duplicating text with information that complements the Glossary rather than restating it. Rent hint: "$24,000/yr · 77% of Mo. Buy Cost" (implicit pass-through ratio visible at a glance). Buy hint: "$1,352 P&I + $277 tax + $124 ins + $247 maint" (live component breakdown, + PMI segment when non-zero). Solves the desktop-users-see-duplicated-info problem flagged in testing.
+- **Mo. Advantage starting-state framing** — Directional hints explicitly say "at the start" ("Renter's monthly advantage at the start" / "Buyer's monthly advantage at the start") to signal the differential evolves over the holding period. Engine already handles the dynamics (rent grows ~3.5%/yr, mortgage P&I is fixed nominal, advantage typically shifts toward buyer and jumps hard at mortgage payoff); the UI now tells users the readout is a snapshot, not a time-averaged number.
+- **Dotted-underline affordance on clickable labels** — All `<GlossaryLink>`-wrapped labels now show a 1px dotted underline in `T.text3` color (theme-aware). Standard web convention for "definition available" — works on both desktop and mobile (replaces the cursor-only affordance that gave zero signal on touch). Applied uniformly across data-table headers, MarketInputs, and the 7 Your Situation inputs.
+
+### GlossaryLink migration — 7 Your Situation inputs
+
+- **Deferred v3.9.99.15 work completed** — All 7 Your Situation input labels (Mo. Rent Cost, Mo. Buy Cost, Savings Budget, Mortgage Term, Sell in Year, Investment Discipline, Mo. Advantage) migrated from `<Tip>` to `<GlossaryLink>`. Hover shows a first-sentence reminder (desktop `title` attribute); tap/click jumps to the Glossary tab with flash highlight on the matching entry. Uses the same `GlossaryLinkBase` module-scope component + `gl` alias pattern established in v3.9.99.15 — no new React machinery.
+- **`TIPS` pruned to `{}`** — All 11 surviving TIPS entries from v3.9.99.15 (4 Your Situation, 7 market) are now canonical in GLOSSARY. TIPS const kept as empty object to preserve `NumInput`'s `TIPS[rangeKey]||""` fallback expression (zero behavior change when a NumInput without gl prop renders). Project priority #3 (one source of truth per value) fully satisfied for input documentation.
+
+### Glossary — 7 new entries, structural reorganization
+
+- **4 Your Situation input entries** — `gl-mo-rent-cost`, `gl-mo-buy-cost`, `gl-savings-budget`, `gl-mo-advantage`. Each carries def, formula, example, and a research-backed note. Mo. Advantage's note includes the pass-through discussion (Löffler & Siegloch on German municipal reforms, McDonald on Chicago commercial real estate, Grainger on U.S. residential rents post-Clean Air Act) explaining why "equal Rent = equal Buy" implicitly assumes full pass-through, and how the Rent/Buy ratio expresses the user's pass-through belief. Dynamic-evolution sentence acknowledges the starting-state snapshot is one moment in a multi-year trajectory.
+- **3 personal-input entries** — `gl-mortgage-term` (5-option coverage, country defaults, interest-savings tradeoff), `gl-sell-in-year` with "Holding Period" alias for legacy references (break-even framing + transaction-cost and post-payoff dynamics), `gl-investment-discipline` (Bernstein-Koudijs QJE 2024 50-80% range, symmetric application to both paths).
+- **Subsection ordering** — Personal inputs cluster first (Rent/Buy/Savings/Advantage/Term/Sell/Discipline = 7 entries), then market assumptions (Rate/Return/Appreciation/RentGrowth/Tax/Ins/Maint = 7 entries). Matches the user's scroll order (Your Situation at the top of the page, Your Assumptions below).
+
+### URL migration — v3 → v4
+
+- **`migratePersonalFromV3(raw, country)` pure function** — Detects legacy v3 URL keys (buyBudget as P&I-only, downPayment as cash-only) versus v4 native keys (buyAllIn, savings). Reconstructs the implied v3 home via `backsolveLoan`, estimates all-in by adding tax + ins + maint + PMI at country rates, computes closing estimate for the savings migration. Returns `{migrated, isLegacy, oldHome, newHome}`.
+- **Share-URL encoding translation** — State `buyBudget` → URL key `buyAllIn`. Thin `{buyBudget, ...rest} → {...rest, buyAllIn: buyBudget}` rename at encode time. The rename IS the migration signal: URL with `buyBudget` but no `buyAllIn` is legacy v3; URL with `buyAllIn` is native v4. No version tag needed.
+- **Inline migration banner** — Amber banner above Your Situation when `isLegacy === true`. Shows old-vs-new home price estimate inline ("Implied home price: ~$413,583 (v3) → ~$413,568 (v4). Adjust as needed."). Auto-dismisses on first input interaction via extension of the `up` helper. Explicit `✕` also dismisses.
+
+### Amber warnings — Mo. Advantage distortion detection
+
+- **Type 2 (priority): setup-verdict disagreement** — Fires when the implied monthly investing stream favors one side but the actual verdict goes the other. Trigger: `investingSide !== verdictSide && projectedFV > 10% × sellYearWealth`. Copy: "Setup has the {side} investing $X/mo extra (~$Y by yr N), but the verdict favors {other side}. Housing math (appreciation / tax / leverage) outweighs the investing stream."
+- **Type 1: investing stream dominates** — Fires when setup and verdict agree, but the investing stream alone explains most of the advantage magnitude. Trigger: `investingSide === verdictSide && projectedFV > 50% × |advantage| && projectedFV > 5% × wealthScale`. Copy: "Mo. Advantage dominates: $X/mo differential compounds to ~$Y over Nyr — verdict hinges more on investment-return assumptions than on housing math."
+- **Mutually exclusive by direction** — Type 1 requires same direction; Type 2 requires opposite. At most one fires per simulation. Low-savings fallback amber takes priority over both.
+
+### Tutorial + polish
+
+- **Tutorial signpost for Glossary discovery** — Tutorial nudge #2 appended with "Tap any input label to see its definition and formula." Works with the dotted-underline affordance (no literal `?` icons promised, no copy that misleads).
+- **Engine comment for v4.1 lock-button collision** — When Mo. Advantage's lock icon becomes an unlock button in v4.1, it must sit outside the `<Gl>` wrapper — otherwise clicking the unlock triggers Glossary navigation. Comment inlined in NumInput source so whoever builds the v4.1 unlock sees the constraint before writing code.
+- **Engine error messages aligned to new naming** — `solveHomePrice` error strings reference "Mo. Buy Cost" instead of "Buy Budget" so any error that reaches a user is readable in the new framing.
+
+### What didn't change
+
+- **Chart types, themes, 16-country/54-metro coverage, data-table format, share URL scope, FAQ, legal disclaimers** — all preserved from v3.9.99.15. v4.0 is a rework of the input model and its documentation, not a rework of the app.
+- **Sim engine's core loop structure** — `simulate()` still executes month-precise amortization, symmetric surplus investing, and excess-itemization tax benefit. The maint timing fix is one line; PMI integration is additive.
+
+### Scope guardrails — what's deferred to v4.1+
+
+- Mo. Advantage unlock (direct-input mode with inflation-adjusted variant)
+- Expert mode toggle (component overrides, Rent/Buy link toggle return, SALT cap / AMT / NIIT, closing-cost capitalization)
+- Extra monthly mortgage payment + prepay-vs-invest callout
+- `otherItemized` full engine removal (UI already removed in v3.9.98, engine param still at 0)
+- `renterIns` disposition (zeroed in v3.9.99.8)
+- Inflation ↔ rent-growth link with unlink affordance
+
+### Pre-ship verification
+
+48-test automated harness (`verify_v4_preship.js`) covers scoping-doc test items 1-7: default-load sanity across all 16 countries (home ratios 11-19× annual Buy Budget, tight sensible range); PMI 4-tier boundary cases; cross-metro consistency (higher prop tax → smaller supported home); URL migration round-trip; Mo. Advantage formula at boundaries; engine contracts (term affects home, holding period doesn't); PMI amortization dropoff. 11 code-level invariants verified (syntax balanced, required functions present, rename completeness, all 7 inputs migrated to gl, TIPS pruned, dotted underline affordance, dropdown options, amber copy, v4.1 comment). Test 8 (fresh-tester walkthrough) is manual — checklist delivered separately.
+
+### Versioning
+
+Format: `vX.Y` (no `.Z` patch component for the major). First non-.99 release — the v3 arc's `.99` micro-versioning sequence (v3.9.99.1 through v3.9.99.15) ends here. Future major UX work or engine changes warrant v4.1, v5.0, etc.
+
+---
+
 ## v3.9.99.15 — April 2026
 
 ### Glossary Link Migration (MarketInputs)
